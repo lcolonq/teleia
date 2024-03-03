@@ -1,0 +1,52 @@
+[package]
+name = "teleia"
+version = "0.1.0"
+authors = ["LLLL Colonq <llll@colonq.computer>"]
+edition = "2021"
+
+[profile.release]
+opt-level = 2
+codegen-units = 1
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[dependencies]
+winit = "*" # windowing and events
+glow = {version = "*", features = []} # rendering
+tobj = "*" # model loader
+# gltf = {version = "*", features = ["extras", "names"]} # model loader
+image = "*" # texture loader
+glam = "*" # linear algebra
+log = "*" # logging
+rand = {version = "*", features = ["small_rng"]} # rng
+getrandom = {version = "*", features = ["js"]} # rng in the browser
+serde = {version = "*", features = ["derive"]} # serialization
+console_log = "*" # log to browser console
+console_error_panic_hook = "*" # log to browser console on panic
+tracing-wasm = "*" # trace performance in browser
+wasm-bindgen = "*" # interface with javascript
+wasm-bindgen-futures = "*" # interface with async javascript
+js-sys = "*"
+
+[dependencies.web-sys] # common browser APIs
+version = "*"
+features = [
+  "Document",
+  "Window",
+  "Element",
+  "HtmlCanvasElement",
+  "WebGl2RenderingContext",
+  "Headers",
+  "Request",
+  "RequestInit",
+  "RequestMode",
+  "Response",
+  "Performance",
+  "PerformanceTiming",
+  "AudioContext",
+  "AudioNode",
+  "AudioDestinationNode",
+  "AudioBuffer",
+  "AudioBufferSourceNode",
+]
