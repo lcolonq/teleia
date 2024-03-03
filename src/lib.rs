@@ -35,7 +35,7 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
     st.write_log("bar");
     st.write_log("baz");
 
-    event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
+    event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
     event_loop.spawn(move |event, elwt| {
         match event {
             winit::event::Event::WindowEvent {
@@ -86,6 +86,7 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
                 }
                 st.run_update(&ctx, &mut game);
                 st.run_render(&ctx, &mut game);
+                ctx.window.request_redraw();
             },
 
             _ => {},
