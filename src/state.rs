@@ -55,7 +55,7 @@ pub struct State {
     pub audio: Option<audio::Assets>,
 
     pub projection: glam::Mat4,
-    pub camera: glam::Mat4,
+    pub camera: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub lighting: (glam::Vec3, glam::Vec3),
 
     pub log: Vec<(u64, String)>,
@@ -95,9 +95,9 @@ impl State {
                 0.1,
                 400.0,
             ),
-            camera: glam::Mat4::IDENTITY,
+            camera: (glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(0.0, 0.0, 1.0), glam::Vec3::new(0.0, 1.0, 0.0)),
             lighting: (
-                glam::Vec3::new(1.0, 0.0, 0.0),
+                glam::Vec3::new(1.0, 1.0, 1.0),
                 glam::Vec3::new(1.0, -1.0, 1.0),
             ),
 
@@ -106,6 +106,7 @@ impl State {
     }
 
     pub fn write_log(&mut self, e: &str) {
+        log::info!("log: {}", e.to_owned());
         self.log.push((self.tick, e.to_owned()));
     }
 
@@ -116,9 +117,11 @@ impl State {
     pub fn move_camera(
         &mut self,
         _ctx: &context::Context,
-        camera: &glam::Mat4,
+        pos: &glam::Vec3,
+        dir: &glam::Vec3,
+        up: &glam::Vec3,
     ) {
-        self.camera = camera.clone();
+        self.camera = (pos.clone(), dir.clone(), up.clone());
     }
 
     pub fn set_lighting(
@@ -131,7 +134,11 @@ impl State {
     }
 
     pub fn view(&self) -> glam::Mat4 {
-        self.camera.clone()
+        glam::Mat4::look_to_lh(
+            self.camera.0,
+            self.camera.1,
+            self.camera.2,
+        )
     }
 
     pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
@@ -230,7 +237,8 @@ impl State {
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
         let now = now(ctx);
-        self.acc += now - self.last;
+        let diff = now - self.last;
+        self.acc += diff;
         self.last = now;
 
         // update, if enough time has accumulated since last update

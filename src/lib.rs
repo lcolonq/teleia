@@ -1,6 +1,7 @@
 use winit::platform::web::EventLoopExtWebSys;
 
 pub mod utils;
+pub mod ui;
 pub mod request;
 pub mod context;
 pub mod state;
