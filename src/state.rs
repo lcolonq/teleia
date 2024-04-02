@@ -143,7 +143,7 @@ impl State {
 
     pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
         shader.bind(ctx);
-        shader.set_mat4(&ctx, "projection", &self.projection);
+        shader.set_mat4(ctx, "projection", &self.projection);
         shader.set_mat4(ctx, "view", &self.view());
         shader.set_vec3(
             ctx, "light_ambient_color",

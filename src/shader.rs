@@ -163,6 +163,15 @@ impl Shader {
         );
     }
 
+    pub fn set_texture_offset(&self, ctx: &context::Context, inc: i32, x: i32, y: i32) {
+        let count = inc as f32;
+        let ratio = 1.0 / count;
+        self.set_vec3(
+            ctx, "texture_offset",
+            &glam::Vec3::new((x % inc) as f32 * ratio, (y % inc) as f32 * ratio, count)
+        );
+    }
+
     pub fn bind(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.use_program(Some(self.program));

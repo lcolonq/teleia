@@ -42,6 +42,14 @@ impl Texture {
         }
     }
 
+    pub fn set_linear_filtering(&self, ctx: &context::Context) {
+        unsafe {
+            ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST_MIPMAP_NEAREST as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST_MIPMAP_NEAREST as i32);
+        }
+    }
+
     pub fn bind(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.active_texture(glow::TEXTURE0);
