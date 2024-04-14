@@ -61,7 +61,8 @@ impl Context {
 
             gl.enable(glow::STENCIL_TEST);
 
-            gl.cull_face(glow::FRONT);
+            // gl.enable(glow::CULL_FACE);
+            // gl.cull_face(glow::FRONT);
         }
 
         let emptyvao = unsafe {
@@ -88,7 +89,7 @@ impl Context {
                     let browser_window = doc.default_view()
                         .or_else(web_sys::window)
                         .unwrap();
-                    winit::dpi::LogicalSize::new(
+                    winit::dpi::PhysicalSize::new(
                         browser_window.inner_width().unwrap().as_f64().unwrap(),
                         browser_window.inner_height().unwrap().as_f64().unwrap(),
                     )

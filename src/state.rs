@@ -92,8 +92,9 @@ impl State {
             projection: glam::Mat4::perspective_lh(
                 std::f32::consts::PI / 4.0,
                 context::RENDER_WIDTH / context::RENDER_HEIGHT,
-                0.1,
-                400.0,
+                // 0.1,
+                0.5,
+                50.0,
             ),
             camera: (glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(0.0, 0.0, 1.0), glam::Vec3::new(0.0, 1.0, 0.0)),
             lighting: (

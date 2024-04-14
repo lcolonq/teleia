@@ -60,12 +60,16 @@ impl Shader {
             ctx.gl.detach_shader(program, frag);
             ctx.gl.delete_shader(frag);
 
+            ctx.gl.use_program(Some(program));
+
             let mut uniforms = HashMap::new();
             for index in 0..ctx.gl.get_active_uniforms(program) {
                 if let Some(active) = ctx.gl.get_active_uniform(program, index) {
-                    let loc = ctx.gl.get_uniform_location(program, &active.name)
-                        .expect(&format!("failed to get location for uniform: {}", active.name));
-                    uniforms.insert(active.name, loc);
+                    if let Some(loc) = ctx.gl.get_uniform_location(program, &active.name) {
+                        uniforms.insert(active.name, loc);
+                    } else {
+                        log::warn!("failed to get location for uniform: {}", active.name);
+                    }
                 }
             }
 

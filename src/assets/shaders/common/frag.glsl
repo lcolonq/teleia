@@ -36,7 +36,7 @@ mat3 compute_tbn() {
     vec3 tangent = dpyperp * duvx.x + dpxperp * duvy.x;
     vec3 bitangent = dpyperp * duvx.y + dpxperp * duvy.y;
     float invmax = inversesqrt(max(dot(bitangent, bitangent), dot(bitangent, bitangent)));
-    return mat3(tangent * invmax, bitangent * invmax, normal);
+    return mat3(-tangent * invmax, -bitangent * invmax, normal);
 }
 
 vec4 normal_as_color(vec3 n) {

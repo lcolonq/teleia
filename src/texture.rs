@@ -42,17 +42,27 @@ impl Texture {
         }
     }
 
-    pub fn set_linear_filtering(&self, ctx: &context::Context) {
+    pub fn set_anisotropic_filtering(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
-            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST_MIPMAP_NEAREST as i32);
-            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST_MIPMAP_NEAREST as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR_MIPMAP_LINEAR as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
+            ctx.gl.tex_parameter_f32(glow::TEXTURE_2D, glow::TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
         }
     }
 
     pub fn bind(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.active_texture(glow::TEXTURE0);
+            ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
+        }
+    }
+
+    pub fn bind_normal(&self, ctx: &context::Context) {
+        unsafe {
+            ctx.gl.active_texture(glow::TEXTURE1);
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
         }
     }
