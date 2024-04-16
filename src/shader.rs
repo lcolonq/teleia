@@ -70,6 +70,8 @@ impl Shader {
                     } else {
                         log::warn!("failed to get location for uniform: {}", active.name);
                     }
+                } else {
+                        log::warn!("failed to get active uniform for index: {}", index);
                 }
             }
 
@@ -105,6 +107,30 @@ impl Shader {
             unsafe { ctx.gl.uniform_1_f32(Some(loc), val) }
         }
     }
+    
+    pub fn set_vec2(&self, ctx: &context::Context, name: &str, val: &glam::Vec2) {
+        if let Some(loc) = self.uniforms.get(name) {
+            unsafe {
+                ctx.gl.uniform_2_f32(
+                    Some(loc),
+                    val.x,
+                    val.y,
+                );
+            }
+        }
+    }
+
+    pub fn set_vec2_array(&self, ctx: &context::Context, name: &str, val: &[glam::Vec2]) {
+        if let Some(loc) = self.uniforms.get(name) {
+            let vs: Vec<f32> = val.iter().flat_map(|v| [v.x, v.y]).collect();
+            unsafe {
+                ctx.gl.uniform_2_f32_slice(
+                    Some(loc),
+                    &vs,
+                );
+            }
+        }
+    }
 
     pub fn set_vec3(&self, ctx: &context::Context, name: &str, val: &glam::Vec3) {
         if let Some(loc) = self.uniforms.get(name) {
@@ -114,6 +140,18 @@ impl Shader {
                     val.x,
                     val.y,
                     val.z,
+                );
+            }
+        }
+    }
+
+    pub fn set_vec3_array(&self, ctx: &context::Context, name: &str, val: &[glam::Vec3]) {
+        if let Some(loc) = self.uniforms.get(name) {
+            let vs: Vec<f32> = val.iter().flat_map(|v| [v.x, v.y, v.z]).collect();
+            unsafe {
+                ctx.gl.uniform_3_f32_slice(
+                    Some(loc),
+                    &vs,
                 );
             }
         }

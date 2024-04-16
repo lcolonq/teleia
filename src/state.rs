@@ -42,6 +42,12 @@ impl Keys {
     }
 }
 
+pub struct PointLight {
+    pub pos: glam::Vec3,
+    pub color: glam::Vec3,
+    pub attenuation: glam::Vec2,
+}
+
 pub struct State {
     pub acc: f64,
     pub last: f64,
@@ -56,7 +62,8 @@ pub struct State {
 
     pub projection: glam::Mat4,
     pub camera: (glam::Vec3, glam::Vec3, glam::Vec3),
-    pub lighting: (glam::Vec3, glam::Vec3),
+    pub lighting: (glam::Vec3, glam::Vec3, glam::Vec3),
+    pub point_lights: Vec<PointLight>,
 
     pub log: Vec<(u64, String)>,
 }
@@ -99,8 +106,10 @@ impl State {
             camera: (glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(0.0, 0.0, 1.0), glam::Vec3::new(0.0, 1.0, 0.0)),
             lighting: (
                 glam::Vec3::new(1.0, 1.0, 1.0),
+                glam::Vec3::new(1.0, 1.0, 1.0),
                 glam::Vec3::new(1.0, -1.0, 1.0),
             ),
+            point_lights: Vec::new(),
 
             log: Vec::new(),
         }
@@ -128,10 +137,31 @@ impl State {
     pub fn set_lighting(
         &mut self,
         _ctx: &context::Context,
+        ambient: &glam::Vec3,
         color: &glam::Vec3,
         dir: &glam::Vec3,
     ) {
-        self.lighting = (color.clone(), dir.clone());
+        self.lighting = (ambient.clone(), color.clone(), dir.clone());
+    }
+
+    pub fn add_point_light(
+        &mut self,
+        _ctx: &context::Context,
+        pos: &glam::Vec3,
+        color: &glam::Vec3,
+        attenuation: &glam::Vec2,
+    ) {
+        self.point_lights.push(
+            PointLight {
+                pos: pos.clone(),
+                color: color.clone(),
+                attenuation: attenuation.clone(),
+            },
+        );
+    }
+
+    pub fn clear_point_lights(&mut self, _ctx: &context::Context) {
+        self.point_lights.clear();
     }
 
     pub fn view(&self) -> glam::Mat4 {
@@ -148,15 +178,38 @@ impl State {
         shader.set_mat4(ctx, "view", &self.view());
         shader.set_vec3(
             ctx, "light_ambient_color",
-            &glam::Vec3::new(1.0, 1.0, 1.0));
-        shader.set_vec3(
-            ctx, "light_dir_color",
             &self.lighting.0,
         );
         shader.set_vec3(
-            ctx, "light_dir",
+            ctx, "light_dir_color",
             &self.lighting.1,
         );
+        shader.set_vec3(
+            ctx, "light_dir",
+            &self.lighting.2.normalize(),
+        );
+        let plc = self.point_lights.len().min(5);
+        shader.set_i32(
+            ctx, &format!("light_count"),
+            plc as _,
+        );
+        if plc > 0 {
+            let lpos: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.pos).collect();
+            shader.set_vec3_array(
+                ctx, &format!("light_pos[0]"),
+                &lpos,
+            );
+            let lcolor: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.color).collect();
+            shader.set_vec3_array(
+                ctx, &format!("light_color[0]"),
+                &lcolor,
+            );
+            let lattenuation: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.attenuation).collect();
+            shader.set_vec2_array(
+                ctx, &format!("light_attenuation[0]"),
+                &lattenuation,
+            );
+        }
     }
 
     pub fn bind_2d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
