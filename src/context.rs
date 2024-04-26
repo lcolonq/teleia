@@ -61,8 +61,7 @@ impl Context {
 
             gl.enable(glow::STENCIL_TEST);
 
-            // gl.enable(glow::CULL_FACE);
-            // gl.cull_face(glow::FRONT);
+            gl.cull_face(glow::BACK);
         }
 
         let emptyvao = unsafe {
@@ -70,7 +69,6 @@ impl Context {
         };
 
         unsafe { js_track_resized_setup(); }
-
 
         Self {
             window,
@@ -152,6 +150,33 @@ impl Context {
         unsafe {
             self.gl.bind_vertex_array(Some(self.emptyvao));
             self.gl.draw_arrays(glow::TRIANGLE_STRIP, 0, 4);
+        }
+    }
+
+    pub fn reset_blend(&self) {
+        unsafe {
+            self.gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+        }
+    }
+
+    pub fn inverse_blend(&self) {
+        unsafe {
+            self.gl.blend_func(
+                glow::ONE_MINUS_DST_COLOR,
+                glow::ZERO,
+            );
+        }
+    }
+
+    pub fn enable_culling(&self) {
+        unsafe {
+            self.gl.enable(glow::CULL_FACE);
+        }
+    }
+
+    pub fn disable_culling(&self) {
+        unsafe {
+            self.gl.disable(glow::CULL_FACE);
         }
     }
 }

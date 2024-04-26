@@ -86,7 +86,8 @@ vec3 point_light(vec3 normal, const int idx) {
     vec3 reflect_dir = reflect(-normalize(light_vector), normalize(normal.xyz));
     float specular = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
     vec3 specular_light = 0.5 * specular * color;
-    return (directional_light + specular_light) * attenuation;
+    // return (directional_light + specular_light) * attenuation;
+    return directional_light * attenuation;
 }
 
 vec3 point_light_billboard(const int idx) {

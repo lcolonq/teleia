@@ -74,9 +74,7 @@ impl Assets {
     }
 
     pub fn play_sfx(&mut self, name: &str) {
-        log::info!("sfx: {}", name);
         if let Some(a) = self.audio.get(name) {
-            log::info!("actually playing");
             a.play(&self.ctx, None);
         }
     }

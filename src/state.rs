@@ -172,7 +172,7 @@ impl State {
         )
     }
 
-    pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+    pub fn bind_3d_helper(&mut self, ctx: &context::Context, shader: &shader::Shader, plc: usize) {
         shader.bind(ctx);
         shader.set_mat4(ctx, "projection", &self.projection);
         shader.set_mat4(ctx, "view", &self.view());
@@ -188,11 +188,19 @@ impl State {
             ctx, "light_dir",
             &self.lighting.2.normalize(),
         );
-        let plc = self.point_lights.len().min(5);
         shader.set_i32(
             ctx, &format!("light_count"),
             plc as _,
         );
+    }
+
+    pub fn bind_3d_no_point_lights(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+        self.bind_3d_helper(ctx, shader, 0);
+    }
+
+    pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+        let plc = self.point_lights.len().min(5);
+        self.bind_3d_helper(ctx, shader, plc);
         if plc > 0 {
             let lpos: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.pos).collect();
             shader.set_vec3_array(
