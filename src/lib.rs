@@ -66,6 +66,7 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
                     event: winit::event::KeyEvent {
                         physical_key: winit::keyboard::PhysicalKey::Code(key),
                         state,
+                        repeat: false,
                         ..
                     },
                     ..

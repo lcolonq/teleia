@@ -34,6 +34,10 @@ impl Mode {
         }
     }
 
+    pub fn is_locked(&self) -> bool {
+        self.locked
+    }
+
     /// Has the current transition finished?
     pub fn is_ready(&self, tick: u64) -> bool {
         let started = match self.toggle {
@@ -54,6 +58,11 @@ impl Mode {
                     .clamp(0.0, 1.0)
             }
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.locked = false;
+        self.toggle = ModeToggle::Inactive { start: 0 };
     }
 
     pub fn reverse(&mut self, tick: u64) -> bool {
