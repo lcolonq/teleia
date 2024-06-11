@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Cardinal {
     North,
     South,
@@ -47,8 +47,8 @@ impl Cardinal {
         match self {
             Self::North => 0.0,
             Self::South => std::f32::consts::PI,
-            Self::West => 3.0 * std::f32::consts::PI / 2.0,
-            Self::East => std::f32::consts::PI / 2.0,
+            Self::West => std::f32::consts::PI / 2.0,
+            Self::East => 3.0 * std::f32::consts::PI / 2.0,
         }
     }
 }

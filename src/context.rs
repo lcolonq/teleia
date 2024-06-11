@@ -61,7 +61,7 @@ impl Context {
 
             gl.enable(glow::STENCIL_TEST);
 
-            gl.cull_face(glow::BACK);
+            gl.cull_face(glow::FRONT);
         }
 
         let emptyvao = unsafe {
