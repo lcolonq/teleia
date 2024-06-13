@@ -1,9 +1,9 @@
 use crate::{context, texture, shader};
 
-const CHAR_WIDTH: i32 = 7;
-const CHAR_HEIGHT: i32 = 9;
-const FONT_WIDTH: i32 = 112;
-const FONT_HEIGHT: i32 = 54;
+pub const CHAR_WIDTH: i32 = 7;
+pub const CHAR_HEIGHT: i32 = 9;
+pub const FONT_WIDTH: i32 = 112;
+pub const FONT_HEIGHT: i32 = 54;
 
 pub struct Font {
     pub shader: shader::Shader,

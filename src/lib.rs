@@ -50,6 +50,9 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
                     ctx.maximize_canvas();
                     st.handle_resize(&ctx);
                 },
+                winit::event::WindowEvent::Focused(false) => {
+                    st.keys = state::Keys::new();
+                },
                 winit::event::WindowEvent::MouseInput {
                     button,
                     state,
