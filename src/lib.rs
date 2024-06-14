@@ -11,6 +11,7 @@ pub mod mesh;
 pub mod texture;
 pub mod font;
 pub mod audio;
+pub mod shadow;
 
 pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Context) -> G) {
     console_log::init_with_level(log::Level::Debug).unwrap();
