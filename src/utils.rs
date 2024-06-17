@@ -7,6 +7,15 @@ pub enum Cardinal {
 }
 
 impl Cardinal {
+    pub fn to_string(&self) -> &'static str {
+        match self {
+            Self::North => "north",
+            Self::South => "south",
+            Self::West => "west",
+            Self::East => "east",
+        }
+    }
+
     pub fn turn_cw(&self) -> Self {
         match self {
             Self::North => Self::East,
