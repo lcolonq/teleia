@@ -60,6 +60,15 @@ impl Cardinal {
             Self::East => 3.0 * std::f32::consts::PI / 2.0,
         }
     }
+
+    pub fn turn_by(&self, o: &Self) -> Self {
+        match o {
+            Self::North => self.clone(),
+            Self::South => self.turn_cw().turn_cw(),
+            Self::West => self.turn_cw(),
+            Self::East => self.turn_ccw(),
+        }
+    }
 }
 
 pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
