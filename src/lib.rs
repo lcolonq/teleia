@@ -13,6 +13,22 @@ pub mod font;
 pub mod audio;
 pub mod shadow;
 
+static mut CTX: Option<*const context::Context> = None;
+static mut ST: Option<*mut state::State> = None;
+static mut G: Option<*mut std::ffi::c_void> = None;
+
+pub fn contextualize<F, G>(f: F)
+where
+    G: state::Game + 'static,
+    F: Fn(&context::Context, &mut state::State, &mut G) {
+    unsafe {
+        match (CTX, ST, G) {
+            (Some(c), Some(s), Some(g)) => f(&*c, &mut*s, &mut*(g as *mut G)),
+            _ => log::info!("context not set"),
+        }
+    }
+}
+
 pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Context) -> G) {
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
@@ -28,10 +44,17 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
         .build(&event_loop)
         .expect("failed to initialize window");
 
-    let ctx = context::Context::new(window);
+    let ctx = Box::leak(Box::new(context::Context::new(window)));
     ctx.maximize_canvas();
-    let mut game = gnew(&ctx);
-    let mut st = state::State::new(&ctx);
+    let mut game = Box::leak(Box::new(gnew(ctx)));
+    let mut st = Box::leak(Box::new(state::State::new(&ctx)));
+
+    unsafe {
+        CTX = Some(ctx as _);
+        ST = Some(st as _);
+        G = Some(game as *mut G as *mut std::ffi::c_void);
+    }
+
     st.write_log("test");
     st.write_log("foo");
     st.write_log("bar");
@@ -60,7 +83,7 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
                     ..
                 } => match state {
                     winit::event::ElementState::Pressed => {
-                        st.mouse_pressed(&ctx, button, &mut game)
+                        st.mouse_pressed(&ctx, button, game)
                     },
                     winit::event::ElementState::Released => {
                         st.mouse_released(&ctx, button)
@@ -90,8 +113,8 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
                     ctx.maximize_canvas();
                     st.handle_resize(&ctx);
                 }
-                st.run_update(&ctx, &mut game);
-                st.run_render(&ctx, &mut game);
+                st.run_update(&ctx, game);
+                st.run_render(&ctx, game);
                 ctx.window.request_redraw();
             },
 
