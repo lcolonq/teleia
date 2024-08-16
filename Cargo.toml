@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["LLLL Colonq <llll@colonq.computer>"]
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [profile.release]
 opt-level = 2
 codegen-units = 1
@@ -27,7 +30,7 @@ console_error_panic_hook = "*" # log to browser console on panic
 tracing-wasm = "*" # trace performance in browser
 wasm-bindgen = "*" # interface with javascript
 wasm-bindgen-futures = "*" # interface with async javascript
-js-sys = "*"
+js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
 
 [dependencies.web-sys] # common browser APIs
 version = "*"

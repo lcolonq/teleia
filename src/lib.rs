@@ -12,6 +12,7 @@ pub mod texture;
 pub mod font;
 pub mod audio;
 pub mod shadow;
+pub mod module;
 
 static mut CTX: Option<*const context::Context> = None;
 static mut ST: Option<*mut state::State> = None;
@@ -29,7 +30,12 @@ where
     }
 }
 
-pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Context) -> G) {
+pub async fn run<'a, F, G, Fut>(gnew: F)
+where
+    Fut: std::future::Future<Output = G>,
+    G: state::Game + 'static,
+    F: (Fn(&'a context::Context) -> Fut),
+{
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
@@ -46,8 +52,8 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
 
     let ctx = Box::leak(Box::new(context::Context::new(window)));
     ctx.maximize_canvas();
-    let mut game = Box::leak(Box::new(gnew(ctx)));
-    let mut st = Box::leak(Box::new(state::State::new(&ctx)));
+    let game = Box::leak(Box::new(gnew(ctx).await));
+    let st = Box::leak(Box::new(state::State::new(&ctx)));
 
     unsafe {
         CTX = Some(ctx as _);
@@ -56,69 +62,68 @@ pub fn run<F, G>(gnew: F) where G: state::Game + 'static, F: (Fn(&context::Conte
     }
 
     st.write_log("test");
-    st.write_log("foo");
-    st.write_log("bar");
-    st.write_log("baz");
 
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
-    event_loop.spawn(move |event, elwt| {
-        match event {
-            winit::event::Event::WindowEvent {
-                event: wev,
-                window_id,
-                ..
-            } => match wev {
-                winit::event::WindowEvent::CloseRequested
-                    if window_id == ctx.window.id() => elwt.exit(),
-                winit::event::WindowEvent::Resized{..} => {
-                    ctx.maximize_canvas();
-                    st.handle_resize(&ctx);
-                },
-                winit::event::WindowEvent::Focused(false) => {
-                    st.keys = state::Keys::new();
-                },
-                winit::event::WindowEvent::MouseInput {
-                    button,
-                    state,
+    event_loop.spawn(|event, elwt| {
+        contextualize(|ctx, st, game: &mut G| {
+            match &event {
+                winit::event::Event::WindowEvent {
+                    event: wev,
+                    window_id,
                     ..
-                } => match state {
-                    winit::event::ElementState::Pressed => {
-                        st.mouse_pressed(&ctx, button, game)
+                } => match wev {
+                    winit::event::WindowEvent::CloseRequested
+                        if *window_id == ctx.window.id() => elwt.exit(),
+                    winit::event::WindowEvent::Resized{..} => {
+                        ctx.maximize_canvas();
+                        st.handle_resize(&ctx);
                     },
-                    winit::event::ElementState::Released => {
-                        st.mouse_released(&ctx, button)
+                    winit::event::WindowEvent::Focused(false) => {
+                        st.keys = state::Keys::new();
                     },
-                }
-                winit::event::WindowEvent::KeyboardInput {
-                    event: winit::event::KeyEvent {
-                        physical_key: winit::keyboard::PhysicalKey::Code(key),
+                    winit::event::WindowEvent::MouseInput {
+                        button,
                         state,
-                        repeat: false,
                         ..
-                    },
-                    ..
-                } => match state {
-                    winit::event::ElementState::Pressed => {
-                        st.key_pressed(&ctx, key)
-                    },
-                    winit::event::ElementState::Released => {
-                        st.key_released(&ctx, key)
-                    },
-                }
-                _ => {},
-            },
+                    } => match state {
+                        winit::event::ElementState::Pressed => {
+                            st.mouse_pressed(&ctx, *button, game)
+                        },
+                        winit::event::ElementState::Released => {
+                            st.mouse_released(&ctx, *button)
+                        },
+                    }
+                    winit::event::WindowEvent::KeyboardInput {
+                        event: winit::event::KeyEvent {
+                            physical_key: winit::keyboard::PhysicalKey::Code(key),
+                            state,
+                            repeat: false,
+                            ..
+                        },
+                        ..
+                    } => match state {
+                        winit::event::ElementState::Pressed => {
+                            st.key_pressed(&ctx, *key)
+                        },
+                        winit::event::ElementState::Released => {
+                            st.key_released(&ctx, *key)
+                        },
+                    }
+                    _ => {},
+                },
                 
-            winit::event::Event::AboutToWait => {
-                if ctx.resize_necessary() {
-                    ctx.maximize_canvas();
-                    st.handle_resize(&ctx);
-                }
-                st.run_update(&ctx, game);
-                st.run_render(&ctx, game);
-                ctx.window.request_redraw();
-            },
+                winit::event::Event::AboutToWait => {
+                    if ctx.resize_necessary() {
+                        ctx.maximize_canvas();
+                        st.handle_resize(&ctx);
+                    }
+                    st.run_update(&ctx, game);
+                    st.run_render(&ctx, game);
+                    ctx.window.request_redraw();
+                },
 
-            _ => {},
-        }
+                _ => {},
+            }
+        });
     });
 }
