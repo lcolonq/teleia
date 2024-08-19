@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use bimap::BiHashMap;
+use enum_map::{enum_map, Enum, EnumMap};
 
 use crate::{context, framebuffer, shader, audio};
 
@@ -12,34 +14,56 @@ pub trait Game {
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
 }
 
-pub struct Keys {
-    pub up: bool,
-    pub down: bool,
-    pub left: bool,
-    pub right: bool,
-    pub a: bool,
-    pub b: bool,
-    pub l: bool,
-    pub r: bool,
-    pub start: bool,
-    pub select: bool,
+#[derive(Debug, Enum, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Key {
+    Up, Down, Left, Right,
+    A, B, L, R,
+    Start, Select,
 }
-
+pub const KEYS: [Key; 10] = [
+    Key::Up, Key::Down, Key::Left, Key::Right,
+    Key::A, Key::B, Key::L, Key::R,
+    Key::Start, Key::Select,
+];
+pub struct Keys {
+    pub pressed: EnumMap<Key, bool>,
+    pub new: EnumMap<Key, bool>,
+}
 impl Keys {
     pub fn new() -> Self {
         Self {
-            up: false,
-            down: false,
-            left: false,
-            right: false,
-            a: false,
-            b: false,
-            l: false,
-            r: false,
-            start: false,
-            select: false,
+            pressed: enum_map! {
+                Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
+                Key::A => false, Key::B => false, Key::L => false, Key::R => false,
+                Key::Start => false, Key::Select => false,
+            },
+            new: enum_map! {
+                Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
+                Key::A => false, Key::B => false, Key::L => false, Key::R => false,
+                Key::Start => false, Key::Select => false,
+            },
         }
     }
+    pub fn up(&self) -> bool { self.pressed[Key::Up] }
+    pub fn down(&self) -> bool { self.pressed[Key::Down] }
+    pub fn left(&self) -> bool { self.pressed[Key::Left] }
+    pub fn right(&self) -> bool { self.pressed[Key::Right] }
+    pub fn a(&self) -> bool { self.pressed[Key::A] }
+    pub fn b(&self) -> bool { self.pressed[Key::B] }
+    pub fn l(&self) -> bool { self.pressed[Key::L] }
+    pub fn r(&self) -> bool { self.pressed[Key::R] }
+    pub fn start(&self) -> bool { self.pressed[Key::Start] }
+    pub fn select(&self) -> bool { self.pressed[Key::Select] }
+    pub fn new_up(&mut self) -> bool { let ret = self.new[Key::Up]; self.new[Key::Up] = false; ret }
+    pub fn new_down(&mut self) -> bool { let ret = self.new[Key::Down]; self.new[Key::Down] = false; ret }
+    pub fn new_left(&mut self) -> bool { let ret = self.new[Key::Left]; self.new[Key::Left] = false; ret }
+    pub fn new_right(&mut self) -> bool { let ret = self.new[Key::Right]; self.new[Key::Right] = false; ret }
+    pub fn new_a(&mut self) -> bool { let ret = self.new[Key::A]; self.new[Key::A] = false; ret }
+    pub fn new_b(&mut self) -> bool { let ret = self.new[Key::B]; self.new[Key::B] = false; ret }
+    pub fn new_l(&mut self) -> bool { let ret = self.new[Key::L]; self.new[Key::L] = false; ret }
+    pub fn new_r(&mut self) -> bool { let ret = self.new[Key::R]; self.new[Key::R] = false; ret }
+    pub fn new_start(&mut self) -> bool { let ret = self.new[Key::Start]; self.new[Key::Start] = false; ret }
+    pub fn new_select(&mut self) -> bool { let ret = self.new[Key::Select]; self.new[Key::Select] = false; ret }
 }
 
 pub struct PointLight {
@@ -53,6 +77,8 @@ pub struct State {
     pub last: f64,
     pub tick: u64,
 
+    pub rebinding: Option<Key>,
+    pub keybindings: BiHashMap<winit::keyboard::KeyCode, Key>,
     pub keys: Keys,
 
     pub screen: framebuffer::Framebuffer,
@@ -70,6 +96,21 @@ pub struct State {
 
 pub fn now(ctx: &context::Context) -> f64 {
     ctx.performance.now() / 1000.0
+}
+
+pub fn default_keybindings() -> BiHashMap<winit::keyboard::KeyCode, Key> {
+    BiHashMap::from_iter(vec![
+        (winit::keyboard::KeyCode::KeyW, Key::Up),
+        (winit::keyboard::KeyCode::KeyS, Key::Down),
+        (winit::keyboard::KeyCode::KeyA, Key::Left),
+        (winit::keyboard::KeyCode::KeyD, Key::Right),
+        (winit::keyboard::KeyCode::Digit1, Key::A),
+        (winit::keyboard::KeyCode::Digit2, Key::B),
+        (winit::keyboard::KeyCode::KeyQ, Key::L),
+        (winit::keyboard::KeyCode::KeyE, Key::R),
+        (winit::keyboard::KeyCode::Tab, Key::Start),
+        (winit::keyboard::KeyCode::Space, Key::Select),
+    ])
 }
 
 impl State {
@@ -90,7 +131,11 @@ impl State {
             acc: 0.0,
             last: now(ctx),
             tick: 0,
+
+            rebinding: None,
+            keybindings: default_keybindings(),
             keys: Keys::new(),
+
             screen,
             render_framebuffer,
             shader_upscale,
@@ -262,18 +307,12 @@ impl State {
         _ctx: &context::Context,
         key: winit::keyboard::KeyCode,
     ) {
-        match key {
-            winit::keyboard::KeyCode::KeyW => self.keys.up = true,
-            winit::keyboard::KeyCode::KeyS => self.keys.down = true,
-            winit::keyboard::KeyCode::KeyA => self.keys.left = true,
-            winit::keyboard::KeyCode::KeyD => self.keys.right = true,
-            winit::keyboard::KeyCode::Digit1 => self.keys.a = true,
-            winit::keyboard::KeyCode::Digit2 => self.keys.b = true,
-            winit::keyboard::KeyCode::KeyQ => self.keys.l = true,
-            winit::keyboard::KeyCode::KeyE => self.keys.r = true,
-            winit::keyboard::KeyCode::Tab => self.keys.start = true,
-            winit::keyboard::KeyCode::Space => self.keys.select = true,
-            _ => {},
+        if let Some(k) = self.rebinding {
+            self.keybindings.insert(key, k);
+            self.rebinding = None;
+        } else if let Some(k) = self.keybindings.get_by_left(&key) {
+            self.keys.pressed[*k] = true;
+            self.keys.new[*k] = true;
         }
     }
 
@@ -282,19 +321,22 @@ impl State {
         _ctx: &context::Context,
         key: winit::keyboard::KeyCode,
     ) {
-        match key {
-            winit::keyboard::KeyCode::KeyW => self.keys.up = false,
-            winit::keyboard::KeyCode::KeyS => self.keys.down = false,
-            winit::keyboard::KeyCode::KeyA => self.keys.left = false,
-            winit::keyboard::KeyCode::KeyD => self.keys.right = false,
-            winit::keyboard::KeyCode::Digit1 => self.keys.a = false,
-            winit::keyboard::KeyCode::Digit2 => self.keys.b = false,
-            winit::keyboard::KeyCode::KeyQ => self.keys.l = false,
-            winit::keyboard::KeyCode::KeyE => self.keys.r = false,
-            winit::keyboard::KeyCode::Tab => self.keys.start = false,
-            winit::keyboard::KeyCode::Space => self.keys.select = false,
-            _ => {},
+        if let Some(k) = self.keybindings.get_by_left(&key) {
+            self.keys.pressed[*k] = false;
         }
+    }
+
+    /// Return the first keybinding for the given virtual key
+    pub fn keybinding_for(&self, k: &Key) -> Option<String> {
+        if let Some(kc) = self.keybindings.get_by_right(k) {
+            Some(format!("{:?}", kc))
+        } else {
+            None
+        }
+    }
+
+    pub fn rebind_key(&mut self, k: &Key) {
+        self.rebinding = Some(*k);
     }
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
