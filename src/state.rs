@@ -9,7 +9,7 @@ const DELTA_TIME: f64 = 1.0 / 60.0;
 pub trait Game {
     fn initialize_audio(&self, ctx: &context::Context, st: &State, actx: &audio::Context) ->
         HashMap<String, audio::Audio>;
-    fn finish_title(&mut self);
+    fn finish_title(&mut self, st: &mut State);
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
 }
@@ -130,7 +130,9 @@ impl State {
         Self {
             acc: 0.0,
             last: now(ctx),
-            tick: 0,
+            // we initialize the tick to 1000, which allows us to use "0" as the default time for
+            // various animation starts on entities without having them all play at game start
+            tick: 1000,
 
             rebinding: None,
             keybindings: default_keybindings(),
@@ -291,7 +293,7 @@ impl State {
             self.audio = Some(audio::Assets::new(|actx| {
                 game.initialize_audio(ctx, &self, actx)
             }));
-            game.finish_title();
+            game.finish_title(self);
         }
     }
 
@@ -307,7 +309,11 @@ impl State {
         _ctx: &context::Context,
         key: winit::keyboard::KeyCode,
     ) {
-        if let Some(k) = self.rebinding {
+        if key == winit::keyboard::KeyCode::F12 {
+            self.keybindings = default_keybindings();
+            self.rebinding = None;
+            self.write_log("Reset keybindings!");
+        } else if let Some(k) = self.rebinding {
             self.keybindings.insert(key, k);
             self.rebinding = None;
         } else if let Some(k) = self.keybindings.get_by_left(&key) {
