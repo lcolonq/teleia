@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_variables)]
 use std::collections::HashMap;
 use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
@@ -6,14 +7,27 @@ use crate::{context, framebuffer, shader, audio};
 
 const DELTA_TIME: f64 = 1.0 / 60.0;
 
+pub struct WinitWaker {}
+
+impl WinitWaker {
+    fn new() -> Self { Self {} }
+}
+impl std::task::Wake for WinitWaker {
+    fn wake(self: std::sync::Arc<Self>) {}
+}
+
 pub trait Game {
     fn initialize_audio(&self, ctx: &context::Context, st: &State, actx: &audio::Context) ->
-        HashMap<String, audio::Audio>;
-    fn finish_title(&mut self, st: &mut State);
-    fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32);
-    fn mouse_press(&mut self, ctx: &context::Context, st: &mut State);
-    fn update(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
-    fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
+        HashMap<String, audio::Audio>
+    {
+        HashMap::new()
+    }
+    fn finish_title(&mut self, st: &mut State) {}
+    fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) {}
+    fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) {}
+    fn request_return(&mut self, ctx: &context::Context, st: &mut State, res: reqwest::Response) {}
+    fn update(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
+    fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
 }
 
 #[derive(Debug, Enum, Clone, Copy, PartialEq, Eq, Hash)]
@@ -93,6 +107,10 @@ pub struct State {
     pub lighting: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub point_lights: Vec<PointLight>,
 
+    pub waker_ctx: std::task::Context<'static>,
+    pub http_client: reqwest::Client,
+    pub request: Option<std::pin::Pin<Box<dyn std::future::Future<Output = reqwest::Response>>>>,
+
     pub log: Vec<(u64, String)>,
 }
 
@@ -129,6 +147,10 @@ impl State {
             include_str!("assets/shaders/scale/frag.glsl"),
         );
 
+        let waker = std::sync::Arc::new(WinitWaker::new());
+        let cwaker = Box::leak(Box::new(waker.into()));
+        let waker_ctx = std::task::Context::from_waker(cwaker);
+
         Self {
             acc: 0.0,
             last: now(ctx),
@@ -159,6 +181,10 @@ impl State {
                 glam::Vec3::new(1.0, -1.0, 1.0),
             ),
             point_lights: Vec::new(),
+
+            waker_ctx,
+            http_client: reqwest::Client::new(),
+            request: None,
 
             log: Vec::new(),
         }
@@ -360,6 +386,25 @@ impl State {
 
     pub fn rebind_key(&mut self, k: &Key) {
         self.rebinding = Some(*k);
+    }
+
+    pub fn request<F>(&mut self, ctx: &context::Context, f: F)
+    where F: Fn(&reqwest::Client) -> reqwest::RequestBuilder
+    {
+        let builder = f(&self.http_client);
+        let fut = async {
+            builder.send().await.expect("failed to send HTTP request")
+        };
+        self.request = Some(Box::pin(fut));
+    }
+
+    pub fn requesting(&self) -> bool { self.request.is_some() }
+
+    pub fn request_returned<G>(&mut self, ctx: &context::Context, game: &mut G, res: reqwest::Response)
+    where G: Game
+    {
+        game.request_return(ctx, self, res);
+        self.request = None;
     }
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {

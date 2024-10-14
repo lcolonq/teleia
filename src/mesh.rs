@@ -1,5 +1,3 @@
-use std::io::BufRead;
-
 use glow::HasContext;
 
 use crate::context;

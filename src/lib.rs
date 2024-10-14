@@ -18,10 +18,10 @@ static mut CTX: Option<*const context::Context> = None;
 static mut ST: Option<*mut state::State> = None;
 static mut G: Option<*mut std::ffi::c_void> = None;
 
-pub fn contextualize<F, G>(f: F)
+pub fn contextualize<F, G>(mut f: F)
 where
     G: state::Game + 'static,
-    F: Fn(&context::Context, &mut state::State, &mut G) {
+    F: FnMut(&context::Context, &mut state::State, &mut G) {
     unsafe {
         match (CTX, ST, G) {
             (Some(c), Some(s), Some(g)) => f(&*c, &mut*s, &mut*(g as *mut G)),
@@ -39,7 +39,7 @@ where
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
-    log::info!("HELLO COMPUTER HELLO CLONKHEAD :)");
+    log::info!("hello computer, starting up...");
 
     let event_loop = winit::event_loop::EventLoop::new()
         .expect("failed to initialize event loop");
@@ -54,14 +54,15 @@ where
     ctx.maximize_canvas();
     let game = Box::leak(Box::new(gnew(ctx).await));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
+    // request = Some(Box::new(async {
+    //     "foo".to_owned()
+    // }));
 
     unsafe {
         CTX = Some(ctx as _);
         ST = Some(st as _);
         G = Some(game as *mut G as *mut std::ffi::c_void);
     }
-
-    st.write_log("test");
 
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
     event_loop.spawn(|event, elwt| {
@@ -119,6 +120,15 @@ where
                     if ctx.resize_necessary() {
                         ctx.maximize_canvas();
                         st.handle_resize(&ctx);
+                    }
+                    if let Some(f) = &mut st.request {
+                        match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
+                            std::task::Poll::Pending => {},
+                            std::task::Poll::Ready(res) => {
+                                st.request_returned(&ctx, game, res);
+                            },
+                        }
+                        // f.poll();
                     }
                     st.run_update(&ctx, game);
                     st.run_render(&ctx, game);

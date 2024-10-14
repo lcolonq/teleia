@@ -33,6 +33,7 @@ wasm-bindgen-futures = "*" # interface with async javascript
 js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
 enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
+reqwest = "*" # http requests
 
 [dependencies.web-sys] # common browser APIs
 version = "*"
