@@ -188,14 +188,14 @@ impl Shader {
         self.set_mat4(&ctx, "normal_matrix", &position.inverse().transpose());
     }
 
-    pub fn set_position_2d(&self, ctx: &context::Context, pos: &glam::Vec2, dims: &glam::Vec2) {
+    pub fn set_position_2d_helper(&self, ctx: &context::Context, pos: &glam::Vec2, dims: &glam::Vec2, rot: &glam::Quat) {
         let halfwidth = dims.x / 2.0;
         let halfheight = dims.y / 2.0;
         self.set_mat4(
             &ctx, "position",
             &glam::Mat4::from_scale_rotation_translation(
                 glam::Vec3::new(halfwidth, halfheight, 1.0),
-                glam::Quat::IDENTITY,
+                rot.clone(),
                 glam::Vec3::new(
                     -context::RENDER_WIDTH / 2.0 + pos.x + halfwidth,
                     context::RENDER_HEIGHT / 2.0 - pos.y - halfheight,
@@ -203,6 +203,10 @@ impl Shader {
                 ),
             )
         );
+    }
+
+    pub fn set_position_2d(&self, ctx: &context::Context, pos: &glam::Vec2, dims: &glam::Vec2) {
+        self.set_position_2d_helper(ctx, pos, dims, &glam::Quat::IDENTITY)
     }
 
     pub fn set_texture_offset(&self, ctx: &context::Context, inc: i32, x: i32, y: i32) {

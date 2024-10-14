@@ -24,7 +24,7 @@ impl Font {
         }
     }
 
-    pub fn render_text(&self, ctx: &context::Context, pos: &glam::Vec2, text: &str) {
+    pub fn render_text_helper(&self, ctx: &context::Context, pos: &glam::Vec2, text: &str, color: &glam::Vec3) {
         let mut width = 0;
         let mut linewidth = 0;
         let mut height = CHAR_HEIGHT;
@@ -52,6 +52,7 @@ impl Font {
         self.shader.set_i32(ctx, "font_height", FONT_HEIGHT as _);
         self.shader.set_i32(ctx, "text_width", width as _);
         self.shader.set_i32(ctx, "text_height", height as _);
+        self.shader.set_vec3(ctx, "text_color", color as _);
         self.shader.set_mat4(
             ctx, "view",
             &glam::Mat4::from_scale(
@@ -78,5 +79,9 @@ impl Font {
         );
         self.font.bind(ctx);
         ctx.render_no_geometry();
+    }
+
+    pub fn render_text(&self, ctx: &context::Context, pos: &glam::Vec2, text: &str) {
+        self.render_text_helper(ctx, pos, text, &glam::Vec3::new(1.0, 1.0, 1.0));
     }
 }

@@ -81,6 +81,9 @@ where
                     winit::event::WindowEvent::Focused(false) => {
                         st.keys = state::Keys::new();
                     },
+                    winit::event::WindowEvent::CursorMoved { position, ..} => {
+                        st.mouse_moved(&ctx, position.x as f32, position.y as f32, game);
+                    },
                     winit::event::WindowEvent::MouseInput {
                         button,
                         state,

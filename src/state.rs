@@ -10,6 +10,8 @@ pub trait Game {
     fn initialize_audio(&self, ctx: &context::Context, st: &State, actx: &audio::Context) ->
         HashMap<String, audio::Audio>;
     fn finish_title(&mut self, st: &mut State);
+    fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32);
+    fn mouse_press(&mut self, ctx: &context::Context, st: &mut State);
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()>;
 }
@@ -282,6 +284,20 @@ impl State {
         );
     }
 
+    pub fn mouse_moved<G>(
+        &mut self,
+        ctx: &context::Context,
+        x: f32, y: f32,
+        game: &mut G
+    ) where G: Game
+    {
+        let rx = ((x - self.screen.offsets.x) * context::RENDER_WIDTH / self.screen.dims.x) as i32;
+        let ry = ((y - self.screen.offsets.y) * context::RENDER_HEIGHT / self.screen.dims.y) as i32;
+        if !(rx < 0 || rx >= context::RENDER_WIDTH as i32 || ry < 0 || ry >= context::RENDER_HEIGHT as i32) {
+            game.mouse_move(ctx, self, rx, ry);
+        }
+    }
+
     pub fn mouse_pressed<G>(
         &mut self,
         ctx: &context::Context,
@@ -295,6 +311,7 @@ impl State {
             }));
             game.finish_title(self);
         }
+        game.mouse_press(ctx, self);
     }
 
     pub fn mouse_released(

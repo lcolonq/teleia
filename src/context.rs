@@ -40,7 +40,7 @@ impl Context {
         let gl = web_sys::window()
             .and_then(|win| win.document())
             .and_then(|doc| {
-                let dst = doc.get_element_by_id("oubliette-parent")?;
+                let dst = doc.get_element_by_id("teleia-parent")?;
                 let canvas = web_sys::Element::from(window.canvas().expect("failed to find canvas"));
                 dst.append_child(&canvas).ok()?;
                 let c = canvas.dyn_into::<web_sys::HtmlCanvasElement>().ok()?;

@@ -115,4 +115,11 @@ impl Mesh {
             ctx.gl.draw_elements(glow::TRIANGLES, self.index_count as _, glow::UNSIGNED_INT, 0);
         }
     }
+
+    pub fn render_instanced(&self, ctx: &context::Context, count: u64) {
+        unsafe {
+            ctx.gl.bind_vertex_array(Some(self.vao));
+            ctx.gl.draw_elements_instanced(glow::TRIANGLES, self.index_count as _, glow::UNSIGNED_INT, 0, count as _);
+        }
+    }
 }
