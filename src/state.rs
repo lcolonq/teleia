@@ -8,12 +8,17 @@ use crate::{context, framebuffer, shader, audio};
 const DELTA_TIME: f64 = 1.0 / 60.0;
 
 pub struct WinitWaker {}
-
 impl WinitWaker {
     fn new() -> Self { Self {} }
 }
 impl std::task::Wake for WinitWaker {
     fn wake(self: std::sync::Arc<Self>) {}
+}
+
+pub struct Response {
+    pub url: String,
+    pub status: reqwest::StatusCode,
+    pub body: bytes::Bytes,
 }
 
 pub trait Game {
@@ -25,7 +30,7 @@ pub trait Game {
     fn finish_title(&mut self, st: &mut State) {}
     fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) {}
     fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) {}
-    fn request_return(&mut self, ctx: &context::Context, st: &mut State, res: reqwest::Response) {}
+    fn request_return(&mut self, ctx: &context::Context, st: &mut State, res: Response) {}
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
 }
@@ -109,7 +114,7 @@ pub struct State {
 
     pub waker_ctx: std::task::Context<'static>,
     pub http_client: reqwest::Client,
-    pub request: Option<std::pin::Pin<Box<dyn std::future::Future<Output = reqwest::Response>>>>,
+    pub request: Option<std::pin::Pin<Box<dyn std::future::Future<Output = reqwest::Result<Response>>>>>,
 
     pub log: Vec<(u64, String)>,
 }
@@ -388,23 +393,30 @@ impl State {
         self.rebinding = Some(*k);
     }
 
-    pub fn request<F>(&mut self, ctx: &context::Context, f: F)
+    pub fn request<F>(&mut self, f: F)
     where F: Fn(&reqwest::Client) -> reqwest::RequestBuilder
     {
         let builder = f(&self.http_client);
         let fut = async {
-            builder.send().await.expect("failed to send HTTP request")
+            let resp = builder.send().await?;
+            let url = resp.url().clone().to_string();
+            let status = resp.status().clone();
+            let body = resp.bytes().await?;
+            reqwest::Result::Ok(Response {
+                url,
+                status,
+                body,
+            })
         };
         self.request = Some(Box::pin(fut));
     }
 
     pub fn requesting(&self) -> bool { self.request.is_some() }
 
-    pub fn request_returned<G>(&mut self, ctx: &context::Context, game: &mut G, res: reqwest::Response)
+    pub fn request_returned<G>(&mut self, ctx: &context::Context, game: &mut G, res: Response)
     where G: Game
     {
         game.request_return(ctx, self, res);
-        self.request = None;
     }
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {

@@ -125,7 +125,11 @@ where
                         match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
                             std::task::Poll::Pending => {},
                             std::task::Poll::Ready(res) => {
-                                st.request_returned(&ctx, game, res);
+                                st.request = None;
+                                match res {
+                                    Ok(r) => st.request_returned(&ctx, game, r),
+                                    Err(e) => log::warn!("error during HTTP request: {}", e),
+                                }
                             },
                         }
                         // f.poll();

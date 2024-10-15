@@ -34,6 +34,7 @@ js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
 enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
 reqwest = "*" # http requests
+bytes = "*" # bytes for http responses
 
 [dependencies.web-sys] # common browser APIs
 version = "*"

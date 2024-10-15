@@ -1759,6 +1759,7 @@ name = "teleia"
 version = "0.1.0"
 dependencies = [
  "bimap",
+ "bytes",
  "console_error_panic_hook",
  "console_log",
  "enum-map",
