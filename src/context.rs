@@ -1,17 +1,15 @@
-use wasm_bindgen::JsCast;
-use winit::platform::web::WindowExtWebSys;
 use glow::HasContext;
 
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::WindowExtWebSys;
+
+#[cfg(target_arch = "wasm32")]
 #[link(wasm_import_module = "./helpers.js")]
 extern {
     fn js_track_resized_setup();
     fn js_poll_resized() -> bool;
 }
 
-// pub const RENDER_WIDTH: f32 = 640.0;
-// pub const RENDER_HEIGHT: f32 = 360.0;
-// pub const RENDER_WIDTH: f32 = 320.0;
-// pub const RENDER_HEIGHT: f32 = 180.0;
 pub const RENDER_WIDTH: f32 = 240.0;
 pub const RENDER_HEIGHT: f32 = 160.0;
 
@@ -32,23 +30,13 @@ pub struct Context {
     pub window: winit::window::Window,
     pub gl: glow::Context,
     pub emptyvao: glow::VertexArray,
+
+    #[cfg(target_arch = "wasm32")]
     pub performance: web_sys::Performance,
 }
 
 impl Context {
-    pub fn new(window: winit::window::Window) -> Self {
-        let gl = web_sys::window()
-            .and_then(|win| win.document())
-            .and_then(|doc| {
-                let dst = doc.get_element_by_id("teleia-parent")?;
-                let canvas = web_sys::Element::from(window.canvas().expect("failed to find canvas"));
-                dst.append_child(&canvas).ok()?;
-                let c = canvas.dyn_into::<web_sys::HtmlCanvasElement>().ok()?;
-                let webgl2_context = c.get_context("webgl2").ok()??
-                    .dyn_into::<web_sys::WebGl2RenderingContext>().ok()?;
-                Some(glow::Context::from_webgl2_context(webgl2_context))
-            })
-            .expect("couldn't add canvas to document");
+    pub fn new(window: winit::window::Window, gl: glow::Context) -> Self {
         unsafe {
             gl.clear_color(0.1, 0.1, 0.1, 1.0);
             gl.clear_depth_f32(1.0);
@@ -68,17 +56,21 @@ impl Context {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
 
+        #[cfg(target_arch = "wasm32")]
         unsafe { js_track_resized_setup(); }
 
         Self {
             window,
             gl,
             emptyvao,
+
+            #[cfg(target_arch = "wasm32")]
             performance: web_sys::window().expect("failed to find window")
                 .performance().expect("failed to get performance"),
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub fn maximize_canvas(&self) {
         web_sys::window()
             .and_then(|win| win.document())
@@ -100,10 +92,16 @@ impl Context {
             .expect("failed to resize canvas");
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub fn resize_necessary(&self) -> bool {
         unsafe {
             js_poll_resized()
         }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn resize_necessary(&self) -> bool {
+        false
     }
 
     pub fn clear_color(&self, color: glam::Vec4) {

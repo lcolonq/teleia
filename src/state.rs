@@ -93,9 +93,15 @@ pub struct PointLight {
     pub attenuation: glam::Vec2,
 }
 
+#[cfg(target_arch = "wasm32")]
+type Timestamp = f64;
+
+#[cfg(not(target_arch = "wasm32"))]
+type Timestamp = std::time::Instant;
+
 pub struct State {
     pub acc: f64,
-    pub last: f64,
+    pub last: Timestamp,
     pub tick: u64,
 
     pub rebinding: Option<Key>,
@@ -119,8 +125,14 @@ pub struct State {
     pub log: Vec<(u64, String)>,
 }
 
-pub fn now(ctx: &context::Context) -> f64 {
+#[cfg(target_arch = "wasm32")]
+pub fn now(ctx: &context::Context) -> Timestamp {
     ctx.performance.now() / 1000.0
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn now(_ctx: &context::Context) -> Timestamp {
+    std::time::Instant::now()
 }
 
 pub fn default_keybindings() -> BiHashMap<winit::keyboard::KeyCode, Key> {
@@ -156,9 +168,12 @@ impl State {
         let cwaker = Box::leak(Box::new(waker.into()));
         let waker_ctx = std::task::Context::from_waker(cwaker);
 
+        let acc = 0.0;
+        let last = now(ctx);
+
         Self {
-            acc: 0.0,
-            last: now(ctx),
+            acc,
+            last,
             // we initialize the tick to 1000, which allows us to use "0" as the default time for
             // various animation starts on entities without having them all play at game start
             tick: 1000,
@@ -421,7 +436,12 @@ impl State {
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
         let now = now(ctx);
+
+        #[cfg(target_arch = "wasm32")]
         let diff = now - self.last;
+        #[cfg(not(target_arch = "wasm32"))]
+        let diff = now.duration_since(self.last).as_secs_f64();
+
         self.acc += diff;
         self.last = now;
 

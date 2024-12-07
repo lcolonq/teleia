@@ -15,7 +15,6 @@ codegen-units = 1
 opt-level = 2
 
 [dependencies]
-winit = "*" # windowing and events
 glow = {version = "*", features = []} # rendering
 tobj = "*" # model loader
 # gltf = {version = "*", features = ["extras", "names"]} # model loader
@@ -23,37 +22,26 @@ image = "*" # texture loader
 glam = "*" # linear algebra
 log = "*" # logging
 rand = {version = "*", features = ["small_rng"]} # rng
-getrandom = {version = "*", features = ["js"]} # rng in the browser
 serde = {version = "*", features = ["derive"]} # serialization
+enum-map = "*" # fast maps with enums as keys
+bimap = "*" # bijective maps
+reqwest = "*" # http requests
+bytes = "*" # bytes for http responses
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+winit = "*" # windowing and events
+getrandom = {version = "*", features = ["js"]} # rng in the browser
 console_log = "*" # log to browser console
 console_error_panic_hook = "*" # log to browser console on panic
 tracing-wasm = "*" # trace performance in browser
 wasm-bindgen = "*" # interface with javascript
 wasm-bindgen-futures = "*" # interface with async javascript
 js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
-enum-map = "*" # fast maps with enums as keys
-bimap = "*" # bijective maps
-reqwest = "*" # http requests
-bytes = "*" # bytes for http responses
+web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode"] }
 
-[dependencies.web-sys] # common browser APIs
-version = "*"
-features = [
-  "Document",
-  "Window",
-  "Element",
-  "HtmlCanvasElement",
-  "WebGl2RenderingContext",
-  "Headers",
-  "Request",
-  "RequestInit",
-  "RequestMode",
-  "Response",
-  "Performance",
-  "PerformanceTiming",
-  "AudioContext",
-  "AudioNode",
-  "AudioDestinationNode",
-  "AudioBuffer",
-  "AudioBufferSourceNode",
-]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "*"
+winit = { version = "0.29", features = ["x11", "rwh_05"], default-features = false } # windowing and events
+raw-window-handle = { version = "0.5" } # get window handle
+glutin = { version = "0.31" } # obtain opengl context
+glutin-winit = { version = "0.4" } # obtain opengl context

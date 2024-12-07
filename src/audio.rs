@@ -1,9 +1,11 @@
 use std::{cell::RefCell, collections::HashMap};
 
+#[cfg(target_arch = "wasm32")]
 pub struct Context {
     pub audio: web_sys::AudioContext,
 }
 
+#[cfg(target_arch = "wasm32")]
 impl Context {
     pub fn new() -> Self {
         let audio = web_sys::AudioContext::new()
@@ -14,11 +16,13 @@ impl Context {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 pub struct Audio {
     pub buffer: &'static RefCell<Option<web_sys::AudioBuffer>>,
     //pub source: &'static web_sys::AudioBufferSourceNode,
 }
 
+#[cfg(target_arch = "wasm32")]
 impl Audio {
     pub fn new(ctx: &Context, bytes: &[u8]) -> Self {
         let sbuffer: &_ = Box::leak(Box::new(RefCell::new(None)));
@@ -52,6 +56,7 @@ impl Audio {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 pub struct Assets {
     pub ctx: Context,
 
@@ -60,6 +65,7 @@ pub struct Assets {
     pub music_node: Option<web_sys::AudioBufferSourceNode>, 
 }
 
+#[cfg(target_arch = "wasm32")]
 impl Assets {
     pub fn new<F>(f : F) -> Self where F: Fn(&Context) -> HashMap<String, Audio> {
         let ctx = Context::new();
@@ -92,5 +98,65 @@ impl Assets {
         if let Some(a) = self.audio.get(name) {
             self.music_node = a.play(&self.ctx, Some((start, end)));
         }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub struct Context {
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Context {
+    pub fn new() -> Self {
+        Self {
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub struct Audio {
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Audio {
+    pub fn new(ctx: &Context, _bytes: &[u8]) -> Self {
+        Self {
+        }
+    }
+
+    pub fn play(&self, ctx: &Context, looping: Option<(Option<f64>, Option<f64>)>) {
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub struct Assets {
+    pub ctx: Context,
+    pub audio: HashMap<String, Audio>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Assets {
+    pub fn new<F>(f : F) -> Self where F: Fn(&Context) -> HashMap<String, Audio> {
+        let ctx = Context::new();
+
+        let audio = f(&ctx);
+
+        Self {
+            ctx,
+            audio,
+        }
+    }
+
+    pub fn play_sfx(&mut self, name: &str) {
+        if let Some(a) = self.audio.get(name) {
+            a.play(&self.ctx, None);
+        }
+    }
+
+    pub fn is_music_playing(&self) -> bool {
+        false
+    }
+
+    pub fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>) {
     }
 }
