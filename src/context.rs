@@ -26,32 +26,41 @@ pub fn compute_upscale(windoww: u32, windowh: u32) -> u32 {
     (ratio - 1).max(1)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+pub struct Context {
+    pub window: sdl2::video::Window,
+    pub gl: glow::Context,
+    pub emptyvao: glow::VertexArray,
+    pub timer: sdl2::TimerSubsystem,
+}
+
+
+#[cfg(target_arch = "wasm32")]
 pub struct Context {
     pub window: winit::window::Window,
     pub gl: glow::Context,
     pub emptyvao: glow::VertexArray,
-
-    #[cfg(target_arch = "wasm32")]
     pub performance: web_sys::Performance,
 }
 
 impl Context {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn new(sdl: sdl2::Sdl, window: sdl2::video::Window, gl: glow::Context) -> Self {
+        let emptyvao = unsafe {
+            gl.create_vertex_array().expect("failed to initialize vao")
+        };
+        let ret = Self {
+            window,
+            gl,
+            emptyvao,
+            timer: sdl.timer().expect("failed to initialize timer subsystem"),
+        };
+        ret.init();
+        ret
+    }
+
+    #[cfg(target_arch = "wasm32")]
     pub fn new(window: winit::window::Window, gl: glow::Context) -> Self {
-        unsafe {
-            gl.clear_color(0.1, 0.1, 0.1, 1.0);
-            gl.clear_depth_f32(1.0);
-
-            gl.enable(glow::DEPTH_TEST);
-            gl.depth_func(glow::LEQUAL);
-
-            gl.enable(glow::BLEND);
-            gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
-
-            gl.enable(glow::STENCIL_TEST);
-
-            gl.cull_face(glow::FRONT);
-        }
-
         let emptyvao = unsafe {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
@@ -59,7 +68,7 @@ impl Context {
         #[cfg(target_arch = "wasm32")]
         unsafe { js_track_resized_setup(); }
 
-        Self {
+        let ret = Self {
             window,
             gl,
             emptyvao,
@@ -67,6 +76,25 @@ impl Context {
             #[cfg(target_arch = "wasm32")]
             performance: web_sys::window().expect("failed to find window")
                 .performance().expect("failed to get performance"),
+        };
+        ret.init();
+        ret
+    }
+
+    pub fn init(&self) {
+        unsafe {
+            self.gl.clear_color(0.1, 0.1, 0.1, 1.0);
+            self.gl.clear_depth_f32(1.0);
+
+            self.gl.enable(glow::DEPTH_TEST);
+            self.gl.depth_func(glow::LEQUAL);
+
+            self.gl.enable(glow::BLEND);
+            self.gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+
+            self.gl.enable(glow::STENCIL_TEST);
+
+            self.gl.cull_face(glow::FRONT);
         }
     }
 

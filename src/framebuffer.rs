@@ -11,7 +11,13 @@ pub struct Framebuffer {
 
 impl Framebuffer {
     pub fn screen(ctx: &context::Context) -> Self {
+        #[cfg(target_arch = "wasm32")]
         let (windoww, windowh): (f32, f32) = ctx.window.inner_size().into();
+        #[cfg(not(target_arch = "wasm32"))]
+        let (windoww, windowh) = {
+            let (w, h) = ctx.window.size();
+            (w as f32, h as f32)
+        };
         let ratio = context::compute_upscale(windoww as _, windowh as _) as f32;
         let upscalew = context::RENDER_WIDTH * ratio;
         let upscaleh = context::RENDER_HEIGHT * ratio;

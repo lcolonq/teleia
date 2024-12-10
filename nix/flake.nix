@@ -15,18 +15,23 @@
           pkgs.clang
           pkgs.llvmPackages.libclang
           pkgs.openssl
+          pkgs.pkg-config
+          pkgs.SDL2
+          pkgs.glxinfo
+          pkgs.alsa-lib
         ];
-        LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${
-          with pkgs;
-          pkgs.lib.makeLibraryPath [
-            libGL 
-            xorg.libX11 
-            xorg.libXcursor 
-            xorg.libXi 
-            libxkbcommon 
-            xorg.libxcb  
-          ]
-        }";
+        # LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${
+        #   with pkgs;
+        #   pkgs.lib.makeLibraryPath [
+        #     libGL 
+        #     xorg.libX11 
+        #     xorg.libXcursor 
+        #     xorg.libXi 
+        #     libxkbcommon 
+        #     xorg.libxcb  
+        #     libglvnd
+        #   ]
+        # }";
       };
     };
 }

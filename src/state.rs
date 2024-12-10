@@ -93,11 +93,13 @@ pub struct PointLight {
     pub attenuation: glam::Vec2,
 }
 
-#[cfg(target_arch = "wasm32")]
 type Timestamp = f64;
 
+#[cfg(target_arch = "wasm32")]
+type Keycode = winit::keyboard::KeyCode;
+
 #[cfg(not(target_arch = "wasm32"))]
-type Timestamp = std::time::Instant;
+type Keycode = sdl2::keyboard::Keycode;
 
 pub struct State {
     pub acc: f64,
@@ -105,7 +107,7 @@ pub struct State {
     pub tick: u64,
 
     pub rebinding: Option<Key>,
-    pub keybindings: BiHashMap<winit::keyboard::KeyCode, Key>,
+    pub keybindings: BiHashMap<Keycode, Key>,
     pub keys: Keys,
 
     pub screen: framebuffer::Framebuffer,
@@ -131,11 +133,13 @@ pub fn now(ctx: &context::Context) -> Timestamp {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn now(_ctx: &context::Context) -> Timestamp {
-    std::time::Instant::now()
+pub fn now(ctx: &context::Context) -> Timestamp {
+    let ms = ctx.timer.ticks64();
+    (ms as f64) / 1000.0
 }
 
-pub fn default_keybindings() -> BiHashMap<winit::keyboard::KeyCode, Key> {
+#[cfg(target_arch = "wasm32")]
+pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
     BiHashMap::from_iter(vec![
         (winit::keyboard::KeyCode::KeyW, Key::Up),
         (winit::keyboard::KeyCode::KeyS, Key::Down),
@@ -147,6 +151,22 @@ pub fn default_keybindings() -> BiHashMap<winit::keyboard::KeyCode, Key> {
         (winit::keyboard::KeyCode::KeyE, Key::R),
         (winit::keyboard::KeyCode::Tab, Key::Start),
         (winit::keyboard::KeyCode::Space, Key::Select),
+    ])
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
+    BiHashMap::from_iter(vec![
+        (sdl2::keyboard::Keycode::W, Key::Up),
+        (sdl2::keyboard::Keycode::S, Key::Down),
+        (sdl2::keyboard::Keycode::A, Key::Left),
+        (sdl2::keyboard::Keycode::D, Key::Right),
+        (sdl2::keyboard::Keycode::NUM_1, Key::A),
+        (sdl2::keyboard::Keycode::NUM_2, Key::B),
+        (sdl2::keyboard::Keycode::Q, Key::L),
+        (sdl2::keyboard::Keycode::E, Key::R),
+        (sdl2::keyboard::Keycode::TAB, Key::Start),
+        (sdl2::keyboard::Keycode::SPACE, Key::Select),
     ])
 }
 
@@ -347,7 +367,6 @@ impl State {
     pub fn mouse_pressed<G>(
         &mut self,
         ctx: &context::Context,
-        _button: winit::event::MouseButton,
         game: &mut G
     ) where G: Game {
         log::info!("click");
@@ -363,16 +382,19 @@ impl State {
     pub fn mouse_released(
         &mut self,
         _ctx: &context::Context,
-        _button: winit::event::MouseButton,
     ) {
     }
 
     pub fn key_pressed(
         &mut self,
         _ctx: &context::Context,
-        key: winit::keyboard::KeyCode,
+        key: Keycode,
     ) {
-        if key == winit::keyboard::KeyCode::F12 {
+        #[cfg(target_arch = "wasm32")]
+        let rebind = key == winit::keyboard::KeyCode::F12;
+        #[cfg(not(target_arch = "wasm32"))]
+        let rebind = key == sdl2::keyboard::Keycode::F12;
+        if rebind {
             self.keybindings = default_keybindings();
             self.rebinding = None;
             self.write_log("Reset keybindings!");
@@ -388,7 +410,7 @@ impl State {
     pub fn key_released(
         &mut self,
         _ctx: &context::Context,
-        key: winit::keyboard::KeyCode,
+        key: Keycode,
     ) {
         if let Some(k) = self.keybindings.get_by_left(&key) {
             self.keys.pressed[*k] = false;
@@ -437,10 +459,7 @@ impl State {
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
         let now = now(ctx);
 
-        #[cfg(target_arch = "wasm32")]
         let diff = now - self.last;
-        #[cfg(not(target_arch = "wasm32"))]
-        let diff = now.duration_since(self.last).as_secs_f64();
 
         self.acc += diff;
         self.last = now;
