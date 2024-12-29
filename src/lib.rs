@@ -9,6 +9,7 @@ pub mod texture;
 pub mod font;
 pub mod shadow;
 pub mod audio;
+pub mod net;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
