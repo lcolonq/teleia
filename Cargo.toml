@@ -16,7 +16,8 @@ opt-level = 2
 
 [dependencies]
 glow = {version = "*", features = []} # rendering
-tobj = "*" # model loader
+tobj = "*" # loader for .obj meshes loader
+gltf = {path = "deps/gltf", features = ["extras", "names", "utils"]} # loader for .gltf scenes
 # gltf = {version = "*", features = ["extras", "names"]} # model loader
 image = "*" # texture loader
 glam = "*" # linear algebra

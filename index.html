@@ -12,9 +12,15 @@
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#404040">
         <link rel="icon" href="data:;base64,iVBORw0KGgo=">
         <link data-trunk rel="css" href="index.css" />
-        <title>OUBLIETTE OF GENERAL</title>
+        <title>teleia</title>
     </head>
     <body>
+        <script>
+         addEventListener("TrunkApplicationStarted", async (event) => {
+             console.log("initialized, starting...");
+             window.wasmBindings.main_js();
+         });
+        </script>
         <div id="teleia-parent"></canvas>
     </body>
 </html>

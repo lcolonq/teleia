@@ -23,7 +23,6 @@ impl Framebuffer {
         let upscaleh = context::RENDER_HEIGHT * ratio;
         let offsetx = (windoww - upscalew) / 2.0;
         let offsety = (windowh - upscaleh) / 2.0;
-        log::info!("{} {} {} {} {} {}", windoww, windowh, upscalew, upscaleh, offsetx, offsety);
         Self {
             tex: None,
             fbo: None,

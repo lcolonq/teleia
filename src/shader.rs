@@ -183,6 +183,19 @@ impl Shader {
         }
     }
 
+    pub fn set_mat4_array(&self, ctx: &context::Context, name: &str, val: &[glam::Mat4]) {
+        if let Some(loc) = self.uniforms.get(name) {
+            let vs: Vec<f32> = val.iter().flat_map(|m| m.to_cols_array()).collect();
+            unsafe {
+                ctx.gl.uniform_matrix_4_f32_slice(
+                    Some(loc),
+                    false,
+                    &vs,
+                );
+            }
+        }
+    }
+
     pub fn set_position_3d(&self, ctx: &context::Context, position: &glam::Mat4) {
         self.set_mat4(&ctx, "position", &position);
         self.set_mat4(&ctx, "normal_matrix", &position.inverse().transpose());

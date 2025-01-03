@@ -6,11 +6,11 @@ pub mod framebuffer;
 pub mod shader;
 pub mod mesh;
 pub mod texture;
+pub mod scene;
 pub mod font;
 pub mod shadow;
 pub mod audio;
 pub mod net;
-
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
 
@@ -265,4 +265,63 @@ where
             }
         });
     });
+}
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+struct TestGame {
+    font: font::Font,
+    cube: mesh::Mesh,
+    fox: scene::Scene,
+    tex: texture::Texture,
+    shader: shader::Shader,
+}
+impl TestGame {
+    pub async fn new(ctx: &context::Context) -> Self {
+        Self {
+            font: font::Font::new(ctx),
+            cube: mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/cube.obj")),
+            // fox: scene::Scene::from_gltf(ctx, include_bytes!("/home/llll/src/colonq/assets/lcolonq_flat.vrm")),
+            fox: scene::Scene::from_gltf(ctx, include_bytes!("assets/scenes/fox.glb")),
+            tex: texture::Texture::new(ctx, include_bytes!("assets/textures/test.png")),
+            shader: shader::Shader::new(ctx, include_str!("assets/shaders/scene/vert.glsl"), include_str!("assets/shaders/scene/frag.glsl")),
+        }
+    }
+}
+impl state::Game for TestGame {
+    fn update(&mut self, ctx: &context::Context, st: &mut state::State) -> Option<()> {
+        st.move_camera(
+            ctx,
+            &glam::Vec3::new(0.0, 0.0, -10.0),
+            &glam::Vec3::new(0.0, 0.0, 1.0),
+            &glam::Vec3::new(0.0, 1.0, 0.0),
+        );
+        Some(())
+    }
+    fn render(&mut self, ctx: &context::Context, st: &mut state::State) -> Option<()> {
+        if let Some(n) = self.fox.nodes_by_name.get("b_Neck_04").and_then(|i| self.fox.nodes.get_mut(*i)) {
+            n.transform *= glam::Mat4::from_rotation_y(0.05);
+        }
+        st.bind_3d(ctx, &self.shader);
+        self.shader.set_position_3d(
+            ctx,
+            &glam::Mat4::from_scale_rotation_translation(
+                glam::Vec3::new(0.1, 0.1, 0.1),
+                glam::Quat::from_rotation_y(st.tick as f32 / 60.0),
+                glam::Vec3::new(0.0, -5.0, 0.0),
+            ),
+        );
+        self.tex.bind(ctx);
+        self.fox.render(ctx, &self.shader);
+        self.font.render_text(ctx, &glam::Vec2::new(0.0, 0.0), "he's all fucked up");
+        Some(())
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub async fn main_js() {
+    run(TestGame::new).await;
 }
