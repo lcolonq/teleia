@@ -37,6 +37,29 @@ pub struct Skin {
     pub joints: Vec<Index>,
 }
 
+pub enum ChannelValues {
+    Translation(Vec<glam::Vec3>),
+    Rotation(Vec<glam::Quat>),
+    Scale(Vec<glam::Vec3>),
+}
+
+pub enum Interpolation {
+    Linear,
+    Step,
+    CubicSpline,
+}
+
+pub struct Channel {
+    pub target: Index,
+    pub interpolation: Interpolation,
+    pub keyframes: Vec<f32>,
+    pub values: ChannelValues, 
+}
+
+pub struct Animation {
+    pub channels: Vec<Channel>,
+}
+
 pub struct Node {
     pub children: Vec<Index>,
     pub object: Option<Index>,
@@ -49,6 +72,7 @@ pub struct Scene {
     pub textures: Vec<texture::Texture>,
     pub materials: Vec<Material>,
     pub skins: Vec<Skin>,
+    pub animations: HashMap<String, Animation>,
     pub nodes: Vec<Node>,
     pub nodes_by_name: HashMap<String, Index>,
     pub scene_nodes: Vec<Index>,
@@ -232,6 +256,31 @@ impl Scene {
             }
         }).collect();
 
+        let animations = HashMap::from_iter(gltf.animations().filter_map(|a| {
+            let channels = a.channels().map(|c| {
+                let read = c.reader(get_buffer_data);
+                Channel {
+                    target: c.target().node().index(),
+                    interpolation: match c.sampler().interpolation() {
+                        gltf::animation::Interpolation::Linear => Interpolation::Linear,
+                        gltf::animation::Interpolation::Step => Interpolation::Step,
+                        gltf::animation::Interpolation::CubicSpline => Interpolation::CubicSpline,
+                    },
+                    keyframes: read.read_inputs().expect("channel has no inputs").collect(),
+                    values: match read.read_outputs().expect("channel has no outputs") {
+                        gltf::animation::util::ReadOutputs::Translations(ts) =>
+                            ChannelValues::Translation(ts.map(glam::Vec3::from_array).collect()),
+                        gltf::animation::util::ReadOutputs::Rotations(ts) =>
+                            ChannelValues::Rotation(ts.into_f32().map(glam::Quat::from_array).collect()),
+                        gltf::animation::util::ReadOutputs::Scales(ts) =>
+                            ChannelValues::Scale(ts.map(glam::Vec3::from_array).collect()),
+                        _ => panic!("unsupport channel outputs"),
+                    },
+                }
+            }).collect();
+            a.name().map(|nm| (nm.to_owned(), Animation { channels }))
+        }));
+
         let nodes = gltf.nodes().map(|n| {
             Node {
                 children: n.children().map(|c| c.index()).collect(),
@@ -255,6 +304,7 @@ impl Scene {
             textures,
             materials,
             skins,
+            animations,
             nodes,
             nodes_by_name,
             scene_nodes,
@@ -306,6 +356,35 @@ impl Scene {
             self.render_node(ctx, shader, n);
             for ci in &n.children {
                 q.push_back(*ci);
+            }
+        }
+    }
+
+    pub fn reflect_animation(&mut self, nm: &str, time: f32) {
+        if let Some(anim) = self.animations.get(nm) {
+            for c in &anim.channels {
+                let (previ, nexti) = if let Some(nexti) = c.keyframes.iter().position(|x| *x > time) {
+                    let previ = if nexti > 0 { nexti - 1 } else { c.keyframes.len() - 1 };
+                    (previ, nexti)
+                } else {
+                    (c.keyframes.len() - 1, 0)
+                };
+                match &c.values {
+                    ChannelValues::Rotation(vs) => {
+                        let prevt = c.keyframes[previ];
+                        let nextt = c.keyframes[nexti];
+                        let prev = vs[previ];
+                        let next = vs[nexti];
+                        let new = prev.slerp(next, (time - prevt) / (nextt - prevt));
+                        let (scale, _, trans) = self.nodes[c.target].transform.to_scale_rotation_translation();
+                        self.nodes[c.target].transform = glam::Mat4::from_scale_rotation_translation(
+                            scale,
+                            new,
+                            trans,
+                        );
+                    },
+                    _ => {},
+                }
             }
         }
     }

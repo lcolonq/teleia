@@ -20,6 +20,7 @@ tobj = "*" # loader for .obj meshes loader
 gltf = {path = "deps/gltf", features = ["extras", "names", "utils"]} # loader for .gltf scenes
 # gltf = {version = "*", features = ["extras", "names"]} # model loader
 image = "*" # texture loader
+fontdue = "*" # truetype fonts
 glam = "*" # linear algebra
 log = "*" # logging
 rand = {version = "*", features = ["small_rng"]} # rng

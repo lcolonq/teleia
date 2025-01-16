@@ -8,6 +8,20 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn new_empty(ctx: &context::Context) -> Self {
+        unsafe {
+            let tex = ctx.gl.create_texture().expect("failed to create texture");
+            ctx.gl.bind_texture(glow::TEXTURE_2D, Some(tex));
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
+            Self {
+                tex,
+            }
+        }
+    }
+
     pub fn new(ctx: &context::Context, bytes: &[u8]) -> Self {
         let rgba = image::io::Reader::new(std::io::Cursor::new(bytes))
             .with_guessed_format()
