@@ -60,7 +60,7 @@ where
         // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
         // gl_attr.set_context_version(3, 0);
         let window = video
-            .window(title, 640, 360)
+            .window(title, w as _, h as _)
             .opengl()
             // .fullscreen_desktop()
             .resizable()
@@ -107,10 +107,10 @@ where
                     st.mouse_released(&ctx)
                 },
                 sdl2::event::Event::KeyDown { keycode: Some(key), repeat: false, .. } => {
-                    st.key_pressed(&ctx, key)
+                    st.key_pressed(&ctx, state::Keycode::new(key))
                 },
                 sdl2::event::Event::KeyUp { keycode: Some(key), repeat: false, .. } => {
-                    st.key_released(&ctx, key)
+                    st.key_released(&ctx, state::Keycode::new(key))
                 },
                 _ => {},
             }

@@ -100,7 +100,33 @@ type Timestamp = f64;
 pub type Keycode = winit::keyboard::KeyCode;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub type Keycode = sdl2::keyboard::Keycode;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Keycode {
+    pub kc: sdl2::keyboard::Keycode
+}
+#[cfg(not(target_arch = "wasm32"))]
+impl Keycode {
+    pub fn new(kc: sdl2::keyboard::Keycode) -> Self { Self { kc } }
+}
+#[cfg(not(target_arch = "wasm32"))]
+impl Serialize for Keycode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer {
+        (self.kc.into_i32()).serialize(serializer)
+    }
+}
+#[cfg(not(target_arch = "wasm32"))]
+impl<'de> Deserialize<'de> for Keycode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        i32::deserialize(deserializer)
+            .and_then(|x| {
+                sdl2::keyboard::Keycode::from_i32(x)
+                    .map(|kc| Keycode { kc })
+                    .ok_or(serde::de::Error::custom("invalid entity flags"))
+            })
+    }
+}
 
 pub struct State {
     pub acc: f64,
@@ -158,16 +184,16 @@ pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
     BiHashMap::from_iter(vec![
-        (sdl2::keyboard::Keycode::W, Key::Up),
-        (sdl2::keyboard::Keycode::S, Key::Down),
-        (sdl2::keyboard::Keycode::A, Key::Left),
-        (sdl2::keyboard::Keycode::D, Key::Right),
-        (sdl2::keyboard::Keycode::NUM_1, Key::A),
-        (sdl2::keyboard::Keycode::NUM_2, Key::B),
-        (sdl2::keyboard::Keycode::Q, Key::L),
-        (sdl2::keyboard::Keycode::E, Key::R),
-        (sdl2::keyboard::Keycode::TAB, Key::Start),
-        (sdl2::keyboard::Keycode::SPACE, Key::Select),
+        (Keycode::new(sdl2::keyboard::Keycode::W), Key::Up),
+        (Keycode::new(sdl2::keyboard::Keycode::S), Key::Down),
+        (Keycode::new(sdl2::keyboard::Keycode::A), Key::Left),
+        (Keycode::new(sdl2::keyboard::Keycode::D), Key::Right),
+        (Keycode::new(sdl2::keyboard::Keycode::NUM_1), Key::A),
+        (Keycode::new(sdl2::keyboard::Keycode::NUM_2), Key::B),
+        (Keycode::new(sdl2::keyboard::Keycode::Q), Key::L),
+        (Keycode::new(sdl2::keyboard::Keycode::E), Key::R),
+        (Keycode::new(sdl2::keyboard::Keycode::TAB), Key::Start),
+        (Keycode::new(sdl2::keyboard::Keycode::SPACE), Key::Select),
     ])
 }
 
@@ -394,7 +420,7 @@ impl State {
         #[cfg(target_arch = "wasm32")]
         let rebind = key == winit::keyboard::KeyCode::F12;
         #[cfg(not(target_arch = "wasm32"))]
-        let rebind = key == sdl2::keyboard::Keycode::F12;
+        let rebind = key.kc == sdl2::keyboard::Keycode::F12;
         if rebind {
             self.keybindings = default_keybindings();
             self.rebinding = None;
