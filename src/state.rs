@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
+use serde::{Serialize, Deserialize};
 
 use crate::{context, framebuffer, shader, audio};
 
@@ -35,7 +36,7 @@ pub trait Game {
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
 }
 
-#[derive(Debug, Enum, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Enum, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Key {
     Up, Down, Left, Right,
     A, B, L, R,
@@ -96,10 +97,10 @@ pub struct PointLight {
 type Timestamp = f64;
 
 #[cfg(target_arch = "wasm32")]
-type Keycode = winit::keyboard::KeyCode;
+pub type Keycode = winit::keyboard::KeyCode;
 
 #[cfg(not(target_arch = "wasm32"))]
-type Keycode = sdl2::keyboard::Keycode;
+pub type Keycode = sdl2::keyboard::Keycode;
 
 pub struct State {
     pub acc: f64,
@@ -175,7 +176,7 @@ impl State {
         let screen = framebuffer::Framebuffer::screen(ctx);
         let render_framebuffer = framebuffer::Framebuffer::new(
             ctx,
-            &glam::Vec2::new(context::RENDER_WIDTH, context::RENDER_HEIGHT),
+            &glam::Vec2::new(ctx.render_width, ctx.render_height),
             &glam::Vec2::new(0.0, 0.0),
         );
         let shader_upscale = shader::Shader::new_nolib(
@@ -209,7 +210,7 @@ impl State {
 
             projection: glam::Mat4::perspective_lh(
                 std::f32::consts::PI / 4.0,
-                context::RENDER_WIDTH / context::RENDER_HEIGHT,
+                ctx.render_width / ctx.render_height,
                 // 0.1,
                 0.5,
                 50.0,
@@ -342,8 +343,8 @@ impl State {
             ctx, "view",
             &glam::Mat4::from_scale(
                 glam::Vec3::new(
-                    2.0 / context::RENDER_WIDTH,
-                    2.0 / context::RENDER_HEIGHT,
+                    2.0 / ctx.render_width,
+                    2.0 / ctx.render_height,
                     1.0,
                 ),
             ),
@@ -357,9 +358,9 @@ impl State {
         game: &mut G
     ) where G: Game
     {
-        let rx = ((x - self.screen.offsets.x) * context::RENDER_WIDTH / self.screen.dims.x) as i32;
-        let ry = ((y - self.screen.offsets.y) * context::RENDER_HEIGHT / self.screen.dims.y) as i32;
-        if !(rx < 0 || rx >= context::RENDER_WIDTH as i32 || ry < 0 || ry >= context::RENDER_HEIGHT as i32) {
+        let rx = ((x - self.screen.offsets.x) * ctx.render_width / self.screen.dims.x) as i32;
+        let ry = ((y - self.screen.offsets.y) * ctx.render_height / self.screen.dims.y) as i32;
+        if !(rx < 0 || rx >= ctx.render_width as i32 || ry < 0 || ry >= ctx.render_height as i32) {
             game.mouse_move(ctx, self, rx, ry);
         }
     }

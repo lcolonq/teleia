@@ -18,9 +18,9 @@ impl Framebuffer {
             let (w, h) = ctx.window.size();
             (w as f32, h as f32)
         };
-        let ratio = context::compute_upscale(windoww as _, windowh as _) as f32;
-        let upscalew = context::RENDER_WIDTH * ratio;
-        let upscaleh = context::RENDER_HEIGHT * ratio;
+        let ratio = ctx.compute_upscale(windoww as _, windowh as _) as f32;
+        let upscalew = ctx.render_width * ratio;
+        let upscaleh = ctx.render_height * ratio;
         let offsetx = (windoww - upscalew) / 2.0;
         let offsety = (windowh - upscaleh) / 2.0;
         Self {

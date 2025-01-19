@@ -1,4 +1,7 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::collections::HashMap;
+
+#[cfg(target_arch = "wasm32")]
+use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
 pub struct Context {

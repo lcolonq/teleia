@@ -11,6 +11,8 @@ pub mod font;
 pub mod shadow;
 pub mod audio;
 pub mod net;
+
+#[cfg(target_arch = "wasm32")]
 use std::ops::Rem;
 
 #[cfg(target_arch = "wasm32")]
@@ -39,7 +41,7 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn run<'a, F, G, Fut>(title: &str, gnew: F)
+pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, gnew: F)
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -72,7 +74,7 @@ where
         (sdl, window, gl, event_loop, gl_context)
     };
 
-    let ctx = Box::leak(Box::new(context::Context::new(sdl, window, gl)));
+    let ctx = Box::leak(Box::new(context::Context::new(sdl, window, gl, w as f32, h as f32)));
     let game = Box::leak(Box::new(gnew(ctx).await));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
 
@@ -140,7 +142,7 @@ where
 }
 
 #[cfg(target_arch = "wasm32")]
-pub async fn run<'a, F, G, Fut>(gnew: F)
+pub async fn run<'a, F, G, Fut>(w: u32, h: u32, gnew: F)
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -176,7 +178,7 @@ where
         (window, gl)
     };
 
-    let ctx = Box::leak(Box::new(context::Context::new(window, gl)));
+    let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32)));
     ctx.maximize_canvas();
     let game = Box::leak(Box::new(gnew(ctx).await));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
@@ -271,7 +273,6 @@ where
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-
 #[cfg(target_arch = "wasm32")]
 struct TestGame {
     font: font::Bitmap,
@@ -281,6 +282,7 @@ struct TestGame {
     tex: texture::Texture,
     shader: shader::Shader,
 }
+#[cfg(target_arch = "wasm32")]
 impl TestGame {
     pub async fn new(ctx: &context::Context) -> Self {
         Self {
@@ -293,6 +295,7 @@ impl TestGame {
         }
     }
 }
+#[cfg(target_arch = "wasm32")]
 impl state::Game for TestGame {
     fn update(&mut self, ctx: &context::Context, st: &mut state::State) -> Option<()> {
         st.move_camera(
@@ -319,8 +322,8 @@ impl state::Game for TestGame {
         );
         self.tex.bind(ctx);
         self.fox.render(ctx, &self.shader);
-        self.font.render_text(ctx, &glam::Vec2::new(0.0, 0.0), "he's all FIXED up");
-        self.tt.render_text(ctx, &glam::Vec2::new(10.0, 10.0), "tESTge");
+        self.font.render_text(ctx, &glam::Vec2::new(0.0, 10.0), "he's all FIXED up");
+        // self.tt.render_text(ctx, &glam::Vec2::new(10.0, 10.0), "tESTge");
         Some(())
     }
 }
@@ -328,5 +331,5 @@ impl state::Game for TestGame {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub async fn main_js_test() {
-    run(TestGame::new).await;
+    run(240, 160, TestGame::new).await;
 }

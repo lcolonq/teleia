@@ -210,8 +210,8 @@ impl Shader {
                 glam::Vec3::new(halfwidth, halfheight, 1.0),
                 rot.clone(),
                 glam::Vec3::new(
-                    -context::RENDER_WIDTH / 2.0 + pos.x + halfwidth,
-                    context::RENDER_HEIGHT / 2.0 - pos.y - halfheight,
+                    -ctx.render_width / 2.0 + pos.x + halfwidth,
+                    ctx.render_height / 2.0 - pos.y - halfheight,
                     0.0,
                 ),
             )

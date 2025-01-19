@@ -10,24 +10,10 @@ extern {
     fn js_poll_resized() -> bool;
 }
 
-pub const RENDER_WIDTH: f32 = 240.0;
-pub const RENDER_HEIGHT: f32 = 160.0;
-
-pub fn compute_upscale(windoww: u32, windowh: u32) -> u32 {
-    let mut ratio = 1;
-    loop {
-        if (RENDER_WIDTH as u32) * ratio > windoww
-            || (RENDER_HEIGHT as u32) * ratio > windowh
-        {
-            break;
-        }
-        ratio += 1;
-    }
-    (ratio - 1).max(1)
-}
-
 #[cfg(not(target_arch = "wasm32"))]
 pub struct Context {
+    pub render_width: f32,
+    pub render_height: f32,
     pub window: sdl2::video::Window,
     pub gl: glow::Context,
     pub emptyvao: glow::VertexArray,
@@ -37,6 +23,8 @@ pub struct Context {
 
 #[cfg(target_arch = "wasm32")]
 pub struct Context {
+    pub render_width: f32,
+    pub render_height: f32,
     pub window: winit::window::Window,
     pub gl: glow::Context,
     pub emptyvao: glow::VertexArray,
@@ -44,12 +32,26 @@ pub struct Context {
 }
 
 impl Context {
+    pub fn compute_upscale(&self, windoww: u32, windowh: u32) -> u32 {
+        let mut ratio = 1;
+        loop {
+            if (self.render_width as u32) * ratio > windoww
+                || (self.render_height as u32) * ratio > windowh
+            {
+                break;
+            }
+            ratio += 1;
+        }
+        (ratio - 1).max(1)
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn new(sdl: sdl2::Sdl, window: sdl2::video::Window, gl: glow::Context) -> Self {
+    pub fn new(sdl: sdl2::Sdl, window: sdl2::video::Window, gl: glow::Context, render_width: f32, render_height: f32) -> Self {
         let emptyvao = unsafe {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
         let ret = Self {
+            render_width, render_height,
             window,
             gl,
             emptyvao,
@@ -60,7 +62,7 @@ impl Context {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn new(window: winit::window::Window, gl: glow::Context) -> Self {
+    pub fn new(window: winit::window::Window, gl: glow::Context, render_width: f32, render_height: f32) -> Self {
         let emptyvao = unsafe {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
@@ -69,6 +71,7 @@ impl Context {
         unsafe { js_track_resized_setup(); }
 
         let ret = Self {
+            render_width, render_height,
             window,
             gl,
             emptyvao,
