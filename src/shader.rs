@@ -46,6 +46,9 @@ impl Shader {
             ctx.gl.bind_attrib_location(program, mesh::ATTRIB_VERTEX, "vertex");
             ctx.gl.bind_attrib_location(program, mesh::ATTRIB_NORMAL, "normal");
             ctx.gl.bind_attrib_location(program, mesh::ATTRIB_TEXCOORD, "texcoord");
+            ctx.gl.bind_attrib_location(program, mesh::ATTRIB_JOINT, "joint");
+            ctx.gl.bind_attrib_location(program, mesh::ATTRIB_WEIGHT, "weight");
+            ctx.gl.bind_attrib_location(program, mesh::ATTRIB_COLOR, "color");
 
             ctx.gl.link_program(program);
             if !ctx.gl.get_program_link_status(program) {

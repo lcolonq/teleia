@@ -102,4 +102,39 @@ impl Framebuffer {
             );
         }
     }
+
+    pub fn blit(&self, ctx: &context::Context, dest: &Self, pos: &glam::Vec2, scale: &glam::Vec2) {
+        unsafe {
+            ctx.gl.bind_framebuffer(glow::READ_FRAMEBUFFER, self.fbo);
+            ctx.gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, dest.fbo);
+            ctx.gl.blit_framebuffer(
+                0, 0, self.dims.x as _, self.dims.y as _,
+                pos.x as _, pos.y as _, (pos.x + scale.x) as _, (pos.y + scale.y) as _,
+                glow::COLOR_BUFFER_BIT, glow::NEAREST
+            );
+        }
+    }
+
+    pub fn get_pixels(&self, ctx: &context::Context, buf: &mut [glam::Vec3]) {
+        let w = self.dims.x as usize;
+        let h = self.dims.y as usize;
+        let tmp = vec![glam::Vec3::default(); w * h];
+        unsafe {
+            ctx.gl.bind_texture(glow::TEXTURE_2D, self.tex);
+            ctx.gl.get_tex_image(
+                glow::TEXTURE_2D, 0, glow::RGB, glow::FLOAT,
+                glow::PixelPackData::Slice(
+                    std::slice::from_raw_parts_mut(
+                        tmp.as_ptr() as *mut u8,
+                        tmp.len() * std::mem::size_of::<glam::Vec3>()
+                    )
+                ),
+            );
+        }
+        for y in 0..h {
+            for x in 0..w {
+                buf[x + (h - 1 - y) * w] = tmp[x + y * w];
+            }
+        }
+    }
 }

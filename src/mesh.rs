@@ -7,6 +7,7 @@ pub const ATTRIB_NORMAL: u32 = 1;
 pub const ATTRIB_TEXCOORD: u32 = 2;
 pub const ATTRIB_JOINT: u32 = 3;
 pub const ATTRIB_WEIGHT: u32 = 4;
+pub const ATTRIB_COLOR: u32 = 5;
 
 pub struct Mesh {
     pub vao: glow::VertexArray,
