@@ -7,6 +7,10 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "tel"
+path = "src/main.rs"
+
 [profile.release]
 opt-level = 2
 codegen-units = 1
@@ -45,3 +49,4 @@ web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCan
 env_logger = "*"
 sdl2 = "*"
 kira = "0.9.6"
+tokio = { version = "*", features = ["full"] }
