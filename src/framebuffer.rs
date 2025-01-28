@@ -15,7 +15,7 @@ impl Framebuffer {
         let (windoww, windowh): (f32, f32) = ctx.window.inner_size().into();
         #[cfg(not(target_arch = "wasm32"))]
         let (windoww, windowh) = {
-            let (w, h) = ctx.window.size();
+            let (w, h) = ctx.window.borrow().get_size();
             (w as f32, h as f32)
         };
         let ratio = ctx.compute_upscale(windoww as _, windowh as _) as f32;

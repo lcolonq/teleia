@@ -1,3 +1,6 @@
 [submodule "deps/gltf"]
 	path = deps/gltf
 	url = https://github.com/lcolonq/gltf
+[submodule "deps/glfw-rs"]
+	path = deps/glfw-rs
+	url = git@github.com:lcolonq/glfw-rs.git

@@ -102,17 +102,17 @@ pub type Keycode = winit::keyboard::KeyCode;
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Keycode {
-    pub kc: sdl2::keyboard::Keycode
+    pub kc: glfw::Key
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl Keycode {
-    pub fn new(kc: sdl2::keyboard::Keycode) -> Self { Self { kc } }
+    pub fn new(kc: glfw::Key) -> Self { Self { kc } }
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl Serialize for Keycode {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: serde::Serializer {
-        (self.kc.into_i32()).serialize(serializer)
+        (self.kc as i32).serialize(serializer)
     }
 }
 #[cfg(not(target_arch = "wasm32"))]
@@ -120,10 +120,8 @@ impl<'de> Deserialize<'de> for Keycode {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
         i32::deserialize(deserializer)
-            .and_then(|x| {
-                sdl2::keyboard::Keycode::from_i32(x)
-                    .map(|kc| Keycode { kc })
-                    .ok_or(serde::de::Error::custom("invalid entity flags"))
+            .map(|x| unsafe {
+                std::mem::transmute(x)
             })
     }
 }
@@ -161,7 +159,8 @@ pub fn now(ctx: &context::Context) -> Timestamp {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn now(ctx: &context::Context) -> Timestamp {
-    let ms = ctx.timer.ticks64();
+    let elapsed = ctx.start_instant.elapsed();
+    let ms = elapsed.as_millis();
     (ms as f64) / 1000.0
 }
 
@@ -184,16 +183,16 @@ pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
     BiHashMap::from_iter(vec![
-        (Keycode::new(sdl2::keyboard::Keycode::W), Key::Up),
-        (Keycode::new(sdl2::keyboard::Keycode::S), Key::Down),
-        (Keycode::new(sdl2::keyboard::Keycode::A), Key::Left),
-        (Keycode::new(sdl2::keyboard::Keycode::D), Key::Right),
-        (Keycode::new(sdl2::keyboard::Keycode::NUM_1), Key::A),
-        (Keycode::new(sdl2::keyboard::Keycode::NUM_2), Key::B),
-        (Keycode::new(sdl2::keyboard::Keycode::Q), Key::L),
-        (Keycode::new(sdl2::keyboard::Keycode::E), Key::R),
-        (Keycode::new(sdl2::keyboard::Keycode::TAB), Key::Start),
-        (Keycode::new(sdl2::keyboard::Keycode::SPACE), Key::Select),
+        (Keycode::new(glfw::Key::W), Key::Up),
+        (Keycode::new(glfw::Key::S), Key::Down),
+        (Keycode::new(glfw::Key::A), Key::Left),
+        (Keycode::new(glfw::Key::D), Key::Right),
+        (Keycode::new(glfw::Key::Num1), Key::A),
+        (Keycode::new(glfw::Key::Num2), Key::B),
+        (Keycode::new(glfw::Key::Q), Key::L),
+        (Keycode::new(glfw::Key::E), Key::R),
+        (Keycode::new(glfw::Key::Tab), Key::Start),
+        (Keycode::new(glfw::Key::Space), Key::Select),
     ])
 }
 
@@ -420,7 +419,7 @@ impl State {
         #[cfg(target_arch = "wasm32")]
         let rebind = key == winit::keyboard::KeyCode::F12;
         #[cfg(not(target_arch = "wasm32"))]
-        let rebind = key.kc == sdl2::keyboard::Keycode::F12;
+        let rebind = key.kc == glfw::Key::F12;
         if rebind {
             self.keybindings = default_keybindings();
             self.rebinding = None;
@@ -505,13 +504,13 @@ impl State {
 
     pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
         self.render_framebuffer.bind(&ctx);
-        ctx.clear_color(glam::Vec4::new(0.1, 0.1, 0.1, 1.0));
+        ctx.clear_color(glam::Vec4::new(0.1, 0.1, 0.1, 0.0));
         ctx.clear();
 
         game.render(ctx, self);
 
         self.screen.bind(&ctx);
-        ctx.clear_color(glam::Vec4::new(0.0, 0.0, 0.0, 1.0));
+        ctx.clear_color(glam::Vec4::new(0.0, 0.0, 0.0, 0.0));
         ctx.clear();
         self.shader_upscale.bind(&ctx);
         self.render_framebuffer.bind_texture(&ctx);

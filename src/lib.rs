@@ -23,6 +23,9 @@ use winit::platform::web::WindowExtWebSys;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
 
+#[cfg(not(target_arch = "wasm32"))]
+use glfw::Context;
+
 static mut CTX: Option<*const context::Context> = None;
 static mut ST: Option<*mut state::State> = None;
 static mut G: Option<*mut std::ffi::c_void> = None;
@@ -40,7 +43,7 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, gnew: F)
+pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, overlay: bool, gnew: F)
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -52,28 +55,46 @@ where
 
     log::info!("hello computer, starting up...");
 
-    let (sdl, window, gl, mut event_loop, _gl_context) = {
-        let sdl = sdl2::init().expect("failed to initialize SDL2");
-        let video = sdl.video().expect("failed to initialize SDL2 video");
+    let (rglfw, rwindow, gl, events) = {
+        use glfw::fail_on_errors;
+        let mut glfw = glfw::init(glfw::fail_on_errors!()).expect("failed to initialize GLFW");
         // let gl_attr = video.gl_attr();
         // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
         // gl_attr.set_context_version(3, 0);
-        let window = video
-            .window(title, w as _, h as _)
-            .opengl()
-            // .fullscreen_desktop()
-            .resizable()
-            .build()
-            .unwrap();
-        let gl_context = window.gl_create_context().unwrap();
+        let (mut window, events) = glfw.with_primary_monitor(|glfw, primary| {
+            if overlay {
+                let mon = primary.expect("failed to get monitor");
+                let mode = mon.get_video_mode().expect("failed to get video mode");
+                glfw.window_hint(glfw::WindowHint::RedBits(Some(mode.red_bits)));
+                glfw.window_hint(glfw::WindowHint::GreenBits(Some(mode.green_bits)));
+                glfw.window_hint(glfw::WindowHint::BlueBits(Some(mode.blue_bits)));
+                glfw.window_hint(glfw::WindowHint::RefreshRate(Some(mode.refresh_rate)));
+                glfw.window_hint(glfw::WindowHint::Resizable(false));
+                glfw.window_hint(glfw::WindowHint::Decorated(false));
+                glfw.window_hint(glfw::WindowHint::Floating(true));
+                glfw.window_hint(glfw::WindowHint::TransparentFramebuffer(true));
+                unsafe {
+                    // glfw.window_hint(glfw::WindowHint::MousePassthrough(true));
+                    glfw::ffi::glfwWindowHint(0x0002000D, 1); // mouse passthrough
+                }
+                glfw.create_window(mode.width, mode.height, title, glfw::WindowMode::FullScreen(mon))
+                    .expect("failed to create window")
+            } else {
+                glfw.create_window(w as _, h as _, title, glfw::WindowMode::Windowed)
+                    .expect("failed to create window")
+            }
+        });
+        window.make_current();
+        window.set_key_polling(true);
         let gl = unsafe {
-            glow::Context::from_loader_function(|s| video.gl_get_proc_address(s) as *const _)
+            glow::Context::from_loader_function(|s| window.get_proc_address(s) as *const _)
         };
-        let event_loop = sdl.event_pump().unwrap();
-        (sdl, window, gl, event_loop, gl_context)
+        (glfw, window, gl, events)
     };
+    let glfw = std::cell::RefCell::new(rglfw);
+    let window = std::cell::RefCell::new(rwindow);
 
-    let ctx = Box::leak(Box::new(context::Context::new(sdl, window, gl, w as f32, h as f32)));
+    let ctx = Box::leak(Box::new(context::Context::new(glfw, window, gl, w as f32, h as f32)));
     let game = Box::leak(Box::new(gnew(ctx).await));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
 
@@ -84,33 +105,34 @@ where
     }
 
     'running: loop {
-        for event in event_loop.poll_iter() {
+        if ctx.window.borrow().should_close() {
+            log::info!("bye!");
+            break 'running;
+        }
+        ctx.glfw.borrow_mut().poll_events();
+        for (_, event) in glfw::flush_messages(&events) {
             match event {
-                sdl2::event::Event::Quit {..} => {
-                    log::info!("bye!");
-                    break 'running;
-                },
-                sdl2::event::Event::Window { win_event: sdl2::event::WindowEvent::Resized(_, _), .. } => {
-                    st.handle_resize(&ctx);
-                },
-                sdl2::event::Event::Window { win_event: sdl2::event::WindowEvent::FocusLost, .. } => {
-                    st.keys = state::Keys::new();
-                },
-                sdl2::event::Event::MouseMotion { x, y, .. } => {
-                    st.mouse_moved(&ctx, x as f32, y as f32, game);
-                },
-                sdl2::event::Event::MouseButtonDown {..} => {
-                    st.mouse_pressed(&ctx, game)
-                },
-                sdl2::event::Event::MouseButtonUp {..} => {
-                    st.mouse_released(&ctx)
-                },
-                sdl2::event::Event::KeyDown { keycode: Some(key), repeat: false, .. } => {
-                    st.key_pressed(&ctx, state::Keycode::new(key))
-                },
-                sdl2::event::Event::KeyUp { keycode: Some(key), repeat: false, .. } => {
-                    st.key_released(&ctx, state::Keycode::new(key))
-                },
+                // sdl2::event::Event::Window { win_event: sdl2::event::WindowEvent::Resized(_, _), .. } => {
+                //     st.handle_resize(&ctx);
+                // },
+                // sdl2::event::Event::Window { win_event: sdl2::event::WindowEvent::FocusLost, .. } => {
+                //     st.keys = state::Keys::new();
+                // },
+                // sdl2::event::Event::MouseMotion { x, y, .. } => {
+                //     st.mouse_moved(&ctx, x as f32, y as f32, game);
+                // },
+                // sdl2::event::Event::MouseButtonDown {..} => {
+                //     st.mouse_pressed(&ctx, game)
+                // },
+                // sdl2::event::Event::MouseButtonUp {..} => {
+                //     st.mouse_released(&ctx)
+                // },
+                // sdl2::event::Event::KeyDown { keycode: Some(key), repeat: false, .. } => {
+                //     st.key_pressed(&ctx, state::Keycode::new(key))
+                // },
+                // sdl2::event::Event::KeyUp { keycode: Some(key), repeat: false, .. } => {
+                //     st.key_released(&ctx, state::Keycode::new(key))
+                // },
                 _ => {},
             }
         }
@@ -131,7 +153,7 @@ where
         }
         st.run_update(&ctx, game);
         st.run_render(&ctx, game);
-        ctx.window.gl_swap_window();
+        ctx.window.borrow_mut().swap_buffers();
     }
 
     // event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);

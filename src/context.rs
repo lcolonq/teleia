@@ -14,10 +14,11 @@ extern {
 pub struct Context {
     pub render_width: f32,
     pub render_height: f32,
-    pub window: sdl2::video::Window,
+    pub glfw: std::cell::RefCell<glfw::Glfw>,
+    pub window: std::cell::RefCell<glfw::PWindow>,
     pub gl: glow::Context,
     pub emptyvao: glow::VertexArray,
-    pub timer: sdl2::TimerSubsystem,
+    pub start_instant: std::time::Instant,
 }
 
 
@@ -46,16 +47,16 @@ impl Context {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn new(sdl: sdl2::Sdl, window: sdl2::video::Window, gl: glow::Context, render_width: f32, render_height: f32) -> Self {
+    pub fn new(glfw: std::cell::RefCell<glfw::Glfw>, window: std::cell::RefCell<glfw::PWindow>, gl: glow::Context, render_width: f32, render_height: f32) -> Self {
         let emptyvao = unsafe {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
         let ret = Self {
             render_width, render_height,
-            window,
+            glfw, window,
             gl,
             emptyvao,
-            timer: sdl.timer().expect("failed to initialize timer subsystem"),
+            start_instant: std::time::Instant::now(),
         };
         ret.init();
         ret
