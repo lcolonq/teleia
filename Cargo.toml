@@ -33,6 +33,7 @@ enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
 reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
+bitflags = "*" # bitwise flags
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 winit = {version = "*", features = ["serde"]} # windowing and events

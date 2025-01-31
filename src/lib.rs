@@ -26,6 +26,9 @@ use wasm_bindgen::JsCast;
 #[cfg(not(target_arch = "wasm32"))]
 use glfw::Context;
 
+#[cfg(not(target_arch = "wasm32"))]
+use bitflags::bitflags;
+
 static mut CTX: Option<*const context::Context> = None;
 static mut ST: Option<*mut state::State> = None;
 static mut G: Option<*mut std::ffi::c_void> = None;
@@ -42,8 +45,15 @@ where
     }
 }
 
+bitflags! {
+    pub struct Options: u32 {
+        const OVERLAY = 0b00000001;
+        const HIDDEN  = 0b00000010;
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, overlay: bool, gnew: F)
+pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, options: Options, gnew: F)
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -62,7 +72,11 @@ where
         // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
         // gl_attr.set_context_version(3, 0);
         let (mut window, events) = glfw.with_primary_monitor(|glfw, primary| {
-            if overlay {
+            if options.contains(Options::HIDDEN) {
+                glfw.window_hint(glfw::WindowHint::Visible(false));
+                glfw.create_window(w as _, h as _, title, glfw::WindowMode::Windowed)
+                    .expect("failed to create window")
+            } else if options.contains(Options::OVERLAY) {
                 let mon = primary.expect("failed to get monitor");
                 let mode = mon.get_video_mode().expect("failed to get video mode");
                 glfw.window_hint(glfw::WindowHint::RedBits(Some(mode.red_bits)));
