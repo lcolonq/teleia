@@ -37,7 +37,7 @@ bytes = "*" # bytes for http responses
 bitflags = "*" # bitwise flags
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-winit = {version = "*", features = ["serde"]} # windowing and events
+winit = {version = "0.29.15", features = ["serde"]} # windowing and events
 getrandom = {version = "*", features = ["js"]} # rng in the browser
 console_log = "*" # log to browser console
 console_error_panic_hook = "*" # log to browser console on panic
