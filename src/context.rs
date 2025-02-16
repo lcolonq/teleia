@@ -1,10 +1,13 @@
 use glow::HasContext;
 
 #[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
 use winit::platform::web::WindowExtWebSys;
 
 #[cfg(target_arch = "wasm32")]
-#[link(wasm_import_module = "./helpers.js")]
+#[wasm_bindgen(module = "/src/helpers.js")]
 extern {
     fn js_track_resized_setup();
     fn js_poll_resized() -> bool;
@@ -69,7 +72,7 @@ impl Context {
         };
 
         #[cfg(target_arch = "wasm32")]
-        unsafe { js_track_resized_setup(); }
+        js_track_resized_setup();
 
         let ret = Self {
             render_width, render_height,
@@ -126,9 +129,7 @@ impl Context {
 
     #[cfg(target_arch = "wasm32")]
     pub fn resize_necessary(&self) -> bool {
-        unsafe {
-            js_poll_resized()
-        }
+        js_poll_resized()
     }
 
     #[cfg(not(target_arch = "wasm32"))]
