@@ -27,7 +27,7 @@ image = "*" # texture loader
 fontdue = "*" # truetype fonts
 glam = "*" # linear algebra
 log = "*" # logging
-rand = {version = "*", features = ["small_rng"]} # rng
+rand = {version = "0.8.5", features = ["small_rng"]} # rng
 serde = {version = "*", features = ["derive"]} # serialization
 serde_json = "*" # serialize JSON
 enum-map = "*" # fast maps with enums as keys
