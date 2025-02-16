@@ -14,32 +14,29 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn new_nolib(ctx: &context::Context, vsrc: &str, fsrc: &str) -> Self {
+    pub fn new_helper(ctx: &context::Context, vsrc: &str, fsrc: &str) -> Result<Self, String> {
         unsafe {
-            let program = ctx.gl.create_program()
-                .expect("cannot create shader program");
+            let program = ctx.gl.create_program()?;
 
-            let vert = ctx.gl.create_shader(glow::VERTEX_SHADER)
-                .expect("cannot create shader");
+            let vert = ctx.gl.create_shader(glow::VERTEX_SHADER)?;
             ctx.gl.shader_source(vert, &vsrc);
             ctx.gl.compile_shader(vert);
             if !ctx.gl.get_shader_compile_status(vert) {
-                panic!(
+                return Err(format!(
                     "failed to compile vertex shader:\n{}",
                     ctx.gl.get_shader_info_log(vert)
-                );
+                ));
             }
             ctx.gl.attach_shader(program, vert);
 
-            let frag = ctx.gl.create_shader(glow::FRAGMENT_SHADER)
-                .expect("cannot create shader");
+            let frag = ctx.gl.create_shader(glow::FRAGMENT_SHADER)?;
             ctx.gl.shader_source(frag, &fsrc);
             ctx.gl.compile_shader(frag);
             if !ctx.gl.get_shader_compile_status(frag) {
-                panic!(
+                return Err(format!(
                     "failed to compile fragment shader:\n{}",
                     ctx.gl.get_shader_info_log(frag)
-                );
+                ));
             }
             ctx.gl.attach_shader(program, frag);
 
@@ -78,17 +75,31 @@ impl Shader {
                 }
             }
 
-            Self {
+            Ok(Self {
                 program,
                 uniforms: std::rc::Rc::new(uniforms),
-            }
+            })
         }
+    }
+
+    pub fn new_nolib(ctx: &context::Context, vsrc: &str, fsrc: &str) -> Self {
+        Self::new_helper(ctx, vsrc, fsrc).expect("failed to load shader")
     }
 
     pub fn new(ctx: &context::Context, vsrcstr: &str, fsrcstr: &str) -> Self {
         let vsrc = format!("{}\n{}\n", COMMON_VERT, vsrcstr);
         let fsrc = format!("{}\n{}\n", COMMON_FRAG, fsrcstr);
         Self::new_nolib(ctx, &vsrc, &fsrc)
+    }
+
+    pub fn delete(&mut self, ctx: &context::Context) {
+        unsafe { ctx.gl.delete_program(self.program); }
+    }
+
+    pub fn replace(&mut self, ctx: &context::Context, vsrc: &str, fsrc: &str) -> Result<(), String> {
+        self.delete(ctx);
+        *self = Self::new_helper(ctx, vsrc, fsrc)?;
+        Ok(())
     }
 
     pub fn set_i32(&self, ctx: &context::Context, name: &str, val: i32) {
