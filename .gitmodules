@@ -4,3 +4,6 @@
 [submodule "deps/glfw-rs"]
 	path = deps/glfw-rs
 	url = git@github.com:lcolonq/glfw-rs.git
+[submodule "deps/directories-rs"]
+	path = deps/directories-rs
+	url = git@github.com:lcolonq/directories-rs.git

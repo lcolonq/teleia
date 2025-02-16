@@ -11,6 +11,7 @@ pub mod font;
 pub mod shadow;
 pub mod audio;
 pub mod net;
+pub mod save;
 
 use std::ops::Rem;
 
@@ -29,6 +30,14 @@ use glfw::Context;
 #[cfg(not(target_arch = "wasm32"))]
 use bitflags::bitflags;
 
+#[cfg(not(target_arch = "wasm32"))]
+bitflags! {
+    pub struct Options: u32 {
+        const OVERLAY = 0b00000001;
+        const HIDDEN  = 0b00000010;
+    }
+}
+
 static mut CTX: Option<*const context::Context> = None;
 static mut ST: Option<*mut state::State> = None;
 static mut G: Option<*mut std::ffi::c_void> = None;
@@ -42,13 +51,6 @@ where
             (Some(c), Some(s), Some(g)) => f(&*c, &mut*s, &mut*(g as *mut G)),
             _ => log::info!("context not set"),
         }
-    }
-}
-
-bitflags! {
-    pub struct Options: u32 {
-        const OVERLAY = 0b00000001;
-        const HIDDEN  = 0b00000010;
     }
 }
 
@@ -100,6 +102,10 @@ where
         });
         window.make_current();
         window.set_key_polling(true);
+        window.set_mouse_button_polling(true);
+        window.set_size_polling(true);
+        window.set_focus_polling(true);
+        window.set_cursor_pos_polling(true);
         let gl = unsafe {
             glow::Context::from_loader_function(|s| window.get_proc_address(s) as *const _)
         };
@@ -126,27 +132,25 @@ where
         ctx.glfw.borrow_mut().poll_events();
         for (_, event) in glfw::flush_messages(&events) {
             match event {
-                // sdl2::event::Event::Window { win_event: sdl2::event::WindowEvent::Resized(_, _), .. } => {
-                //     st.handle_resize(&ctx);
-                // },
-                // sdl2::event::Event::Window { win_event: sdl2::event::WindowEvent::FocusLost, .. } => {
-                //     st.keys = state::Keys::new();
-                // },
-                // sdl2::event::Event::MouseMotion { x, y, .. } => {
-                //     st.mouse_moved(&ctx, x as f32, y as f32, game);
-                // },
-                // sdl2::event::Event::MouseButtonDown {..} => {
-                //     st.mouse_pressed(&ctx, game)
-                // },
-                // sdl2::event::Event::MouseButtonUp {..} => {
-                //     st.mouse_released(&ctx)
-                // },
-                // sdl2::event::Event::KeyDown { keycode: Some(key), repeat: false, .. } => {
-                //     st.key_pressed(&ctx, state::Keycode::new(key))
-                // },
-                // sdl2::event::Event::KeyUp { keycode: Some(key), repeat: false, .. } => {
-                //     st.key_released(&ctx, state::Keycode::new(key))
-                // },
+                glfw::WindowEvent::Size(_, _) => st.handle_resize(&ctx),
+                glfw::WindowEvent::Focus(false) => {
+                    st.keys = state::Keys::new();
+                },
+                glfw::WindowEvent::CursorPos(x, y) => {
+                    st.mouse_moved(&ctx, x as f32, y as f32, game);
+                }
+                glfw::WindowEvent::MouseButton(_, glfw::Action::Press, _) => {
+                    st.mouse_pressed(&ctx, game)
+                },
+                glfw::WindowEvent::MouseButton(_, glfw::Action::Release, _) => {
+                    st.mouse_released(&ctx)
+                },
+                glfw::WindowEvent::Key(key, _, glfw::Action::Press, _) => {
+                    st.key_pressed(&ctx, state::Keycode::new(key))
+                },
+                glfw::WindowEvent::Key(key, _, glfw::Action::Release, _) => {
+                    st.key_released(&ctx, state::Keycode::new(key))
+                },
                 _ => {},
             }
         }
@@ -312,7 +316,7 @@ use wasm_bindgen::prelude::*;
 pub struct TestGame {
     font: font::Bitmap,
     tt: font::TrueType,
-    cube: mesh::Mesh,
+    // cube: mesh::Mesh,
     fox: scene::Scene,
     tex: texture::Texture,
     shader: shader::Shader,
@@ -323,7 +327,7 @@ impl TestGame {
         Self {
             font: font::Bitmap::new(ctx),
             tt: font::TrueType::new(ctx, 12.0, include_bytes!("assets/fonts/ComicNeue-Regular.ttf")),
-            cube: mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/cube.obj")),
+            // cube: mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/cube.obj")),
             fox: scene::Scene::from_gltf(ctx, include_bytes!("assets/scenes/fox.glb")),
             // fox: scene::Scene::from_gltf(ctx, include_bytes!("/home/llll/src/colonq/assets/lcolonq_flat.vrm")),
             tex: texture::Texture::new(ctx, include_bytes!("assets/textures/test.png")),

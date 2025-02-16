@@ -504,9 +504,6 @@ impl State {
 
     pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
         self.render_framebuffer.bind(&ctx);
-        ctx.clear_color(glam::Vec4::new(0.1, 0.1, 0.1, 0.0));
-        ctx.clear();
-
         game.render(ctx, self);
 
         self.screen.bind(&ctx);

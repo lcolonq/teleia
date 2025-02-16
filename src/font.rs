@@ -92,7 +92,7 @@ impl Bitmap {
                 texcoords.push(tcbase + glam::Vec2::new(cwidth, cheight));
                 texcoords.push(tcbase + glam::Vec2::new(cwidth, 0.0));
                 texcoords.push(tcbase);
-                let c = if let Some(c) = color.get(i) {
+                let c = if let Some(c) = color.get(if color.len() == 0 { 0 } else { i % color.len() }) {
                     *c
                 } else {
                     glam::Vec3::new(1.0, 1.0, 1.0)

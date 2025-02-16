@@ -29,6 +29,7 @@ glam = "*" # linear algebra
 log = "*" # logging
 rand = {version = "*", features = ["small_rng"]} # rng
 serde = {version = "*", features = ["derive"]} # serialization
+serde_json = "*" # serialize JSON
 enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
 reqwest = "*" # http requests
@@ -44,10 +45,11 @@ tracing-wasm = "*" # trace performance in browser
 wasm-bindgen = "*" # interface with javascript
 wasm-bindgen-futures = "*" # interface with async javascript
 js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
-web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode", "BinaryType", "Blob", "CloseEvent", "ErrorEvent", "FileReader", "MessageEvent", "ProgressEvent", "WebSocket"] }
+web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode", "BinaryType", "Blob", "CloseEvent", "ErrorEvent", "FileReader", "MessageEvent", "ProgressEvent", "WebSocket", "Storage"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "*"
-glfw = { path = "deps/glfw-rs", features = ["serde"] }
-kira = "0.9.6"
-tokio = { version = "*", features = ["full"] }
+env_logger = "*" # configurable logging to stdout
+tokio = { version = "*", features = ["full"] } # async runtime
+glfw = { path = "deps/glfw-rs", features = ["serde"] } # window management
+kira = "0.9.6" # audio
+directories = { path = "deps/directories-rs" } # standard system directories
