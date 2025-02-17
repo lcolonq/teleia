@@ -27,14 +27,12 @@ use wasm_bindgen::JsCast;
 #[cfg(not(target_arch = "wasm32"))]
 use glfw::Context;
 
-#[cfg(not(target_arch = "wasm32"))]
 use bitflags::bitflags;
-
-#[cfg(not(target_arch = "wasm32"))]
 bitflags! {
     pub struct Options: u32 {
-        const OVERLAY = 0b00000001;
-        const HIDDEN  = 0b00000010;
+        const OVERLAY  = 0b00000001;
+        const HIDDEN   = 0b00000010;
+        const NORESIZE = 0b00000100;
     }
 }
 
@@ -67,6 +65,7 @@ where
 
     log::info!("hello computer, starting up...");
 
+    let resize = !options.contains(Options::NORESIZE);
     let (rglfw, rwindow, gl, events) = {
         use glfw::fail_on_errors;
         let mut glfw = glfw::init(glfw::fail_on_errors!()).expect("failed to initialize GLFW");
@@ -114,7 +113,10 @@ where
     let glfw = std::cell::RefCell::new(rglfw);
     let window = std::cell::RefCell::new(rwindow);
 
-    let ctx = Box::leak(Box::new(context::Context::new(glfw, window, gl, w as f32, h as f32)));
+    let ctx = Box::leak(Box::new(context::Context::new(
+        glfw, window, gl,
+        w as f32, h as f32, resize,
+    )));
     let game = Box::leak(Box::new(gnew(ctx).await));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
 
@@ -181,7 +183,7 @@ where
 }
 
 #[cfg(target_arch = "wasm32")]
-pub async fn run<'a, F, G, Fut>(w: u32, h: u32, gnew: F)
+pub async fn run<'a, F, G, Fut>(w: u32, h: u32, options: Options, gnew: F)
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -196,9 +198,10 @@ where
     let event_loop = winit::event_loop::EventLoop::new()
         .expect("failed to initialize event loop");
 
+    let resize = !options.contains(Options::NORESIZE);
     let (window, gl) = {
         let window = winit::window::WindowBuilder::new()
-            .with_maximized(true)
+            .with_maximized(resize)
             .with_decorations(false)
             .build(&event_loop)
             .expect("failed to initialize window");
@@ -217,7 +220,7 @@ where
         (window, gl)
     };
 
-    let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32)));
+    let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32, resize)));
     ctx.maximize_canvas();
     let game = Box::leak(Box::new(gnew(ctx).await));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
@@ -379,5 +382,5 @@ impl state::Game for TestGame {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub async fn main_js_test() {
-    run(240, 160, TestGame::new).await;
+    run(240, 160, Options::empty(), TestGame::new).await;
 }
