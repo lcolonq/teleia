@@ -216,4 +216,13 @@ impl Context {
             self.gl.disable(glow::CULL_FACE);
         }
     }
+
+    pub fn check_error(&self) {
+        unsafe {
+            let err = self.gl.get_error();
+            if err != 0 {
+                log::warn!("gl error: {}", err);
+            }
+        }
+    }
 }

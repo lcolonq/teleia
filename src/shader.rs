@@ -49,10 +49,10 @@ impl Shader {
 
             ctx.gl.link_program(program);
             if !ctx.gl.get_program_link_status(program) {
-                panic!(
+                return Err(format!(
                     "failed to link shader program:\n{}",
                     ctx.gl.get_program_info_log(program),
-                );
+                ));
             }
 
             ctx.gl.detach_shader(program, vert);
