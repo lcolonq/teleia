@@ -7,10 +7,6 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[[bin]]
-name = "tel"
-path = "src/main.rs"
-
 [profile.release]
 opt-level = 2
 codegen-units = 1
@@ -35,6 +31,7 @@ bimap = "*" # bijective maps
 reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
 bitflags = "*" # bitwise flags
+anyhow = "*" # generic error type handling
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 winit = {version = "=0.29.15", features = ["serde"]} # windowing and events

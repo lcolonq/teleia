@@ -79,6 +79,13 @@ pub struct Scene {
 }
 
 impl Scene {
+    pub fn load_default_shader(ctx: &context::Context) -> shader::Shader {
+        shader::Shader::new(
+            ctx,
+            include_str!("assets/shaders/scene/vert.glsl"),
+            include_str!("assets/shaders/scene/frag.glsl")
+        )
+    }
     pub fn from_gltf(ctx: &context::Context, bytes: &[u8]) -> Self {
         let (gltf, buffers, images) = gltf::import_slice(bytes).expect("failed to parse GLTF");
         let get_buffer_data = |b: gltf::Buffer| {

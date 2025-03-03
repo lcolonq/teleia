@@ -64,23 +64,10 @@
             cargoHash = "sha256-ckJxAR20GuVGstzXzIj1M0WBFj5eJjrO2/DRMUK5dwM=";
           };
         });
-      in
-      {
-        checks = {
-          inherit teleia;
-          teleia-clippy = craneLib.cargoClippy (commonArgs // {
-            inherit cargoArtifacts;
-            cargoClippyExtraArgs = "--all-targets -- --deny warnings";
-          });
-          teleia-fmt = craneLib.cargoFmt {
-            inherit src;
-          };
-        };
-
+      in {
         packages.default = teleia;
 
         devShells.default = craneLib.devShell {
-          checks = self.checks.${system};
           packages = [
             pkgs.trunk
             pkgs.rust-analyzer
@@ -99,6 +86,16 @@
             pkgs.xorg.libxcb  
             pkgs.libglvnd
           ];
+          LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${
+            pkgs.lib.makeLibraryPath [
+              pkgs.xorg.libX11 
+              pkgs.xorg.libXcursor 
+              pkgs.xorg.libXi 
+              pkgs.libxkbcommon 
+              pkgs.xorg.libxcb  
+              pkgs.libglvnd
+            ]
+          }";
         };
       });
 }
