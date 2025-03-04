@@ -8,6 +8,8 @@ pub enum Cardinal {
     East,
 }
 
+pub const CARDINALS: [Cardinal; 4] = [Cardinal::North, Cardinal::South, Cardinal::West, Cardinal::East];
+
 impl Cardinal {
     pub fn to_string(&self) -> &'static str {
         match self {
