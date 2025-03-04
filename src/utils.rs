@@ -2,7 +2,11 @@ use serde::{Serialize, Deserialize};
 
 pub type Erm<T> = anyhow::Result<T>;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub fn erm<E, T>(e: E) -> Erm<T> where E: std::error::Error + std::marker::Send + std::marker::Sync + 'static {
+    Err(anyhow::Error::from(e))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Cardinal {
     North,
     South,
