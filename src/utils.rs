@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+pub type Erm<T> = anyhow::Result<T>;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Cardinal {
     North,

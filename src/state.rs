@@ -4,7 +4,7 @@ use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
 use serde::{Serialize, Deserialize};
 
-use crate::{context, framebuffer, shader, audio};
+use crate::{audio, context, framebuffer, shader, utils};
 
 const DELTA_TIME: f64 = 1.0 / 60.0;
 
@@ -23,6 +23,7 @@ pub struct Response {
 }
 
 pub trait Game {
+    fn initialize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
     fn initialize_audio(&self, ctx: &context::Context, st: &State, actx: &audio::Context) ->
         HashMap<String, audio::Audio>
     {
@@ -32,8 +33,8 @@ pub trait Game {
     fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) {}
     fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) {}
     fn request_return(&mut self, ctx: &context::Context, st: &mut State, res: Response) {}
-    fn update(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
-    fn render(&mut self, ctx: &context::Context, st: &mut State) -> Option<()> { Some(()) }
+    fn update(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
+    fn render(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
 }
 
 #[derive(Debug, Enum, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -494,7 +495,9 @@ impl State {
         if self.acc >= DELTA_TIME {
             self.acc -= DELTA_TIME;
             self.tick += 1;
-            game.update(ctx, self);
+
+            // TODO: handle failure here in a nicer way
+            game.update(ctx, self).expect("game update failed");
 
             // if a lot of time has elapsed (e.g. if window is unfocused and not
             // running update loop), prevent "death spiral"
@@ -504,7 +507,9 @@ impl State {
 
     pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
         self.render_framebuffer.bind(&ctx);
-        game.render(ctx, self);
+
+        // TODO: handle failure here in a nicer way
+        game.render(ctx, self).expect("game render failed");
 
         self.screen.bind(&ctx);
         ctx.clear_color(glam::Vec4::new(0.0, 0.0, 0.0, 0.0));

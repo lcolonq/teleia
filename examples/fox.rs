@@ -26,16 +26,16 @@ impl TestGame {
 }
 
 impl state::Game for TestGame {
-    fn update(&mut self, ctx: &context::Context, st: &mut state::State) -> Option<()> {
+    fn update(&mut self, ctx: &context::Context, st: &mut state::State) -> Erm<()> {
         st.move_camera(
             ctx,
             &glam::Vec3::new(0.0, 0.0, -1.0),
             &glam::Vec3::new(0.0, 0.0, 1.0),
             &glam::Vec3::new(0.0, 1.0, 0.0),
         );
-        Some(())
+        Ok(())
     }
-    fn render(&mut self, ctx: &context::Context, st: &mut state::State) -> Option<()> {
+    fn render(&mut self, ctx: &context::Context, st: &mut state::State) -> Erm<()> {
         // if let Some(n) = self.fox.nodes_by_name.get("J_Bip_C_Neck").and_then(|i| self.fox.nodes.get_mut(*i)) {
         //     n.transform *= glam::Mat4::from_rotation_z(0.05);
         // }
@@ -62,7 +62,7 @@ impl state::Game for TestGame {
                 glam::Vec3::new(0.0, 1.0, 0.0),
             ],
         );
-        Some(())
+        Ok(())
     }
 }
 

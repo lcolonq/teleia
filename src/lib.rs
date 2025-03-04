@@ -13,6 +13,9 @@ pub mod audio;
 pub mod net;
 pub mod save;
 
+pub use utils::Erm;
+pub use anyhow::Context as ErmContext;
+
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
 
