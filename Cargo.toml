@@ -31,7 +31,7 @@ bimap = "*" # bijective maps
 reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
 bitflags = "*" # bitwise flags
-anyhow = "*" # generic error type handling
+color-eyre = { version = "*", default-features = false } # error reporting and formatting
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 winit = {version = "=0.29.15", features = ["serde"]} # windowing and events

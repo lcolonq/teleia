@@ -13,8 +13,8 @@ pub mod audio;
 pub mod net;
 pub mod save;
 
-pub use utils::{erm, Erm};
-pub use anyhow::Context as ErmContext;
+pub use utils::{erm, install_error_handler, Erm};
+pub use color_eyre::eyre::WrapErr;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
@@ -54,7 +54,7 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, options: Options, gnew: F)
+pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -63,6 +63,7 @@ where
     env_logger::Builder::new()
         .filter(None, log::LevelFilter::Info)
         .init();
+    color_eyre::install().expect("failed to install panic handler");
 
     log::info!("hello computer, starting up...");
 
@@ -172,19 +173,15 @@ where
                 },
             }
         }
-        st.run_update(&ctx, game);
-        st.run_render(&ctx, game);
+        st.run_update(&ctx, game)?;
+        st.run_render(&ctx, game)?;
         ctx.window.borrow_mut().swap_buffers();
     }
-
-    // event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
-    // event_loop.run(|event, elwt| {
-    //     event_loop_body::<G>(event, elwt);
-    // }).expect("window closed");
+    Ok(())
 }
 
 #[cfg(target_arch = "wasm32")]
-pub async fn run<'a, F, G, Fut>(w: u32, h: u32, options: Options, gnew: F)
+pub async fn run<'a, F, G, Fut>(w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -193,6 +190,7 @@ where
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
+    color_eyre::install().expect("failed to install panic handler");
 
     log::info!("hello computer, starting up...");
 
@@ -303,8 +301,8 @@ where
                         }
                         // f.poll();
                     }
-                    st.run_update(&ctx, game);
-                    st.run_render(&ctx, game);
+                    st.run_update(&ctx, game)?;
+                    st.run_render(&ctx, game)?;
                     ctx.window.request_redraw();
                 },
 
@@ -312,4 +310,5 @@ where
             }
         });
     });
+    Ok(())
 }

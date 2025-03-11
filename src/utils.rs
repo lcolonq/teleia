@@ -1,9 +1,38 @@
 use serde::{Serialize, Deserialize};
 
-pub type Erm<T> = anyhow::Result<T>;
+pub type Erm<T> = color_eyre::Result<T>;
 
 pub fn erm<E, T>(e: E) -> Erm<T> where E: std::error::Error + std::marker::Send + std::marker::Sync + 'static {
-    Err(anyhow::Error::from(e))
+    Err(e.into())
+}
+
+pub struct ErrorHandler;
+impl color_eyre::eyre::EyreHandler for ErrorHandler {
+    fn debug(
+        &self,
+        error: &(dyn std::error::Error + 'static),
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        if f.alternate() {
+            return core::fmt::Debug::fmt(error, f);
+        }
+        let mut first = true;
+        if let Some(s) = error.source() {
+            let errors: Vec<_> = std::iter::successors(Some(s), |e| (*e).source()).collect();
+            for err in errors.iter().rev() {
+                writeln!(f)?; write!(f, "{}{}", if first {""} else {" - "}, err)?;
+                first = false;
+            }
+        }
+        writeln!(f)?; write!(f, "{}{}", if first {""} else {" - "}, error)?;
+        Ok(())
+    }
+}
+
+pub fn install_error_handler() {
+    let (panic_hook, _) = color_eyre::config::HookBuilder::default().into_hooks();
+    panic_hook.install();
+    color_eyre::eyre::set_hook(Box::new(move |_| Box::new(ErrorHandler))).expect("failed to install error handler");
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

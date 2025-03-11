@@ -483,7 +483,7 @@ impl State {
         game.request_return(ctx, self, res);
     }
 
-    pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
+    pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
         let now = now(ctx);
 
         let diff = now - self.last;
@@ -496,20 +496,19 @@ impl State {
             self.acc -= DELTA_TIME;
             self.tick += 1;
 
-            // TODO: handle failure here in a nicer way
-            game.update(ctx, self).expect("game update failed");
+            game.update(ctx, self)?;
 
             // if a lot of time has elapsed (e.g. if window is unfocused and not
             // running update loop), prevent "death spiral"
             if self.acc >= DELTA_TIME { self.acc = 0.0 }
         }
+        Ok(())
     }
 
-    pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) where G: Game {
+    pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
         self.render_framebuffer.bind(&ctx);
 
-        // TODO: handle failure here in a nicer way
-        game.render(ctx, self).expect("game render failed");
+        game.render(ctx, self)?;
 
         self.screen.bind(&ctx);
         ctx.clear_color(glam::Vec4::new(0.0, 0.0, 0.0, 0.0));
@@ -517,5 +516,6 @@ impl State {
         self.shader_upscale.bind(&ctx);
         self.render_framebuffer.bind_texture(&ctx);
         ctx.render_no_geometry();
+        Ok(())
     }
 }
