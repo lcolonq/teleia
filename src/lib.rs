@@ -63,7 +63,7 @@ where
     env_logger::Builder::new()
         .filter(None, log::LevelFilter::Info)
         .init();
-    color_eyre::install().expect("failed to install panic handler");
+    install_error_handler();
 
     log::info!("hello computer, starting up...");
 
@@ -190,7 +190,7 @@ where
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
-    color_eyre::install().expect("failed to install panic handler");
+    install_error_handler();
 
     log::info!("hello computer, starting up...");
 
