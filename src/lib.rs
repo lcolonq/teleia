@@ -41,14 +41,14 @@ static mut CTX: Option<*const context::Context> = None;
 static mut ST: Option<*mut state::State> = None;
 static mut G: Option<*mut std::ffi::c_void> = None;
 
-pub fn contextualize<F, G>(mut f: F)
+pub fn contextualize<F, G, X>(mut f: F) -> X
 where
     G: state::Game + 'static,
-    F: FnMut(&context::Context, &mut state::State, &mut G) {
+    F: FnMut(&context::Context, &mut state::State, &mut G) -> X {
     unsafe {
         match (CTX, ST, G) {
             (Some(c), Some(s), Some(g)) => f(&*c, &mut*s, &mut*(g as *mut G)),
-            _ => log::info!("context not set"),
+            _ => panic!("context not set"),
         }
     }
 }
@@ -181,7 +181,7 @@ where
 }
 
 #[cfg(target_arch = "wasm32")]
-pub async fn run<'a, F, G, Fut>(w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
+pub async fn run<'a, F, G, Fut>(w: u32, h: u32, options: Options, gnew: F)
 where
     Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
@@ -230,9 +230,11 @@ where
         G = Some(game as *mut G as *mut std::ffi::c_void);
     }
 
+    let res = std::rc::Rc::new(std::cell::RefCell::new(Ok(())));
+    let result = res.clone();
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
-    event_loop.spawn(|event, elwt| {
-        contextualize(|ctx, st, game: &mut G| {
+    event_loop.spawn(move |event, elwt| {
+        let res: Erm<()> = contextualize(|ctx, st, game: &mut G| {
             match &event {
                 winit::event::Event::WindowEvent {
                     event: wev,
@@ -308,7 +310,14 @@ where
 
                 _ => {},
             }
+            Ok(())
         });
+        if let Err(e) = res {
+            *result.borrow_mut() = Err(e);
+            elwt.exit();
+        }
     });
-    Ok(())
+    if let Err(e) = res.replace(Ok(())) {
+        panic!("{}", e);
+    }
 }
