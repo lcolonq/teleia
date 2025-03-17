@@ -14,7 +14,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, crane, flake-utils, rust-overlay, nixpkgs-for-wasm-bindgen, ... }:
+  outputs = { self, nixpkgs, crane, flake-utils, rust-overlay, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
