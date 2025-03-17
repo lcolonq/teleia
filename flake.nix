@@ -31,16 +31,6 @@
       craneLib = ((crane.mkLib pkgs).overrideToolchain rustToolchain).overrideScope (_final: _prev: {
         inherit (import nixpkgs-for-wasm-bindgen { inherit system; }) wasm-bindgen-cli;
       });
-      src = lib.cleanSourceWith {
-        src = ./.;
-        filter = path: type:
-          (lib.hasSuffix "\.html" path) ||
-          (lib.hasSuffix "\.js" path) ||
-          (lib.hasSuffix "\.css" path) ||
-          (lib.hasInfix "/assets/" path) ||
-          (craneLib.filterCargoSources path type)
-        ;
-      };
 
       native = rec {
         nativeBuildInputs = [
@@ -59,57 +49,83 @@
           pkgs.libglvnd
           pkgs.alsa-lib
         ];
-        commonArgs = {
-          inherit src nativeBuildInputs buildInputs;
-          strictDeps = true;
-          CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
-          inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
-        };
-        cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-          doCheck = false;
-        });
-        build = nm: craneLib.buildPackage (commonArgs // {
-          inherit cargoArtifacts;
-          pname = nm;
-          cargoExtraArgs = "-p ${nm}";
-        });
+        build = path: nm:
+          let
+            src = lib.cleanSourceWith {
+              src = ./.;
+              filter = path: type:
+                (lib.hasSuffix "\.html" path) ||
+                (lib.hasSuffix "\.js" path) ||
+                (lib.hasSuffix "\.css" path) ||
+                (lib.hasInfix "/assets/" path) ||
+                (craneLib.filterCargoSources path type)
+              ;
+            };
+            commonArgs = {
+              inherit src nativeBuildInputs buildInputs;
+              strictDeps = true;
+              CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
+              inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
+            };
+            cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+              doCheck = false;
+            });
+          in
+            craneLib.buildPackage (commonArgs // {
+              inherit cargoArtifacts;
+              pname = nm;
+              cargoExtraArgs = "-p ${nm}";
+            });
       };
 
       wasm = rec {
-        commonArgs = {
-          inherit src;
-          strictDeps = true;
-          CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
-          buildInputs = [];
-          inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
-          wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
-            src = pkgs.fetchCrate {
-              pname = "wasm-bindgen-cli";
-              version = "0.2.100";
-              hash = "sha256-3RJzK7mkYFrs7C/WkhW9Rr4LdP5ofb2FdYGz1P7Uxog=";
+        build = path: nm:
+          let
+            src = lib.cleanSourceWith {
+              src = ./.;
+              filter = path: type:
+                (lib.hasSuffix "\.html" path) ||
+                (lib.hasSuffix "\.js" path) ||
+                (lib.hasSuffix "\.css" path) ||
+                (lib.hasInfix "/assets/" path) ||
+                (craneLib.filterCargoSources path type)
+              ;
             };
-            cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
+            commonArgs = {
               inherit src;
-              inherit (src) pname version;
-              hash = "sha256-qsO12332HSjWCVKtf1cUePWWb9IdYUmT+8OPj/XP2WE=";
+              strictDeps = true;
+              CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
+              buildInputs = [];
+              inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
+              wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
+                src = pkgs.fetchCrate {
+                  pname = "wasm-bindgen-cli";
+                  version = "0.2.100";
+                  hash = "sha256-3RJzK7mkYFrs7C/WkhW9Rr4LdP5ofb2FdYGz1P7Uxog=";
+                };
+                cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
+                  inherit src;
+                  inherit (src) pname version;
+                  hash = "sha256-qsO12332HSjWCVKtf1cUePWWb9IdYUmT+8OPj/XP2WE=";
+                };
+              };
             };
-          };
-        };
-        build = nm: craneLib.buildTrunkPackage (commonArgs // rec {
-          pname = nm;
-          cargoExtraArgs = "-p ${nm}";
-          cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-            inherit cargoExtraArgs;
-            doCheck = false;
-          });
-          preBuild = ''
-              cd ./crates/throwshade
-            '';
-          postBuild = ''
-              mv ./dist ../..
-              cd ../..
-            '';
-        });
+          in
+            craneLib.buildTrunkPackage (commonArgs // rec {
+              pname = nm;
+              cargoExtraArgs = "-p ${nm}";
+              cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+                inherit cargoExtraArgs;
+                doCheck = false;
+              });
+              preBuild = ''
+                cd ./crates/throwshade
+              '';
+              postBuild = ''
+                mv ./dist ../..
+                cd ../..
+              '';
+            });
       };
 
       shell = craneLib.devShell {
