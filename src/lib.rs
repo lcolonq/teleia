@@ -11,6 +11,7 @@ pub mod font;
 pub mod shadow;
 pub mod audio;
 pub mod net;
+pub mod physics;
 pub mod save;
 
 pub use utils::{erm, install_error_handler, Erm};

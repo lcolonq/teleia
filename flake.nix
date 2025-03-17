@@ -56,18 +56,7 @@
           doCheck = false;
         });
 
-        teleia = craneLib.buildTrunkPackage (commonArgs // {
-          inherit cargoArtifacts;
-          wasm-bindgen-cli = pkgs.wasm-bindgen-cli.override {
-            version = "0.2.90";
-            hash = "sha256-X8+DVX7dmKh7BgXqP7Fp0smhup5OO8eWEhn26ODYbkQ=";
-            cargoHash = "sha256-ckJxAR20GuVGstzXzIj1M0WBFj5eJjrO2/DRMUK5dwM=";
-          };
-        });
-      in {
-        packages.default = teleia;
-
-        devShells.default = craneLib.devShell {
+        shell = craneLib.devShell {
           packages = [
             pkgs.trunk
             pkgs.rust-analyzer
@@ -97,5 +86,8 @@
             ]
           }";
         };
+      in {
+        inherit shell;
+        devShells.default = shell;
       });
 }

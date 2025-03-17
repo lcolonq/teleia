@@ -21,7 +21,7 @@ gltf = {path = "deps/gltf", features = ["extras", "names", "utils"]} # loader fo
 # gltf = {version = "*", features = ["extras", "names"]} # model loader
 image = "*" # texture loader
 fontdue = "*" # truetype fonts
-glam = "*" # linear algebra
+glam = "0.29" # linear algebra
 log = "*" # logging
 rand = {version = "=0.8.5", features = ["small_rng"]} # rng
 serde = {version = "*", features = ["derive"]} # serialization
@@ -32,6 +32,9 @@ reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
 bitflags = "*" # bitwise flags
 color-eyre = { version = "*", default-features = false } # error reporting and formatting
+rapier3d = "*" # rigid-body physics
+parry3d = "*" # collision detection
+nalgebra = {version = "0.33.2", features = ["convert-glam029"]} # linear algebra library for rapier3d
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 winit = {version = "=0.29.15", features = ["serde"]} # windowing and events
