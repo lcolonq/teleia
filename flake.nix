@@ -52,7 +52,7 @@
         build = path: nm:
           let
             src = lib.cleanSourceWith {
-              src = ./.;
+              src = path;
               filter = path: type:
                 (lib.hasSuffix "\.html" path) ||
                 (lib.hasSuffix "\.js" path) ||
@@ -82,7 +82,7 @@
         build = path: nm:
           let
             src = lib.cleanSourceWith {
-              src = ./.;
+              src = path;
               filter = path: type:
                 (lib.hasSuffix "\.html" path) ||
                 (lib.hasSuffix "\.js" path) ||
