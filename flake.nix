@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-for-wasm-bindgen.url = "github:NixOS/nixpkgs/4e6868b1aa3766ab1de169922bb3826143941973";
     crane = {
       url = "github:ipetkov/crane";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,9 +27,7 @@
       rustToolchain = pkgs.rust-bin.stable.latest.default.override {
         targets = [ "wasm32-unknown-unknown" "x86_64-unknown-linux-gnu" ];
       };
-      craneLib = ((crane.mkLib pkgs).overrideToolchain rustToolchain).overrideScope (_final: _prev: {
-        inherit (import nixpkgs-for-wasm-bindgen { inherit system; }) wasm-bindgen-cli;
-      });
+      craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
       native = rec {
         nativeBuildInputs = [
