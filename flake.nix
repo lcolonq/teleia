@@ -21,13 +21,12 @@
         inherit system;
         overlays = [ (import rust-overlay) ];
       };
-
       inherit (pkgs) lib;
 
-      rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+      rustToolchainFor = p: p.rust-bin.stable.latest.default.override {
         targets = [ "wasm32-unknown-unknown" "x86_64-unknown-linux-gnu" ];
       };
-      craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+      craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchainFor;
 
       native = rec {
         nativeBuildInputs = [
