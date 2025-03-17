@@ -27,13 +27,17 @@
       };
       craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchainFor;
 
+      glfw = pkgs.glfw.overrideAttrs (cur: prev: {
+        cmakeFlags = [];
+      });
+
       native = rec {
         nativeBuildInputs = [
           pkgs.pkg-config
         ];
         buildInputs = [
           pkgs.openssl.dev
-          pkgs.glfw
+          glfw
           pkgs.xorg.libX11 
           pkgs.xorg.libXcursor 
           pkgs.xorg.libXi 
@@ -130,9 +134,12 @@
           pkgs.glxinfo
           pkgs.cmake
         ] ++ native.nativeBuildInputs ++ native.buildInputs;
+        LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
+        RUSTFLAGS="-L ${glfw}/lib";
         LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
       };
     in {
+      packages.${system}.glfw = glfw;
       inherit shell native wasm;
       devShells.${system}.default = shell;
     };
