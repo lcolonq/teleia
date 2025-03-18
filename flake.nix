@@ -28,7 +28,12 @@
       craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchainFor;
 
       glfw = pkgs.glfw.overrideAttrs (cur: prev: {
-        cmakeFlags = [];
+        cmakeFlags = []; # by default, static linking is disabled here
+        # for some reason, the default glfw package hardcodes a nix store path to libGL
+        # see: https://github.com/NixOS/nixpkgs/pull/47175
+        # this makes it impossible to run the binary on another system
+        # I'd much rather just load whatever we find on LD_LIBRARY_PATH etc, since this is much easier to control
+        env = {};
       });
 
       native = rec {
