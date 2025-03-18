@@ -139,13 +139,18 @@
       };
 
       windows = rec {
+        glfw = pkgs.pkgsCross.mingwW64.glfw.overrideAttrs (cur: prev: {
+          cmakeFlags = [];
+          env = {};
+          postPatch = "true";
+        });
         shell = craneLib.devShell {
           packages = [
             pkgs.pkgsCross.mingwW64.stdenv.cc
             pkgs.pkgsCross.mingwW64.windows.pthreads
-            pkgs.pkgsCross.mingwW64.glfw
+            glfw
           ];
-          RUSTFLAGS="-L ${pkgs.pkgsCross.mingwW64.glfw}/bin";
+          RUSTFLAGS="-L ${glfw}/lib";
         };
         build = path: nm:
           let
