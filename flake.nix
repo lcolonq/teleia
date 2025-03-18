@@ -144,6 +144,7 @@
           pkgs.rust-analyzer
           pkgs.glxinfo
           pkgs.cmake
+          pkgs.pkgsCross.mingwW64.buildPackages.gcc
         ] ++ native.nativeBuildInputs ++ native.buildInputs;
         LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         RUSTFLAGS="-L ${glfw}/lib";
