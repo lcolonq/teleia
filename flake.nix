@@ -138,15 +138,54 @@
             });
       };
 
+      windows = rec {
+        cpkgs = pkgs.pkgsCross.mingwW64;
+        nativeBuildInputs = [
+          cpkgs.buildPackages.gcc
+          cpkgs.windows.pthreads
+        ];
+        buildInputs = [
+          cpkgs.openssl.dev
+          cpkgs.glfw
+        ];
+        build = path: nm:
+          let
+            src = lib.cleanSourceWith {
+              src = path;
+              filter = path: type:
+                (lib.hasSuffix "\.html" path) ||
+                (lib.hasSuffix "\.js" path) ||
+                (lib.hasSuffix "\.css" path) ||
+                (lib.hasInfix "/assets/" path) ||
+                (craneLib.filterCargoSources path type)
+              ;
+            };
+            commonArgs = {
+              inherit src nativeBuildInputs buildInputs;
+              strictDeps = true;
+              CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+              inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
+            };
+            cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+              doCheck = false;
+            });
+          in
+            craneLib.buildPackage (commonArgs // {
+              inherit cargoArtifacts;
+              pname = nm;
+              cargoExtraArgs = "-p ${nm}";
+            });
+      };
+
       shell = craneLib.devShell {
         packages = [
           pkgs.trunk
           pkgs.rust-analyzer
           pkgs.glxinfo
           pkgs.cmake
-          pkgs.pkgsCross.mingwW64.buildPackages.gcc
-          pkgs.pkgsCross.mingwW64.windows.pthreads
-        ] ++ native.nativeBuildInputs ++ native.buildInputs;
+        ]
+        ++ native.nativeBuildInputs ++ native.buildInputs
+        ++ windows.nativeBuildInputs ++ windows.buildInputs;
         LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         RUSTFLAGS="-L ${glfw}/lib";
         LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
