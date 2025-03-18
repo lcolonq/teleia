@@ -139,15 +139,6 @@
       };
 
       windows = rec {
-        cpkgs = pkgs.pkgsCross.mingwW64;
-        nativeBuildInputs = [
-          cpkgs.buildPackages.gcc
-        ];
-        buildInputs = [
-          # cpkgs.openssl.dev
-          cpkgs.glfw
-          cpkgs.windows.pthreads
-        ];
         build = path: nm:
           let
             src = lib.cleanSourceWith {
@@ -161,9 +152,17 @@
               ;
             };
             commonArgs = {
-              inherit src nativeBuildInputs buildInputs;
+              inherit src;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+              TARGET_CC = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/${pkgs.pkgsCross.mingwW64.stdenv.cc.targetPrefix}cc";
+              OPENSSL_DIR = "${pkgs.openssl.dev}";
+              OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+              OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include/";
+              depsBuildBuild = with pkgs; [
+                pkgsCross.mingwW64.stdenv.cc
+                pkgsCross.mingwW64.windows.pthreads
+              ];
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
             };
             cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
@@ -183,9 +182,7 @@
           pkgs.rust-analyzer
           pkgs.glxinfo
           pkgs.cmake
-        ]
-        ++ native.nativeBuildInputs ++ native.buildInputs
-        ++ windows.nativeBuildInputs ++ windows.buildInputs;
+        ] ++ native.nativeBuildInputs ++ native.buildInputs;
         LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         RUSTFLAGS="-L ${glfw}/lib";
         LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
