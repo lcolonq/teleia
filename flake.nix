@@ -64,6 +64,7 @@
               inherit src nativeBuildInputs buildInputs;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
+              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
             };
             cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
@@ -74,7 +75,6 @@
               inherit cargoArtifacts;
               pname = nm;
               cargoExtraArgs = "-p ${nm}";
-              RUSTFLAGS="-L ${glfw}/lib";
             });
       };
 
