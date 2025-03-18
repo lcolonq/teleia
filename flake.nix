@@ -146,7 +146,7 @@
         });
         shell = craneLib.devShell {
           packages = [
-            pkgs.pkgsCross.mingwW64.stdenv.cc
+            pkgs.pkgsCross.mingwW64.buildPackages.gcc
             pkgs.pkgsCross.mingwW64.windows.pthreads
             glfw
           ];
@@ -169,14 +169,11 @@
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
               CARGO_BUILD_RUSTFLAGS="-L ${pkgs.pkgsCross.mingwW64.glfw}/bin";
-              TARGET_CC = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/${pkgs.pkgsCross.mingwW64.stdenv.cc.targetPrefix}cc";
               CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/${pkgs.pkgsCross.mingwW64.stdenv.cc.targetPrefix}cc";
-              OPENSSL_DIR = "${pkgs.openssl.dev}";
-              OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
-              OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include/";
               depsBuildBuild = with pkgs; [
-                pkgsCross.mingwW64.stdenv.cc
+                pkgsCross.mingwW64.buildPackages.gcc
                 pkgsCross.mingwW64.windows.pthreads
+                glfw
               ];
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
             };
