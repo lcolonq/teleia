@@ -147,15 +147,15 @@
         cc = pkgs.pkgsCross.mingwW64.buildPackages.wrapCCWith {
           cc = pkgs.pkgsCross.mingwW64.buildPackages.gcc;
           extraPackages = [
-            pkgs.pkgsCross.mingwW64.windows.pthreads
-            glfw
+            # pkgs.pkgsCross.mingwW64.windows.pthreads
+            # glfw
           ];
         };
         shell = craneLib.devShell {
           packages = [
             cc
           ];
-          RUSTFLAGS="-L ${glfw}/lib";
+          RUSTFLAGS="-L ${glfw}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
         };
         build = path: nm:
           let
