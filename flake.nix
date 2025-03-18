@@ -139,6 +139,14 @@
       };
 
       windows = rec {
+        shell = craneLib.devShell {
+          packages = [
+            pkgs.pkgsCross.mingwW64.stdenv.cc
+            pkgs.pkgsCross.mingwW64.windows.pthreads
+            pkgs.pkgsCross.mingwW64.glfw
+          ];
+          RUSTFLAGS="-L ${pkgs.pkgsCross.mingwW64.glfw}/bin";
+        };
         build = path: nm:
           let
             src = lib.cleanSourceWith {
@@ -155,7 +163,9 @@
               inherit src;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+              CARGO_BUILD_RUSTFLAGS="-L ${pkgs.pkgsCross.mingwW64.glfw}/bin";
               TARGET_CC = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/${pkgs.pkgsCross.mingwW64.stdenv.cc.targetPrefix}cc";
+              CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/${pkgs.pkgsCross.mingwW64.stdenv.cc.targetPrefix}cc";
               OPENSSL_DIR = "${pkgs.openssl.dev}";
               OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
               OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include/";
@@ -188,8 +198,10 @@
         LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
       };
     in {
-      packages.${system}.glfw = glfw;
       inherit shell native wasm windows;
-      devShells.${system}.default = shell;
+      devShells.${system} = {
+        default = shell;
+        windows = windows.shell;
+      };
     };
 }
