@@ -144,11 +144,16 @@
           env = {};
           postPatch = "true";
         });
-        shell = craneLib.devShell {
-          packages = [
-            pkgs.pkgsCross.mingwW64.buildPackages.gcc
+        cc = pkgs.pkgsCross.mingwW64.buildPackages.wrapCCWith {
+          cc = pkgs.pkgsCross.mingwW64.buildPackages.gcc;
+          extraPackages = [
             pkgs.pkgsCross.mingwW64.windows.pthreads
             glfw
+          ];
+        };
+        shell = craneLib.devShell {
+          packages = [
+            cc
           ];
           RUSTFLAGS="-L ${glfw}/lib";
         };
