@@ -192,7 +192,7 @@
       };
     in {
       packages.${system}.glfw = glfw;
-      inherit shell native wasm;
+      inherit shell native wasm windows;
       devShells.${system}.default = shell;
     };
 }
