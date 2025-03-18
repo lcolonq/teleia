@@ -142,11 +142,11 @@
         cpkgs = pkgs.pkgsCross.mingwW64;
         nativeBuildInputs = [
           cpkgs.buildPackages.gcc
-          cpkgs.windows.pthreads
         ];
         buildInputs = [
-          cpkgs.openssl.dev
+          # cpkgs.openssl.dev
           cpkgs.glfw
+          cpkgs.windows.pthreads
         ];
         build = path: nm:
           let
