@@ -74,7 +74,7 @@
               inherit cargoArtifacts;
               pname = nm;
               cargoExtraArgs = "-p ${nm}";
-              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
+              RUSTFLAGS="-L ${glfw}/lib";
             });
       };
 
