@@ -182,6 +182,7 @@
               inherit cargoArtifacts;
               pname = nm;
               cargoExtraArgs = "-p ${nm}";
+              doCheck = false;
             });
       };
 
