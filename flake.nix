@@ -34,6 +34,7 @@
         # this makes it impossible to run the binary on another system
         # I'd much rather just load whatever we find on LD_LIBRARY_PATH etc, since this is much easier to control
         env = {};
+        postPatch = "true";
       });
 
       native = rec {
