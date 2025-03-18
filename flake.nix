@@ -128,13 +128,6 @@
                 inherit cargoExtraArgs;
                 doCheck = false;
               });
-              preBuild = ''
-                cd ./crates/throwshade
-              '';
-              postBuild = ''
-                mv ./dist ../..
-                cd ../..
-              '';
             });
       };
 
