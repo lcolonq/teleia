@@ -42,7 +42,7 @@ getrandom = {version = "*", features = ["js"]} # rng in the browser
 console_log = "*" # log to browser console
 console_error_panic_hook = "*" # log to browser console on panic
 tracing-wasm = "*" # trace performance in browser
-wasm-bindgen = "*" # interface with javascript
+wasm-bindgen = "=0.2.100" # interface with javascript
 wasm-bindgen-futures = "*" # interface with async javascript
 js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
 web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode", "BinaryType", "Blob", "CloseEvent", "ErrorEvent", "FileReader", "MessageEvent", "ProgressEvent", "WebSocket", "Storage"] }
