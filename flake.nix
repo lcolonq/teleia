@@ -145,6 +145,7 @@
           pkgs.glxinfo
           pkgs.cmake
           pkgs.pkgsCross.mingwW64.buildPackages.gcc
+          pkgs.pkgsCross.mingwW64.windows.pthreads
         ] ++ native.nativeBuildInputs ++ native.buildInputs;
         LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         RUSTFLAGS="-L ${glfw}/lib";
