@@ -144,18 +144,12 @@
           env = {};
           postPatch = "true";
         });
-        cc = pkgs.pkgsCross.mingwW64.buildPackages.wrapCCWith {
-          cc = pkgs.pkgsCross.mingwW64.buildPackages.gcc;
-          extraPackages = [
-            # pkgs.pkgsCross.mingwW64.windows.pthreads
-            # glfw
-          ];
-        };
+        rustflags = "-L ${glfw}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
         shell = craneLib.devShell {
           packages = [
-            cc
+            pkgs.pkgsCross.mingwW64.buildPackages.gcc
           ];
-          RUSTFLAGS="-L ${glfw}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
+          RUSTFLAGS = rustflags;
         };
         build = path: nm:
           let
@@ -173,12 +167,10 @@
               inherit src;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
-              CARGO_BUILD_RUSTFLAGS="-L ${pkgs.pkgsCross.mingwW64.glfw}/bin";
+              CARGO_BUILD_RUSTFLAGS = rustflags;
               CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/${pkgs.pkgsCross.mingwW64.stdenv.cc.targetPrefix}cc";
               depsBuildBuild = with pkgs; [
                 pkgsCross.mingwW64.buildPackages.gcc
-                pkgsCross.mingwW64.windows.pthreads
-                glfw
               ];
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
             };
