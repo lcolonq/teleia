@@ -13,6 +13,7 @@ pub mod audio;
 pub mod net;
 pub mod physics;
 pub mod save;
+pub mod level2d;
 
 pub use utils::{erm, install_error_handler, Erm};
 pub use color_eyre::eyre::WrapErr;
@@ -191,7 +192,7 @@ where
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
-    install_error_handler();
+    // install_error_handler();
 
     log::info!("hello computer, starting up...");
 
