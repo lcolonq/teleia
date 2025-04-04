@@ -24,6 +24,7 @@ pub struct Response {
 
 pub trait Game {
     fn initialize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
+    fn finalize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
     fn initialize_audio(&self, ctx: &context::Context, st: &State, actx: &audio::Context) ->
         HashMap<String, audio::Audio>
     {
@@ -485,22 +486,14 @@ impl State {
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
         let now = now(ctx);
-
         let diff = now - self.last;
 
-        self.acc += diff;
-        self.last = now;
-
         // update, if enough time has accumulated since last update
-        if self.acc >= DELTA_TIME {
-            self.acc -= DELTA_TIME;
+        if diff >= DELTA_TIME {
+            self.last = now;
             self.tick += 1;
-
             game.update(ctx, self)?;
-
-            // if a lot of time has elapsed (e.g. if window is unfocused and not
-            // running update loop), prevent "death spiral"
-            if self.acc >= DELTA_TIME { self.acc = 0.0 }
+            self.acc = 0.0;
         }
         Ok(())
     }

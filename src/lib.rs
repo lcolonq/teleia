@@ -111,6 +111,7 @@ where
         let gl = unsafe {
             glow::Context::from_loader_function(|s| window.get_proc_address(s) as *const _)
         };
+        glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
         (glfw, window, gl, events)
     };
     let glfw = std::cell::RefCell::new(rglfw);
@@ -129,8 +130,10 @@ where
         G = Some(game as *mut G as *mut std::ffi::c_void);
     }
 
+    game.initialize(ctx, st)?;
     'running: loop {
         if ctx.window.borrow().should_close() {
+            game.finalize(ctx, st)?;
             log::info!("bye!");
             break 'running;
         }
@@ -182,11 +185,10 @@ where
 }
 
 #[cfg(target_arch = "wasm32")]
-pub async fn run<'a, F, G, Fut>(w: u32, h: u32, options: Options, gnew: F)
+pub fn run<'a, F, G>(w: u32, h: u32, options: Options, gnew: F)
 where
-    Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
-    F: (Fn(&'a context::Context) -> Fut),
+    F: (Fn(&'a context::Context) -> G),
 {
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
@@ -222,7 +224,7 @@ where
 
     let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32, resize)));
     ctx.maximize_canvas();
-    let game = Box::leak(Box::new(gnew(ctx).await));
+    let game = Box::leak(Box::new(gnew(ctx)));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
 
     unsafe {
@@ -231,6 +233,7 @@ where
         G = Some(game as *mut G as *mut std::ffi::c_void);
     }
 
+    let _ = game.initialize(ctx, st);
     let res = std::rc::Rc::new(std::cell::RefCell::new(Ok(())));
     let result = res.clone();
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
@@ -318,6 +321,7 @@ where
             elwt.exit();
         }
     });
+    let _ = game.finalize(ctx, st);
     if let Err(e) = res.replace(Ok(())) {
         panic!("{}", e);
     }
