@@ -56,11 +56,10 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn run<'a, F, G, Fut>(title: &str, w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
+pub fn run<'a, F, G>(title: &str, w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
 where
-    Fut: std::future::Future<Output = G>,
     G: state::Game + 'static,
-    F: (Fn(&'a context::Context) -> Fut),
+    F: (Fn(&'a context::Context) -> G),
 {
     env_logger::Builder::new()
         .filter(None, log::LevelFilter::Info)
@@ -121,7 +120,7 @@ where
         glfw, window, gl,
         w as f32, h as f32, resize,
     )));
-    let game = Box::leak(Box::new(gnew(ctx).await));
+    let game = Box::leak(Box::new(gnew(ctx)));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
 
     unsafe {

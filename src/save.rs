@@ -26,8 +26,10 @@ pub fn save<W>(id: &str, data: &W) where W: serde::Serialize {
     let pd = directories::ProjectDirs::from("", "milkfat", id).expect("failed to get save directory");
     let _ = std::fs::create_dir_all(pd.data_dir());
     let path = pd.data_dir().join("teleia.save");
-    let file = std::fs::File::create(&path).expect("failed to open save file");
-    serde_json::to_writer(file, data).expect("failed to write save file");
+    let mut file = std::fs::File::create(&path).expect("failed to open save file");
+    // serde_json::to_writer(file, data).expect("failed to write save file");
+    bincode::serde::encode_into_std_write(data, &mut file, bincode::config::standard())
+        .expect("failed to write save file");
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -35,6 +37,7 @@ pub fn load<W>(id: &str) -> Option<W> where W: serde::de::DeserializeOwned {
     let pd = directories::ProjectDirs::from("", "milkfat", id).expect("failed to get save directory");
     let _ = std::fs::create_dir_all(pd.data_dir());
     let path = pd.data_dir().join("teleia.save");
-    let file = std::fs::File::open(&path).ok()?;
-    serde_json::from_reader(file).ok()
+    let mut file = std::fs::File::open(&path).ok()?;
+    // serde_json::from_reader(file).ok()
+    bincode::serde::decode_from_std_read(&mut file, bincode::config::standard()).ok()
 }
