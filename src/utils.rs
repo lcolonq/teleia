@@ -1,4 +1,7 @@
+use std::f32::consts::PI;
+
 use serde::{Serialize, Deserialize};
+use strum::EnumIter;
 
 pub type Erm<T> = color_eyre::Result<T>;
 
@@ -35,15 +38,13 @@ pub fn install_error_handler() {
     color_eyre::eyre::set_hook(Box::new(move |_| Box::new(ErrorHandler))).expect("failed to install error handler");
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Cardinal {
     North,
     South,
     West,
     East,
 }
-
-pub const CARDINALS: [Cardinal; 4] = [Cardinal::North, Cardinal::South, Cardinal::West, Cardinal::East];
 
 impl Cardinal {
     pub fn to_string(&self) -> &'static str {
@@ -94,9 +95,9 @@ impl Cardinal {
     pub fn angle(&self) -> f32 {
         match self {
             Self::North => 0.0,
-            Self::South => std::f32::consts::PI,
-            Self::West => std::f32::consts::PI / 2.0,
-            Self::East => 3.0 * std::f32::consts::PI / 2.0,
+            Self::South => PI,
+            Self::West => PI / 2.0,
+            Self::East => 3.0 * PI / 2.0,
         }
     }
 
@@ -108,8 +109,23 @@ impl Cardinal {
             Self::East => self.turn_ccw(),
         }
     }
+
+    pub fn angle_between(&self, o: &Self) -> f32 {
+        if o == &self.turn_cw() { -PI / 2.0 }
+        else if o == &self.turn_ccw() { PI / 2.0 }
+        else if o == &self.turn_cw().turn_cw() { PI }
+        else { 0.0 }
+    }
 }
 
 pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + t.clamp(0.0, 1.0) * (b - a)
+}
+
+pub fn dir_lerp(a: &glam::Vec3, b: glam::Vec3, t: f32) -> glam::Vec3 {
+    let dirrotaxis = a.cross(b).normalize();
+    let dirrotangle = a.angle_between(b);
+    let dirrotfull = glam::Quat::from_axis_angle(dirrotaxis, dirrotangle);
+    let dirrot = glam::Quat::IDENTITY.slerp(dirrotfull, t);
+    dirrot.mul_vec3(a.clone())
 }
