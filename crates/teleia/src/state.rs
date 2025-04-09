@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_variables)]
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
 use serde::{Serialize, Deserialize};
@@ -109,6 +109,12 @@ pub struct Keycode {
 #[cfg(not(target_arch = "wasm32"))]
 impl Keycode {
     pub fn new(kc: glfw::Key) -> Self { Self { kc } }
+}
+#[cfg(not(target_arch = "wasm32"))]
+impl Display for Keycode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.kc)
+    }
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl Serialize for Keycode {
@@ -448,7 +454,7 @@ impl State {
     /// Return the first keybinding for the given virtual key
     pub fn keybinding_for(&self, k: &Key) -> Option<String> {
         if let Some(kc) = self.keybindings.get_by_right(k) {
-            Some(format!("{:?}", kc))
+            Some(format!("{}", kc))
         } else {
             None
         }

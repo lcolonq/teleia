@@ -635,6 +635,7 @@ checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
 [[package]]
 name = "directories"
 version = "6.0.0"
+source = "git+https://github.com/lcolonq/directories-rs#164536daab2c07265167715934081cb1942387b0"
 dependencies = [
  "dirs-sys",
 ]
@@ -949,6 +950,7 @@ dependencies = [
 [[package]]
 name = "glfw"
 version = "0.59.0"
+source = "git+https://github.com/lcolonq/glfw-rs#1ce13a2bcf3ef3bf6184bcb4c2a90d9034956841"
 dependencies = [
  "bitflags 1.3.2",
  "objc2 0.5.2",
@@ -978,6 +980,7 @@ dependencies = [
 [[package]]
 name = "gltf"
 version = "1.4.1"
+source = "git+https://github.com/lcolonq/gltf#9763a5abe8c168eb1282a037ff16668542fe2a6d"
 dependencies = [
  "base64 0.13.1",
  "byteorder",
@@ -991,6 +994,7 @@ dependencies = [
 [[package]]
 name = "gltf-derive"
 version = "1.4.1"
+source = "git+https://github.com/lcolonq/gltf#9763a5abe8c168eb1282a037ff16668542fe2a6d"
 dependencies = [
  "inflections",
  "proc-macro2",
@@ -1001,6 +1005,7 @@ dependencies = [
 [[package]]
 name = "gltf-json"
 version = "1.4.1"
+source = "git+https://github.com/lcolonq/gltf#9763a5abe8c168eb1282a037ff16668542fe2a6d"
 dependencies = [
  "gltf-derive",
  "serde",
