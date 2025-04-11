@@ -81,3 +81,21 @@ impl Texture {
         }
     }
 }
+
+pub struct Material {
+    pub color: Texture,
+    pub normal: Texture,
+}
+impl Material {
+    pub fn new(ctx: &context::Context, color_bytes: &[u8], normal_bytes: &[u8]) -> Self {
+        let color = Texture::new(ctx, color_bytes);
+        let normal = Texture::new(ctx, normal_bytes);
+        color.set_anisotropic_filtering(ctx);
+        normal.set_anisotropic_filtering(ctx);
+        Self { color, normal }
+    }
+    pub fn bind(&self, ctx: &context::Context) {
+        self.color.bind(ctx);
+        self.normal.bind_index(ctx, 1);
+    }
+}

@@ -1,0 +1,12 @@
+[package]
+name = "teleia_macros"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+walkdir = "*"
+heck = "*"
