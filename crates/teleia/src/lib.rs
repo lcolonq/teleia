@@ -279,10 +279,10 @@ where
                         ..
                     } => match state {
                         winit::event::ElementState::Pressed => {
-                            st.key_pressed(&ctx, *key)
+                            st.key_pressed(&ctx, state::Keycode { kc: *key })
                         },
                         winit::event::ElementState::Released => {
-                            st.key_released(&ctx, *key)
+                            st.key_released(&ctx, state::Keycode { kc: *key })
                         },
                     }
                     _ => {},

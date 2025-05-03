@@ -99,11 +99,18 @@ pub struct PointLight {
 type Timestamp = f64;
 
 #[cfg(target_arch = "wasm32")]
-pub type Keycode = winit::keyboard::KeyCode;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Keycode {
+    pub kc: winit::keyboard::KeyCode,
+}
+#[cfg(target_arch = "wasm32")]
+impl Keycode {
+    pub fn new(kc: winit::keyboard::KeyCode) -> Self { Self { kc } }
+}
 #[cfg(target_arch = "wasm32")]
 impl Display for Keycode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{:?}", self.kc)
     }
 }
 
@@ -181,16 +188,16 @@ pub fn now(ctx: &context::Context) -> Timestamp {
 #[cfg(target_arch = "wasm32")]
 pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
     BiHashMap::from_iter(vec![
-        (winit::keyboard::KeyCode::KeyW, Key::Up),
-        (winit::keyboard::KeyCode::KeyS, Key::Down),
-        (winit::keyboard::KeyCode::KeyA, Key::Left),
-        (winit::keyboard::KeyCode::KeyD, Key::Right),
-        (winit::keyboard::KeyCode::Digit1, Key::A),
-        (winit::keyboard::KeyCode::Digit2, Key::B),
-        (winit::keyboard::KeyCode::KeyQ, Key::L),
-        (winit::keyboard::KeyCode::KeyE, Key::R),
-        (winit::keyboard::KeyCode::Tab, Key::Start),
-        (winit::keyboard::KeyCode::Space, Key::Select),
+        (Keycode::new(winit::keyboard::KeyCode::KeyW), Key::Up),
+        (Keycode::new(winit::keyboard::KeyCode::KeyS), Key::Down),
+        (Keycode::new(winit::keyboard::KeyCode::KeyA), Key::Left),
+        (Keycode::new(winit::keyboard::KeyCode::KeyD), Key::Right),
+        (Keycode::new(winit::keyboard::KeyCode::Digit1), Key::A),
+        (Keycode::new(winit::keyboard::KeyCode::Digit2), Key::B),
+        (Keycode::new(winit::keyboard::KeyCode::KeyQ), Key::L),
+        (Keycode::new(winit::keyboard::KeyCode::KeyE), Key::R),
+        (Keycode::new(winit::keyboard::KeyCode::Tab), Key::Start),
+        (Keycode::new(winit::keyboard::KeyCode::Space), Key::Select),
     ])
 }
 
@@ -431,7 +438,7 @@ impl State {
         key: Keycode,
     ) {
         #[cfg(target_arch = "wasm32")]
-        let rebind = key == winit::keyboard::KeyCode::F12;
+        let rebind = key.kc == winit::keyboard::KeyCode::F12;
         #[cfg(not(target_arch = "wasm32"))]
         let rebind = key.kc == glfw::Key::F12;
         if rebind {
