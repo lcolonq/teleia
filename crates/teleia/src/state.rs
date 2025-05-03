@@ -100,6 +100,12 @@ type Timestamp = f64;
 
 #[cfg(target_arch = "wasm32")]
 pub type Keycode = winit::keyboard::KeyCode;
+#[cfg(target_arch = "wasm32")]
+impl Display for Keycode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.kc)
+    }
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
