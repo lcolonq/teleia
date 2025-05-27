@@ -522,8 +522,12 @@ impl State {
         let now = now(ctx);
         let diff = now - self.last;
 
-        // update, if enough time has accumulated since last update
-        if diff >= DELTA_TIME {
+        // skip update if not enough time has accumulated since last update
+        // we truncate to below the target framerate, which is pretty gross
+        // the intention here is to allow vsync to dictate the framerate most of the time
+        // however, we need some way to limit the framerate on monitors with >60Hz
+        // so we use this to skip frames. in general this should be tested more on faster monitors
+        if diff >= DELTA_TIME.trunc() as f64 {
             self.last = now;
             self.tick += 1;
             game.update(ctx, self)?;

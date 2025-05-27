@@ -68,7 +68,6 @@ where
 
     log::info!("hello computer, starting up...");
 
-    let resize = !options.contains(Options::NORESIZE);
     let (rglfw, rwindow, gl, events) = {
         use glfw::fail_on_errors;
         let mut glfw = glfw::init(glfw::fail_on_errors!()).expect("failed to initialize GLFW");
@@ -119,7 +118,7 @@ where
 
     let ctx = Box::leak(Box::new(context::Context::new(
         glfw, window, gl,
-        w as f32, h as f32, resize,
+        w as f32, h as f32, options,
     )));
     let game = Box::leak(Box::new(gnew(ctx)));
     let st = Box::leak(Box::new(state::State::new(&ctx)));

@@ -74,6 +74,13 @@ impl Texture {
         }
     }
 
+    pub fn bind_initial(ctx: &context::Context) {
+        unsafe {
+            ctx.gl.active_texture(glow::TEXTURE0);
+            ctx.gl.bind_texture(glow::TEXTURE_2D, None);
+        }
+    }
+
     pub fn bind_index(&self, ctx: &context::Context, idx: u32) {
         unsafe {
             ctx.gl.active_texture(glow::TEXTURE0 + idx);

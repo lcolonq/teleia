@@ -347,6 +347,8 @@ impl Scene {
                     .and_then(|m| m.base_color_texture)
                     .and_then(|t| self.textures.get(t)) {
                         tex.bind(ctx);
+                    } else {
+                        texture::Texture::bind_initial(ctx);
                     }
                 p.mesh.render(ctx);
             }
