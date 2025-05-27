@@ -1,5 +1,6 @@
 use glow::HasContext;
 
+use crate::Options;
 use crate::context;
 
 pub struct Framebuffer {
@@ -12,7 +13,7 @@ pub struct Framebuffer {
 impl Framebuffer {
     pub fn screen(ctx: &context::Context) -> Self {
         #[cfg(target_arch = "wasm32")]
-        let (windoww, windowh): (f32, f32) = if ctx.resize {
+        let (windoww, windowh): (f32, f32) = if !ctx.options.contains(Options::NORESIZE) {
             ctx.window.inner_size().into()
         } else {
             (ctx.render_width, ctx.render_height)

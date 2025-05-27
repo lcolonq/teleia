@@ -113,6 +113,21 @@ impl Display for Keycode {
         write!(f, "{:?}", self.kc)
     }
 }
+#[cfg(target_arch = "wasm32")]
+impl Serialize for Keycode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer {
+        self.kc.serialize(serializer)
+    }
+}
+#[cfg(target_arch = "wasm32")]
+impl<'de> Deserialize<'de> for Keycode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        let kc = winit::keyboard::KeyCode::deserialize(deserializer)?;
+        Ok(Self { kc })
+    }
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -523,7 +538,13 @@ impl State {
         game.render(ctx, self)?;
 
         self.screen.bind(&ctx);
-        ctx.clear_color(glam::Vec4::new(0.0, 0.0, 0.0, 0.0));
+        ctx.clear_color(
+            if ctx.options.contains(crate::Options::OVERLAY) {
+                glam::Vec4::new(0.0, 0.0, 0.0, 0.0)
+            } else {
+                glam::Vec4::new(0.0, 0.0, 0.0, 1.0)
+            }
+        );
         ctx.clear();
         self.shader_upscale.bind(&ctx);
         self.render_framebuffer.bind_texture(&ctx);

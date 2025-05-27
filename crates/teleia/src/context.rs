@@ -1,3 +1,5 @@
+use crate::Options;
+
 use glow::HasContext;
 
 #[cfg(target_arch = "wasm32")]
@@ -17,7 +19,7 @@ extern {
 pub struct Context {
     pub render_width: f32,
     pub render_height: f32,
-    pub resize: bool,
+    pub options: Options,
     pub glfw: std::cell::RefCell<glfw::Glfw>,
     pub window: std::cell::RefCell<glfw::PWindow>,
     pub gl: glow::Context,
@@ -30,7 +32,7 @@ pub struct Context {
 pub struct Context {
     pub render_width: f32,
     pub render_height: f32,
-    pub resize: bool,
+    pub options: Options,
     pub window: winit::window::Window,
     pub gl: glow::Context,
     pub emptyvao: glow::VertexArray,
@@ -52,13 +54,13 @@ impl Context {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn new(glfw: std::cell::RefCell<glfw::Glfw>, window: std::cell::RefCell<glfw::PWindow>, gl: glow::Context, render_width: f32, render_height: f32, resize: bool) -> Self {
+    pub fn new(glfw: std::cell::RefCell<glfw::Glfw>, window: std::cell::RefCell<glfw::PWindow>, gl: glow::Context, render_width: f32, render_height: f32, options: Options) -> Self {
         let emptyvao = unsafe {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
         let ret = Self {
             render_width, render_height,
-            resize,
+            options,
             glfw, window,
             gl,
             emptyvao,
@@ -69,7 +71,7 @@ impl Context {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn new(window: winit::window::Window, gl: glow::Context, render_width: f32, render_height: f32, resize: bool) -> Self {
+    pub fn new(window: winit::window::Window, gl: glow::Context, render_width: f32, render_height: f32, options: Options) -> Self {
         let emptyvao = unsafe {
             gl.create_vertex_array().expect("failed to initialize vao")
         };
@@ -79,7 +81,7 @@ impl Context {
 
         let ret = Self {
             render_width, render_height,
-            resize,
+            options,
             window,
             gl,
             emptyvao,
@@ -111,7 +113,7 @@ impl Context {
 
     #[cfg(target_arch = "wasm32")]
     pub fn maximize_canvas(&self) {
-        if self.resize {
+        if !self.options.contains(Options::NORESIZE) {
             web_sys::window()
                 .and_then(|win| win.document())
                 .and_then(|doc| {

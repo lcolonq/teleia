@@ -222,7 +222,7 @@ where
         (window, gl)
     };
 
-    let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32, resize)));
+    let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32, options)));
     ctx.maximize_canvas();
     let game = Box::leak(Box::new(gnew(ctx)));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
