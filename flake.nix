@@ -89,7 +89,7 @@
       };
 
       wasm = rec {
-        build = path: nm:
+        buildAtUrl = path: nm: url:
           let
             src = lib.cleanSourceWith {
               src = path;
@@ -124,11 +124,13 @@
             craneLib.buildTrunkPackage (commonArgs // rec {
               pname = nm;
               cargoExtraArgs = "-p ${nm}";
+              trunkExtraBuildArgs = "--public-url ${url}";
               cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
                 inherit cargoExtraArgs;
                 doCheck = false;
               });
             });
+        build = path: nm: buildAtUrl path nm "";
       };
 
       windows = rec {
