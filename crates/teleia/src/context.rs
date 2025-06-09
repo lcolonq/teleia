@@ -13,6 +13,8 @@ use winit::platform::web::WindowExtWebSys;
 extern {
     fn js_track_resized_setup();
     fn js_poll_resized() -> bool;
+    fn js_bundt_api_server() -> String;
+    fn js_bundt_secure_api_server() -> String;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -136,14 +138,23 @@ impl Context {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn resize_necessary(&self) -> bool {
-        js_poll_resized()
-    }
-
+    pub fn resize_necessary(&self) -> bool { js_poll_resized() }
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn resize_necessary(&self) -> bool {
-        false
-    }
+    pub fn resize_necessary(&self) -> bool { false }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn bundt_api_server(&self) -> String { js_bundt_api_server() }
+    #[cfg(all(not(target_arch = "wasm32"), debug_assertions))]
+    pub fn bundt_api_server(&self) -> String { "http://localhost:8080/api".to_owned() }
+    #[cfg(all(not(target_arch = "wasm32"), not(debug_assertions)))]
+    pub fn bundt_api_server(&self) -> String { "http://api.colonq.computer/api".to_owned() }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn bundt_secure_api_server(&self) -> String { js_bundt_secure_api_server() }
+    #[cfg(all(not(target_arch = "wasm32"), debug_assertions))]
+    pub fn bundt_secure_api_server(&self) -> String { "http://localhost:8080/api".to_owned() }
+    #[cfg(all(not(target_arch = "wasm32"), not(debug_assertions)))]
+    pub fn bundt_secure_api_server(&self) -> String { "http://secure.colonq.computer/api".to_owned() }
 
     pub fn clear_color(&self, color: glam::Vec4) {
         unsafe {

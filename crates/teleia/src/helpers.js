@@ -11,3 +11,11 @@ export function js_poll_resized() {
     resized = false;
     return ret;
 }
+
+export function js_bundt_api_server() {
+    return globalThis.apiServer || "http://localhost:8080/api";
+}
+
+export function js_bundt_secure_api_server() {
+    return globalThis.secureApiServer || "http://localhost:8080/api";
+}
