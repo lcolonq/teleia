@@ -145,16 +145,16 @@ impl Context {
     #[cfg(target_arch = "wasm32")]
     pub fn bundt_api_server(&self) -> String { js_bundt_api_server() }
     #[cfg(all(not(target_arch = "wasm32"), debug_assertions))]
-    pub fn bundt_api_server(&self) -> String { "http://localhost:8080/api".to_owned() }
+    pub fn bundt_api_server(&self) -> String { "http://localhost:8000/api".to_owned() }
     #[cfg(all(not(target_arch = "wasm32"), not(debug_assertions)))]
-    pub fn bundt_api_server(&self) -> String { "http://api.colonq.computer/api".to_owned() }
+    pub fn bundt_api_server(&self) -> String { "https://api.colonq.computer/api".to_owned() }
 
     #[cfg(target_arch = "wasm32")]
     pub fn bundt_secure_api_server(&self) -> String { js_bundt_secure_api_server() }
     #[cfg(all(not(target_arch = "wasm32"), debug_assertions))]
-    pub fn bundt_secure_api_server(&self) -> String { "http://localhost:8080/api".to_owned() }
+    pub fn bundt_secure_api_server(&self) -> String { "http://localhost:8000/api".to_owned() }
     #[cfg(all(not(target_arch = "wasm32"), not(debug_assertions)))]
-    pub fn bundt_secure_api_server(&self) -> String { "http://secure.colonq.computer/api".to_owned() }
+    pub fn bundt_secure_api_server(&self) -> String { "https://secure.colonq.computer/api".to_owned() }
 
     pub fn clear_color(&self, color: glam::Vec4) {
         unsafe {
