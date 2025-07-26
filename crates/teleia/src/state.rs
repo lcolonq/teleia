@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::{audio, context, framebuffer, shader, utils};
 
-const DELTA_TIME: f64 = 1.0 / 60.0;
+const DELTA_TIME: f64 = 1.0 / 61.0; // todo
 
 pub struct WinitWaker {}
 impl WinitWaker {
@@ -163,9 +163,11 @@ impl<'de> Deserialize<'de> for Keycode {
 }
 
 pub struct State {
-    pub acc: f64,
-    pub last: Timestamp,
     pub tick: u64,
+    pub nextframe: Timestamp,
+    pub fps: u32,
+    pub frames_this_second: u32,
+    pub start_this_second: Timestamp,
 
     pub rebinding: Option<Key>,
     pub keybindings: BiHashMap<Keycode, Key>,
@@ -250,15 +252,17 @@ impl State {
         let cwaker = Box::leak(Box::new(waker.into()));
         let waker_ctx = std::task::Context::from_waker(cwaker);
 
-        let acc = 0.0;
-        let last = now(ctx);
+        let nextframe = now(ctx);
 
         Self {
-            acc,
-            last,
             // we initialize the tick to 1000, which allows us to use "0" as the default time for
             // various animation starts on entities without having them all play at game start
             tick: 1000,
+
+            nextframe,
+            fps: 0,
+            frames_this_second: 0,
+            start_this_second: nextframe,
 
             rebinding: None,
             keybindings: default_keybindings(),
@@ -520,18 +524,18 @@ impl State {
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
         let now = now(ctx);
-        let diff = now - self.last;
-
-        // skip update if not enough time has accumulated since last update
-        // we truncate to below the target framerate, which is pretty gross
-        // the intention here is to allow vsync to dictate the framerate most of the time
-        // however, we need some way to limit the framerate on monitors with >60Hz
-        // so we use this to skip frames. in general this should be tested more on faster monitors
-        if diff >= DELTA_TIME.trunc() as f64 {
-            self.last = now;
+        if now > self.nextframe {
+            while self.nextframe < now { // find the next target frame that isn't in the past
+                self.nextframe = self.nextframe + DELTA_TIME;
+            }
             self.tick += 1;
+            self.frames_this_second += 1;
             game.update(ctx, self)?;
-            self.acc = 0.0;
+        }
+        if now - self.start_this_second > 1.0 { // track FPS
+            self.start_this_second = now;
+            self.fps = self.frames_this_second;
+            self.frames_this_second = 0;
         }
         Ok(())
     }
