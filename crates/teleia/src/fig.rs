@@ -70,20 +70,36 @@ impl Default for BinaryClientState {
 }
 pub struct BinaryClient {
     state: BinaryClientState,
+    writer: std::net::TcpStream,
     reader: std::io::BufReader<std::net::TcpStream>,
 }
 impl BinaryClient {
-    pub fn new(addr: &str, subs: &[&[u8]]) -> Self {
+    pub fn new(addr: &str, blocking: bool, subs: &[&[u8]]) -> Self {
         let mut socket = std::net::TcpStream::connect(addr).expect("failed to connect to message bus");
-        socket.set_nonblocking(true).expect("failed to set message bus socket nonblocking");
+        socket.set_nonblocking(!blocking).expect("failed to set message bus socket nonblocking");
         for s in subs {
             write!(socket, "s").expect("failed to send subscribe message to bus");
             socket.write_u32::<byteorder::LE>(s.len() as u32).expect("failed to send subscribe message length to bus");
             socket.write_all(s).expect("failed to send subscribe message to bus");
         }
         socket.flush().expect("failed to flush bus connection");
+        let writer = socket.try_clone().expect("failed to clone socket");
         let reader = std::io::BufReader::new(socket);
-        Self { state: BinaryClientState::PartialEventLength { buf_len: 0, buf: [0; 4] }, reader }
+        Self {
+            state: BinaryClientState::PartialEventLength { buf_len: 0, buf: [0; 4] },
+            writer,
+            reader,
+        }
+    }
+    fn write_length_prefixed(&mut self, buf: &[u8]) {
+        self.writer.write_u32::<byteorder::LE>(buf.len() as u32).expect("failed to send message");
+        self.writer.write_all(buf).expect("failed to send message");
+        
+    }
+    pub fn publish(&mut self, ev: &[u8], data: &[u8]) {
+        write!(self.writer, "p").expect("failed to send publish message to bus");
+        self.write_length_prefixed(ev);
+        self.write_length_prefixed(data);
     }
     fn read(reader: &mut std::io::BufReader<std::net::TcpStream>, buf: &mut [u8]) -> Option<usize> {
         match reader.read(buf) {

@@ -143,4 +143,14 @@ impl Framebuffer {
             }
         }
     }
+
+    pub fn get_pixels_raw(&self, ctx: &context::Context, buf: &mut [u8]) {
+        unsafe {
+            ctx.gl.bind_texture(glow::TEXTURE_2D, self.tex);
+            ctx.gl.get_tex_image(
+                glow::TEXTURE_2D, 0, glow::RGBA, glow::UNSIGNED_BYTE,
+                glow::PixelPackData::Slice(buf),
+            );
+        }
+    }
 }
