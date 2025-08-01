@@ -14,6 +14,7 @@ pub mod net;
 pub mod physics;
 pub mod save;
 pub mod level2d;
+pub mod fig;
 
 pub use utils::{erm, install_error_handler, Erm};
 pub use color_eyre::eyre::WrapErr;
