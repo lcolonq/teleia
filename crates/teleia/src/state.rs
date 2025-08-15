@@ -4,7 +4,7 @@ use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
 use serde::{Serialize, Deserialize};
 
-use crate::{audio, context, framebuffer, shader, utils};
+use crate::{audio, context, framebuffer, mesh, shader, utils};
 
 const DELTA_TIME: f64 = 1.0 / 61.0; // todo
 
@@ -176,6 +176,7 @@ pub struct State {
     pub screen: framebuffer::Framebuffer,
     pub render_framebuffer: framebuffer::Framebuffer,
     pub shader_upscale: shader::Shader,
+    pub mesh_square: mesh::Mesh,
     pub audio: Option<audio::Assets>,
 
     pub projection: glam::Mat4,
@@ -247,6 +248,7 @@ impl State {
             include_str!("assets/shaders/scale/vert.glsl"),
             include_str!("assets/shaders/scale/frag.glsl"),
         );
+        let mesh_square = mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/square.obj"));
 
         let waker = std::sync::Arc::new(WinitWaker::new());
         let cwaker = Box::leak(Box::new(waker.into()));
@@ -271,6 +273,7 @@ impl State {
             screen,
             render_framebuffer,
             shader_upscale,
+            mesh_square,
             audio: None,
 
             projection: glam::Mat4::perspective_lh(

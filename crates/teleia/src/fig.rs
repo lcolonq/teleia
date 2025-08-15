@@ -72,6 +72,7 @@ pub struct BinaryClient {
     state: BinaryClientState,
     writer: std::net::TcpStream,
     reader: std::io::BufReader<std::net::TcpStream>,
+    blocking: bool,
 }
 impl BinaryClient {
     pub fn new(addr: &str, blocking: bool, subs: &[&[u8]]) -> Self {
@@ -89,6 +90,7 @@ impl BinaryClient {
             state: BinaryClientState::PartialEventLength { buf_len: 0, buf: [0; 4] },
             writer,
             reader,
+            blocking,
         }
     }
     fn write_length_prefixed(&mut self, buf: &[u8]) {
@@ -97,9 +99,15 @@ impl BinaryClient {
         
     }
     pub fn publish(&mut self, ev: &[u8], data: &[u8]) {
+        if !self.blocking {
+            self.writer.set_nonblocking(false).expect("failed to set message bus socket nonblocking");
+        }
         write!(self.writer, "p").expect("failed to send publish message to bus");
         self.write_length_prefixed(ev);
         self.write_length_prefixed(data);
+        if !self.blocking {
+            self.writer.set_nonblocking(true).expect("failed to set message bus socket nonblocking");
+        }
     }
     fn read(reader: &mut std::io::BufReader<std::net::TcpStream>, buf: &mut [u8]) -> Option<usize> {
         match reader.read(buf) {
