@@ -23,8 +23,7 @@ impl SexpClient {
     }
     pub fn pump(&mut self) -> Option<SexpMessage> {
         match self.reader.read_line(&mut self.buf) {
-            Ok(l) => {
-                // log::info!("read line: {}", self.buf);
+            Ok(_l) => {
                 let mv = lexpr::from_str(&self.buf);
                 self.buf.clear();
                 match mv {
@@ -40,9 +39,6 @@ impl SexpClient {
                 }
             },
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                // if self.buf.len() > 0 {
-                //     log::error!("error wouldblock: buf is {}", self.buf);
-                // }
                 None
             },
             Err(e) => panic!("IO error on message bus: {}", e),

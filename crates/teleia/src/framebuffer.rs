@@ -1,6 +1,5 @@
 use glow::HasContext;
 
-use crate::Options;
 use crate::context;
 
 pub struct Framebuffer {

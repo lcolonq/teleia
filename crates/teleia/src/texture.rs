@@ -23,7 +23,7 @@ impl Texture {
     }
 
     pub fn new(ctx: &context::Context, bytes: &[u8]) -> Self {
-        let rgba = image::io::Reader::new(std::io::Cursor::new(bytes))
+        let rgba = image::ImageReader::new(std::io::Cursor::new(bytes))
             .with_guessed_format()
             .expect("failed to guess image format")
             .decode()
