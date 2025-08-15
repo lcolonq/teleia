@@ -2,6 +2,9 @@ use glow::HasContext;
 
 use crate::context;
 
+#[cfg(target_arch = "wasm32")]
+use crate::Options;
+
 pub struct Framebuffer {
     pub tex: Option<glow::Texture>,
     pub fbo: Option<glow::Framebuffer>,
