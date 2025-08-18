@@ -141,6 +141,6 @@ impl AssetData {
 #[proc_macro]
 pub fn generate_assets(_s: TokenStream) -> TokenStream {
     let assets = AssetData::new();
-    println!("{}", assets.generate());
+    // println!("{}", assets.generate());
     format!("{}", assets.generate()).parse().expect("failed to parse generate_assets result")
 }
