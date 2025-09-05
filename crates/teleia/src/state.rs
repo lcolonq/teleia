@@ -175,6 +175,7 @@ pub struct State {
 
     pub screen: framebuffer::Framebuffer,
     pub render_framebuffer: framebuffer::Framebuffer,
+    pub render_dims: glam::Vec2,
     pub shader_upscale: shader::Shader,
     pub mesh_square: mesh::Mesh,
     pub audio: Option<audio::Assets>,
@@ -272,6 +273,7 @@ impl State {
 
             screen,
             render_framebuffer,
+            render_dims: glam::Vec2::new(ctx.render_width, ctx.render_height),
             shader_upscale,
             mesh_square,
             audio: None,
@@ -316,6 +318,11 @@ impl State {
         up: &glam::Vec3,
     ) {
         self.camera = (pos.clone(), dir.clone(), up.clone());
+    }
+
+    pub fn bind_framebuffer(&mut self, ctx: &context::Context, fb: &framebuffer::Framebuffer) {
+        fb.bind(ctx);
+        self.render_dims = fb.dims;
     }
 
     pub fn set_lighting(
@@ -544,11 +551,11 @@ impl State {
     }
 
     pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
-        self.render_framebuffer.bind(&ctx);
+        self.render_framebuffer.bind(&ctx); self.render_dims = self.render_framebuffer.dims;
 
         game.render(ctx, self)?;
 
-        self.screen.bind(&ctx);
+        self.screen.bind(&ctx); self.render_dims = self.screen.dims;
         ctx.clear_color(
             if ctx.options.contains(crate::Options::OVERLAY) {
                 glam::Vec4::new(0.0, 0.0, 0.0, 0.0)

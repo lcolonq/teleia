@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{context, mesh, shader, texture};
+use crate::{context, mesh, shader, state, texture};
 use glow::HasContext;
 
 pub struct Bitmap {
@@ -65,7 +65,7 @@ impl Bitmap {
         Self::from_image(ctx, 7, 9, 112, 54, include_bytes!("assets/fonts/simple.png"))
     }
 
-    pub fn render_text_helper(&self, ctx: &context::Context, pos: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
+    pub fn render_text_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
         let mut cur = glam::Vec2::new(0.0, 0.0);
         let mut vertices = Vec::new();
         let mut texcoords = Vec::new();
@@ -106,10 +106,10 @@ impl Bitmap {
         let index_bytes: Vec<u8> = indices.iter().flat_map(|x| x.to_ne_bytes()).collect();
         self.shader.bind(ctx);
         self.font.bind(ctx);
-        let scale = glam::Vec2::new(2.0 / ctx.render_width, 2.0 / ctx.render_height);
+        let scale = glam::Vec2::new(2.0 / st.render_dims.x, 2.0 / st.render_dims.y);
         let offset = glam::Vec2::new(
-            -ctx.render_width / 2.0,
-            ctx.render_height / 2.0 - self.char_height as f32,
+            -st.render_dims.x / 2.0,
+            st.render_dims.y / 2.0 - self.char_height as f32,
         );
         let npos = (glam::Vec2::new(pos.x, -pos.y) + offset) * scale;
         self.shader.set_mat4(
@@ -159,8 +159,8 @@ impl Bitmap {
         }
     }
 
-    pub fn render_text(&self, ctx: &context::Context, pos: &glam::Vec2, text: &str) {
-        self.render_text_helper(ctx, pos, text, &[]);
+    pub fn render_text(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str) {
+        self.render_text_helper(ctx, st, pos, text, &[]);
     }
 }
 
@@ -266,7 +266,7 @@ impl TrueType {
         }
     }
 
-    pub fn render_text_helper(&self, ctx: &context::Context, pos: &glam::Vec2, spacing: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
+    pub fn render_text_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, spacing: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
         let mut cur = glam::Vec2::new(0.0, 0.0);
         let mut vertices = Vec::new();
         let mut texcoords = Vec::new();
@@ -301,14 +301,14 @@ impl TrueType {
                     indices.push(idx + 0); indices.push(idx + 1); indices.push(idx + 2);
                     indices.push(idx + 0); indices.push(idx + 3); indices.push(idx + 2);
                 }
-                cur.x += spacing.x; 
+                cur.x += spacing.x;
             }
         }
         let index_bytes: Vec<u8> = indices.iter().flat_map(|x| x.to_ne_bytes()).collect();
-        let scale = glam::Vec2::new(2.0 / ctx.render_width, 2.0 / ctx.render_height);
+        let scale = glam::Vec2::new(2.0 / st.render_dims.x, 2.0 / st.render_dims.y);
         let offset = glam::Vec2::new(
-            -ctx.render_width / 2.0,
-            ctx.render_height / 2.0 - cellheight as f32,
+            -st.render_dims.x / 2.0,
+            st.render_dims.y / 2.0 - cellheight as f32,
         );
         let npos = (glam::Vec2::new(pos.x, -pos.y) + offset) * scale;
         self.shader.bind(ctx);
