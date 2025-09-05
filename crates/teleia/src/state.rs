@@ -325,6 +325,14 @@ impl State {
         self.render_dims = fb.dims;
     }
 
+    pub fn bind_render_framebuffer(&mut self, ctx: &context::Context) {
+        self.render_framebuffer.bind(&ctx); self.render_dims = self.render_framebuffer.dims;
+    }
+
+    pub fn bind_screen(&mut self, ctx: &context::Context) {
+        self.screen.bind(&ctx); self.render_dims = self.screen.dims;
+    }
+
     pub fn set_lighting(
         &mut self,
         _ctx: &context::Context,
@@ -551,11 +559,11 @@ impl State {
     }
 
     pub fn run_render<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
-        self.render_framebuffer.bind(&ctx); self.render_dims = self.render_framebuffer.dims;
+        self.bind_render_framebuffer(ctx);
 
         game.render(ctx, self)?;
 
-        self.screen.bind(&ctx); self.render_dims = self.screen.dims;
+        self.bind_screen(ctx);
         ctx.clear_color(
             if ctx.options.contains(crate::Options::OVERLAY) {
                 glam::Vec4::new(0.0, 0.0, 0.0, 0.0)
