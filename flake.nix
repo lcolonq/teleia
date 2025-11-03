@@ -103,6 +103,7 @@
             };
             cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
               doCheck = false;
+              cargoExtraArgs = "-p ${nm}";
             });
           in
             craneLib.buildPackage (commonArgs // {
