@@ -8,5 +8,7 @@ authors.workspace = true
 proc-macro = true
 
 [dependencies]
+env = "*"
 walkdir = "*"
 heck = "*"
+litrs = "*"

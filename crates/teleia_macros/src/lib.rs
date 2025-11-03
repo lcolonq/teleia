@@ -1,10 +1,8 @@
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream};
 use std::path::Path;
 use std::collections::HashSet;
 use walkdir::WalkDir;
 use heck::ToUpperCamelCase;
-
-const BASE: &'static str = "src/assets/";
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 struct Designator {
@@ -26,7 +24,6 @@ impl Designator {
         }
     }
     fn enum_entry(&self, _fnm: &str) -> String {
-        let vs: Vec<_> = self.parts.iter().map(|s| s.to_uppercase()).collect();
         format!("{}", self.parts.join(" ").to_upper_camel_case())
     }
     fn load_expr(&self, fnm: &str) -> Option<String> {
@@ -54,9 +51,9 @@ struct Field {
     entries: HashSet<Designator>,
 }
 impl Field {
-    fn new(nm: &str) -> Self {
+    fn new(base: &str, nm: &str) -> Self {
         let mut entries = HashSet::new();
-        let fbase = format!("{}{}", BASE, nm);
+        let fbase = format!("{}{}", base, nm);
         for mf in WalkDir::new(&fbase) {
             if let Ok(f) = mf {
                 if f.file_type().is_file() {
@@ -105,12 +102,12 @@ struct AssetData {
     fields: Vec<Field>,
 }
 impl AssetData {
-    fn new() -> Self {
+    fn new(base: &str) -> Self {
         let mut fields = Vec::new();
-        let dirs = std::fs::read_dir(BASE).expect("failed to read assets directory");
+        let dirs = std::fs::read_dir(base).expect(&format!("failed to read assets directory: {}", base));
         for dir in dirs {
             if let Ok(d) = dir {
-                fields.push(Field::new(&d.file_name().into_string().unwrap()));
+                fields.push(Field::new(base, &d.file_name().into_string().unwrap()));
             }
         }
         Self {
@@ -139,8 +136,12 @@ impl AssetData {
 }
 
 #[proc_macro]
-pub fn generate_assets(_s: TokenStream) -> TokenStream {
-    let assets = AssetData::new();
+pub fn generate_assets(s: TokenStream) -> TokenStream {
+    let token = s.into_iter().next().expect("must pass asset base path as a string literal");
+    let lit = litrs::StringLit::try_from(token).expect("argument was not a string literal");
+    let base = lit.value();
+    let manifest = env::var("CARGO_MANIFEST_DIR").expect("failed to get manifest path");
+    let assets = AssetData::new(&format!("{}/{}", manifest, base));
     // println!("{}", assets.generate());
     format!("{}", assets.generate()).parse().expect("failed to parse generate_assets result")
 }

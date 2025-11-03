@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::{audio, context, framebuffer, mesh, shader, utils};
 
-const DELTA_TIME: f64 = 1.0 / 61.0; // todo
+const DELTA_TIME: f64 = 0.016; // todo
 
 pub struct WinitWaker {}
 impl WinitWaker {
@@ -25,9 +25,10 @@ pub struct Response {
 pub trait Game {
     fn initialize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
     fn finalize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
-    fn initialize_audio(&self, ctx: &context::Context, st: &State, actx: &audio::Context) ->
-        HashMap<String, audio::Audio>
-    {
+    fn initialize_audio(
+        &self, ctx: &context::Context, st: &State,
+        actx: &audio::Context
+    ) -> HashMap<String, audio::Audio> {
         HashMap::new()
     }
     fn finish_title(&mut self, st: &mut State) {}

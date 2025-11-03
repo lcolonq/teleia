@@ -58,6 +58,30 @@
           pkgs.libglvnd
           pkgs.alsa-lib
         ];
+        deps = path: nm:
+          let
+            src = lib.cleanSourceWith {
+              src = path;
+              filter = path: type:
+                (lib.hasSuffix "\.html" path) ||
+                (lib.hasSuffix "\.js" path) ||
+                (lib.hasSuffix "\.css" path) ||
+                (lib.hasInfix "/assets/" path) ||
+                (craneLib.filterCargoSources path type)
+              ;
+            };
+            commonArgs = {
+              inherit src nativeBuildInputs buildInputs;
+              strictDeps = true;
+              CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
+              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
+              inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
+            };
+            cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+              doCheck = false;
+            });
+          in
+            cargoArtifacts;
         build = path: nm:
           let
             src = lib.cleanSourceWith {
@@ -198,6 +222,9 @@
       devShells.${system} = {
         default = shell;
         windows = windows.shell;
+      };
+      packages.${system} = {
+        default = native.deps ./. "teleia";
       };
     };
 }
