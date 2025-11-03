@@ -60,16 +60,17 @@
         ];
         deps = path: nm:
           let
-            src = lib.cleanSourceWith {
-              src = path;
-              filter = path: type:
-                (lib.hasSuffix "\.html" path) ||
-                (lib.hasSuffix "\.js" path) ||
-                (lib.hasSuffix "\.css" path) ||
-                (lib.hasInfix "/assets/" path) ||
-                (craneLib.filterCargoSources path type)
-              ;
-            };
+            src = path;
+            # src = lib.cleanSourceWith {
+            #   src = path;
+            #   filter = path: type:
+            #     (lib.hasSuffix "\.html" path) ||
+            #     (lib.hasSuffix "\.js" path) ||
+            #     (lib.hasSuffix "\.css" path) ||
+            #     (lib.hasInfix "/assets/" path) ||
+            #     (craneLib.filterCargoSources path type)
+            #   ;
+            # };
             commonArgs = {
               inherit src nativeBuildInputs buildInputs;
               strictDeps = true;
@@ -84,16 +85,17 @@
             cargoArtifacts;
         build = path: nm:
           let
-            src = lib.cleanSourceWith {
-              src = path;
-              filter = path: type:
-                (lib.hasSuffix "\.html" path) ||
-                (lib.hasSuffix "\.js" path) ||
-                (lib.hasSuffix "\.css" path) ||
-                (lib.hasInfix "/assets/" path) ||
-                (craneLib.filterCargoSources path type)
-              ;
-            };
+            src = path;
+            # src = lib.cleanSourceWith {
+            #   src = path;
+            #   filter = path: type:
+            #     (lib.hasSuffix "\.html" path) ||
+            #     (lib.hasSuffix "\.js" path) ||
+            #     (lib.hasSuffix "\.css" path) ||
+            #     (lib.hasInfix "/assets/" path) ||
+            #     (craneLib.filterCargoSources path type)
+            #   ;
+            # };
             commonArgs = {
               inherit src nativeBuildInputs buildInputs;
               strictDeps = true;
