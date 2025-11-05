@@ -427,8 +427,8 @@ impl State {
             ctx, "view",
             &glam::Mat4::from_scale(
                 glam::Vec3::new(
-                    2.0 / ctx.render_width,
-                    2.0 / ctx.render_height,
+                    2.0 / self.render_dims.x,
+                    2.0 / self.render_dims.y,
                     1.0,
                 ),
             ),
