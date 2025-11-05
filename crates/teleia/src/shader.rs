@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use glow::HasContext;
 
-use crate::{context, mesh};
+use crate::{context, state, mesh};
 
 const COMMON_VERT: &'static str = include_str!("assets/shaders/common/vert.glsl");
 const COMMON_FRAG: &'static str = include_str!("assets/shaders/common/frag.glsl");
@@ -210,12 +210,12 @@ impl Shader {
         }
     }
 
-    pub fn set_position_3d(&self, ctx: &context::Context, position: &glam::Mat4) {
+    pub fn set_position_3d(&self, ctx: &context::Context, _st: &state::State, position: &glam::Mat4) {
         self.set_mat4(&ctx, "position", &position);
         self.set_mat4(&ctx, "normal_matrix", &position.inverse().transpose());
     }
 
-    pub fn set_position_2d_helper(&self, ctx: &context::Context, pos: &glam::Vec2, dims: &glam::Vec2, rot: &glam::Quat) {
+    pub fn set_position_2d_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, dims: &glam::Vec2, rot: &glam::Quat) {
         let halfwidth = dims.x / 2.0;
         let halfheight = dims.y / 2.0;
         self.set_mat4(
@@ -224,16 +224,16 @@ impl Shader {
                 glam::Vec3::new(halfwidth, halfheight, 1.0),
                 rot.clone(),
                 glam::Vec3::new(
-                    -ctx.render_width / 2.0 + pos.x + halfwidth,
-                    ctx.render_height / 2.0 - pos.y - halfheight,
+                    -st.render_dims.x / 2.0 + pos.x + halfwidth,
+                    st.render_dims.y / 2.0 - pos.y - halfheight,
                     0.0,
                 ),
             )
         );
     }
 
-    pub fn set_position_2d(&self, ctx: &context::Context, pos: &glam::Vec2, dims: &glam::Vec2) {
-        self.set_position_2d_helper(ctx, pos, dims, &glam::Quat::IDENTITY)
+    pub fn set_position_2d(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, dims: &glam::Vec2) {
+        self.set_position_2d_helper(ctx, st, pos, dims, &glam::Quat::IDENTITY)
     }
 
     pub fn set_texture_offset(&self, ctx: &context::Context, inc: i32, x: i32, y: i32) {
