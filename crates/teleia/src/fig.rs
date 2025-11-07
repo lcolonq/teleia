@@ -1,7 +1,14 @@
 use std::io::{Read, Write};
-use byteorder::{ReadBytesExt, WriteBytesExt};
+use byteorder::{LE, ReadBytesExt, WriteBytesExt};
 
 use crate::{Erm, WrapErr};
+
+pub fn read_length_prefixed_utf8<R>(r: &mut R) -> Erm<String> where R: std::io::Read {
+    let len = r.read_u32::<LE>()?;
+    let mut bs = vec![0; len as usize];
+    r.read_exact(&mut bs)?;
+    Ok(String::from_utf8(bs)?)
+}
 
 #[derive(Debug, Clone)]
 pub struct BinaryMessage {
