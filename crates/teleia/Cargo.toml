@@ -48,3 +48,4 @@ env_logger = "*" # configurable logging to stdout
 glfw = { git = "https://github.com/lcolonq/glfw-rs", features = ["serde"] } # window management
 kira = { version = "=0.9.6", default-features = false, features = ["cpal", "ogg", "wav"] } # audio
 directories = { git = "https://github.com/lcolonq/directories-rs" } # standard system directories
+polling = "*" # interface to epoll

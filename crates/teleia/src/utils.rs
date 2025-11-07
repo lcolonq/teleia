@@ -9,6 +9,23 @@ pub fn erm<E, T>(e: E) -> Erm<T> where E: std::error::Error + std::marker::Send 
     Err(e.into())
 }
 
+#[derive(Debug)]
+pub struct Error {
+    msg: String
+}
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "teleia error: {}", self.msg)
+    }
+}
+impl std::error::Error for Error {}
+
+pub fn erm_msg<T>(msg: &str) -> Erm<T> {
+    Err(Error {
+        msg: msg.to_owned(),
+    }.into())
+}
+
 pub struct ErrorHandler;
 impl color_eyre::eyre::EyreHandler for ErrorHandler {
     fn debug(
