@@ -1,9 +1,10 @@
 use std::f32::consts::PI;
 
+use enum_map::Enum;
 use serde::{Serialize, Deserialize};
 use strum::EnumIter;
 
-pub type Erm<T> = color_eyre::Result<T>;
+pub type Erm<T> = simple_eyre::Result<T>;
 
 pub fn erm<E, T>(e: E) -> Erm<T> where E: std::error::Error + std::marker::Send + std::marker::Sync + 'static {
     Err(e.into())
@@ -27,7 +28,7 @@ pub fn erm_msg<T>(msg: &str) -> Erm<T> {
 }
 
 pub struct ErrorHandler;
-impl color_eyre::eyre::EyreHandler for ErrorHandler {
+impl simple_eyre::eyre::EyreHandler for ErrorHandler {
     fn debug(
         &self,
         error: &(dyn std::error::Error + 'static),
@@ -50,12 +51,10 @@ impl color_eyre::eyre::EyreHandler for ErrorHandler {
 }
 
 pub fn install_error_handler() {
-    let (panic_hook, _) = color_eyre::config::HookBuilder::default().into_hooks();
-    panic_hook.install();
-    color_eyre::eyre::set_hook(Box::new(move |_| Box::new(ErrorHandler))).expect("failed to install error handler");
+    simple_eyre::eyre::set_hook(Box::new(move |_| Box::new(ErrorHandler))).expect("failed to install error handler");
 }
 
-#[derive(Clone, Copy, Debug, EnumIter, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Enum, EnumIter, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Cardinal {
     North,
     South,

@@ -13,7 +13,7 @@ glow = {version = "=0.13.1", features = []} # rendering
 tobj = "*" # loader for .obj meshes loader
 gltf = {git = "https://github.com/lcolonq/gltf", features = ["extras", "import", "names", "utils"]} # loader for .gltf scenes
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] } # texture loader
-fontdue = "*" # truetype fonts
+cosmic-text = "*" # advanced text rendering
 glam = "0.29" # linear algebra
 log = "*" # logging
 rand = {version = "=0.8.5", features = ["small_rng"]} # rng
@@ -22,10 +22,10 @@ serde_json = "*" # serialize JSON
 bincode = {version = "*", features = ["serde"]} # binary serialization
 enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
-reqwest = "*" # http requests
+# reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
 bitflags = "*" # bitwise flags
-color-eyre = { version = "*", default-features = false } # error reporting and formatting
+simple-eyre = { version = "*", default-features = false } # error reporting and formatting
 rapier3d = "*" # rigid-body physics
 parry3d = "*" # collision detection
 nalgebra = {version = "0.33.2", features = ["convert-glam029"]} # linear algebra library for rapier3d

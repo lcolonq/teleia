@@ -207,3 +207,16 @@ impl Assets {
         }
     }
 }
+
+pub trait AudioPlayback {
+    fn play_sfx(&mut self, name: &str);
+    fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>);
+}
+impl AudioPlayback for Option<Assets> {
+    fn play_sfx(&mut self, name: &str) {
+        if let Some(a) = self { a.play_sfx(name); }
+    }
+    fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>) {
+        if let Some(a) = self { a.play_music(name, start, end); }
+    }
+}

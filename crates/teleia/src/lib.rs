@@ -17,7 +17,8 @@ pub mod level2d;
 pub mod fig;
 
 pub use utils::{erm, install_error_handler, Erm};
-pub use color_eyre::eyre::WrapErr;
+pub use audio::AudioPlayback;
+pub use simple_eyre::eyre::WrapErr;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
@@ -165,18 +166,18 @@ where
         if ctx.resize_necessary() {
             st.handle_resize(&ctx);
         }
-        if let Some(f) = &mut st.request {
-            match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
-                std::task::Poll::Pending => {},
-                std::task::Poll::Ready(res) => {
-                    st.request = None;
-                    match res {
-                        Ok(r) => st.request_returned(&ctx, game, r),
-                        Err(e) => log::warn!("error during HTTP request: {}", e),
-                    }
-                },
-            }
-        }
+        // if let Some(f) = &mut st.request {
+        //     match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
+        //         std::task::Poll::Pending => {},
+        //         std::task::Poll::Ready(res) => {
+        //             st.request = None;
+        //             match res {
+        //                 Ok(r) => st.request_returned(&ctx, game, r),
+        //                 Err(e) => log::warn!("error during HTTP request: {}", e),
+        //             }
+        //         },
+        //     }
+        // }
         st.run_update(&ctx, game)?;
         st.run_render(&ctx, game)?;
         ctx.window.borrow_mut().swap_buffers();
