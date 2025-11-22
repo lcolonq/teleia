@@ -1,6 +1,10 @@
 use crate::{context, mesh, shader, state, texture};
 use glow::HasContext;
 
+pub struct BitmapParams<'color> {
+    pub color: &'color [glam::Vec3],
+    pub scale: glam::Vec2,
+}
 pub struct Bitmap {
     pub char_width: i32,
     pub char_height: i32,
@@ -63,7 +67,11 @@ impl Bitmap {
         Self::from_image(ctx, 7, 9, 112, 54, include_bytes!("assets/fonts/simple.png"))
     }
 
-    pub fn render_text_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
+    pub fn render_text_parameterized(&self,
+        ctx: &context::Context, st: &state::State,
+        pos: &glam::Vec2, text: &str,
+        params: BitmapParams,
+    ) {
         let mut cur = glam::Vec2::new(0.0, 0.0);
         let mut vertices = Vec::new();
         let mut texcoords = Vec::new();
@@ -71,17 +79,18 @@ impl Bitmap {
         let mut indices = Vec::new();
         let cwidth = self.char_width as f32 / self.font_width as f32;
         let cheight = self.char_height as f32 / self.font_height as f32;
+        let sdims = glam::Vec2::new(self.char_width as f32, self.char_height as f32) * params.scale;
         let row_len = self.font_width as u32 / self.char_width as u32;
         for (i, c) in text.chars().enumerate() {
             if c == '\n' {
                 cur.x = 0.0;
-                cur.y -= self.char_height as f32;
+                cur.y -= sdims.y;
             } else {
                 let idx = vertices.len() as u32;
                 vertices.push(cur);
-                vertices.push(cur + glam::Vec2::new(self.char_width as f32, 0.0));
-                vertices.push(cur + glam::Vec2::new(self.char_width as f32, self.char_height as f32));
-                vertices.push(cur + glam::Vec2::new(0.0, self.char_height as f32));
+                vertices.push(cur + glam::Vec2::new(sdims.x, 0.0));
+                vertices.push(cur + glam::Vec2::new(sdims.x, sdims.y));
+                vertices.push(cur + glam::Vec2::new(0.0, sdims.y));
                 let cidx = c as u32 - ' ' as u32;
                 let col = cidx % row_len;
                 let row = cidx / row_len;
@@ -90,7 +99,7 @@ impl Bitmap {
                 texcoords.push(tcbase + glam::Vec2::new(cwidth, cheight));
                 texcoords.push(tcbase + glam::Vec2::new(cwidth, 0.0));
                 texcoords.push(tcbase);
-                let c = if let Some(c) = color.get(if color.len() == 0 { 0 } else { i % color.len() }) {
+                let c = if let Some(c) = params.color.get(if params.color.len() == 0 { 0 } else { i % params.color.len() }) {
                     *c
                 } else {
                     glam::Vec3::new(1.0, 1.0, 1.0)
@@ -98,7 +107,7 @@ impl Bitmap {
                 colors.push(c); colors.push(c); colors.push(c); colors.push(c);
                 indices.push(idx + 0); indices.push(idx + 1); indices.push(idx + 2);
                 indices.push(idx + 0); indices.push(idx + 3); indices.push(idx + 2);
-                cur.x += self.char_width as f32; 
+                cur.x += sdims.x; 
             }
         }
         let index_bytes: Vec<u8> = indices.iter().flat_map(|x| x.to_ne_bytes()).collect();
@@ -107,7 +116,7 @@ impl Bitmap {
         let scale = glam::Vec2::new(2.0 / st.render_dims.x, 2.0 / st.render_dims.y);
         let offset = glam::Vec2::new(
             -st.render_dims.x / 2.0,
-            st.render_dims.y / 2.0 - self.char_height as f32,
+            st.render_dims.y / 2.0 - sdims.y,
         );
         let npos = (glam::Vec2::new(pos.x, -pos.y) + offset) * scale;
         self.shader.set_mat4(
@@ -155,6 +164,13 @@ impl Bitmap {
             );
             ctx.gl.draw_elements(glow::TRIANGLES, indices.len() as _, glow::UNSIGNED_INT, 0);
         }
+    }
+
+    pub fn render_text_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
+        self.render_text_parameterized(ctx, st, pos, text, BitmapParams {
+            color,
+            scale: glam::Vec2::ONE,
+        })
     }
 
     pub fn render_text(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str) {
