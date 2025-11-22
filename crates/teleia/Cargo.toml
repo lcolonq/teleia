@@ -8,18 +8,18 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-strum = {version = "*", features = ["derive"]} # utility macros for enums
-glow = {version = "=0.13.1", features = []} # rendering
+strum = { version = "*", features = ["derive"] } # utility macros for enums
+glow = { version = "=0.13.1", features = [] } # rendering
 tobj = "*" # loader for .obj meshes loader
-gltf = {git = "https://github.com/lcolonq/gltf", features = ["extras", "import", "names", "utils"]} # loader for .gltf scenes
+gltf = { git = "https://github.com/lcolonq/gltf", features = ["extras", "import", "names", "utils"] } # loader for .gltf scenes
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] } # texture loader
-cosmic-text = "*" # advanced text rendering
+cosmic-text = { version = "*", default-features = false, features = ["std", "swash"] }  # advanced text rendering
 glam = "0.29" # linear algebra
 log = "*" # logging
-rand = {version = "=0.8.5", features = ["small_rng"]} # rng
-serde = {version = "*", features = ["derive"]} # serialization
+rand = { version = "=0.8.5", features = ["small_rng"] } # rng
+serde = { version = "*", features = ["derive"] } # serialization
 serde_json = "*" # serialize JSON
-bincode = {version = "*", features = ["serde"]} # binary serialization
+bincode = { version = "*", features = ["serde"] } # binary serialization
 enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
 # reqwest = "*" # http requests

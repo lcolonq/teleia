@@ -85,7 +85,7 @@ impl Field {
                 _ => panic!("unknown asset type: {}", self.nm),
             };
             let enums: Vec<_> = ents.iter().map(|(e, _)| e.clone()).collect();
-            let edecl = format!("#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, enum_map::Enum)]
+            let edecl = format!("#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, enum_map::Enum)]
 pub enum {} {{ {} }}", enm, enums.join(", "));
             let decl = format!("pub {}: enum_map::EnumMap<{}, {}>", self.nm, enm, ty);
             let inits: Vec<_> = ents.into_iter().map(|(e, exp)| format!("{}::{} => {}", enm, e, exp)).collect();

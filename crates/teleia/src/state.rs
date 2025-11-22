@@ -3,6 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
 use serde::{Serialize, Deserialize};
+use strum::EnumIter;
 
 use crate::{audio, context, framebuffer, mesh, shader, utils};
 
@@ -39,17 +40,12 @@ pub trait Game {
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
 }
 
-#[derive(Debug, Enum, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Enum, EnumIter, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Key {
     Up, Down, Left, Right,
-    A, B, L, R,
+    A, B, X, Y, L, R,
     Start, Select,
 }
-pub const KEYS: [Key; 10] = [
-    Key::Up, Key::Down, Key::Left, Key::Right,
-    Key::A, Key::B, Key::L, Key::R,
-    Key::Start, Key::Select,
-];
 pub struct Keys {
     pub pressed: EnumMap<Key, bool>,
     pub new: EnumMap<Key, bool>,
@@ -59,12 +55,14 @@ impl Keys {
         Self {
             pressed: enum_map! {
                 Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
-                Key::A => false, Key::B => false, Key::L => false, Key::R => false,
+                Key::A => false, Key::B => false, Key::X => false, Key::Y => false,
+                Key::L => false, Key::R => false,
                 Key::Start => false, Key::Select => false,
             },
             new: enum_map! {
                 Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
-                Key::A => false, Key::B => false, Key::L => false, Key::R => false,
+                Key::A => false, Key::B => false, Key::X => false, Key::Y => false,
+                Key::L => false, Key::R => false,
                 Key::Start => false, Key::Select => false,
             },
         }
@@ -75,6 +73,8 @@ impl Keys {
     pub fn right(&self) -> bool { self.pressed[Key::Right] }
     pub fn a(&self) -> bool { self.pressed[Key::A] }
     pub fn b(&self) -> bool { self.pressed[Key::B] }
+    pub fn x(&self) -> bool { self.pressed[Key::X] }
+    pub fn y(&self) -> bool { self.pressed[Key::Y] }
     pub fn l(&self) -> bool { self.pressed[Key::L] }
     pub fn r(&self) -> bool { self.pressed[Key::R] }
     pub fn start(&self) -> bool { self.pressed[Key::Start] }
@@ -85,6 +85,8 @@ impl Keys {
     pub fn new_right(&mut self) -> bool { let ret = self.new[Key::Right]; self.new[Key::Right] = false; ret }
     pub fn new_a(&mut self) -> bool { let ret = self.new[Key::A]; self.new[Key::A] = false; ret }
     pub fn new_b(&mut self) -> bool { let ret = self.new[Key::B]; self.new[Key::B] = false; ret }
+    pub fn new_x(&mut self) -> bool { let ret = self.new[Key::X]; self.new[Key::X] = false; ret }
+    pub fn new_y(&mut self) -> bool { let ret = self.new[Key::Y]; self.new[Key::Y] = false; ret }
     pub fn new_l(&mut self) -> bool { let ret = self.new[Key::L]; self.new[Key::L] = false; ret }
     pub fn new_r(&mut self) -> bool { let ret = self.new[Key::R]; self.new[Key::R] = false; ret }
     pub fn new_start(&mut self) -> bool { let ret = self.new[Key::Start]; self.new[Key::Start] = false; ret }
@@ -214,6 +216,8 @@ pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
         (Keycode::new(winit::keyboard::KeyCode::KeyD), Key::Right),
         (Keycode::new(winit::keyboard::KeyCode::Digit1), Key::A),
         (Keycode::new(winit::keyboard::KeyCode::Digit2), Key::B),
+        (Keycode::new(winit::keyboard::KeyCode::Digit3), Key::X),
+        (Keycode::new(winit::keyboard::KeyCode::Digit4), Key::Y),
         (Keycode::new(winit::keyboard::KeyCode::KeyQ), Key::L),
         (Keycode::new(winit::keyboard::KeyCode::KeyE), Key::R),
         (Keycode::new(winit::keyboard::KeyCode::Tab), Key::Start),
@@ -230,6 +234,8 @@ pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
         (Keycode::new(glfw::Key::D), Key::Right),
         (Keycode::new(glfw::Key::Num1), Key::A),
         (Keycode::new(glfw::Key::Num2), Key::B),
+        (Keycode::new(glfw::Key::Num3), Key::X),
+        (Keycode::new(glfw::Key::Num4), Key::Y),
         (Keycode::new(glfw::Key::Q), Key::L),
         (Keycode::new(glfw::Key::E), Key::R),
         (Keycode::new(glfw::Key::Tab), Key::Start),
@@ -503,16 +509,16 @@ impl State {
     }
 
     /// Return the first keybinding for the given virtual key
-    pub fn keybinding_for(&self, k: &Key) -> Option<String> {
-        if let Some(kc) = self.keybindings.get_by_right(k) {
+    pub fn keybinding_for(&self, k: Key) -> Option<String> {
+        if let Some(kc) = self.keybindings.get_by_right(&k) {
             Some(format!("{}", kc))
         } else {
             None
         }
     }
 
-    pub fn rebind_key(&mut self, k: &Key) {
-        self.rebinding = Some(*k);
+    pub fn rebind_key(&mut self, k: Key) {
+        self.rebinding = Some(k);
     }
 
     // pub fn request<F>(&mut self, f: F)
