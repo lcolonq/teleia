@@ -189,6 +189,13 @@ impl Context {
         }
     }
 
+    pub fn use_inverse_stencil(&self) {
+        unsafe {
+            self.gl.stencil_func(glow::NOTEQUAL, 1, 0xff);
+            self.gl.stencil_op(glow::KEEP, glow::KEEP, glow::KEEP);
+        }
+    }
+
     pub fn end_stencil(&self) {
         unsafe {
             self.gl.stencil_func(glow::ALWAYS, 1, 0xff);
