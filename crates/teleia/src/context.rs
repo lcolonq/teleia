@@ -175,6 +175,12 @@ impl Context {
         }
     }
 
+    pub fn depth_mask(&self, m: bool) {
+        unsafe {
+            self.gl.depth_mask(m);
+        }
+    }
+
     pub fn begin_stencil(&self) {
         unsafe {
             self.gl.stencil_func(glow::ALWAYS, 1, 0xff);
