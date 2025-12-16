@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 #[cfg(target_arch = "wasm32")]
-use std::{cell::RefCell, sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 
 #[cfg(target_arch = "wasm32")]
 pub struct Context {
@@ -84,7 +84,7 @@ impl Audio {
 pub struct Assets {
     pub ctx: Context,
     pub audio: HashMap<String, Audio>,
-    pub music_node: Option<web_sys::AudioBufferSourceNode>, 
+    pub music_node: Option<AudioPlayingHandle>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -109,7 +109,7 @@ impl Assets {
 
     pub fn is_music_playing(&self) -> bool {
         if let Some(ms) = &self.music_node {
-            ms.buffer().is_some()
+            ms.node.buffer().is_some()
         } else { false }
     }
 
