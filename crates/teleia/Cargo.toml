@@ -41,7 +41,7 @@ tracing-wasm = "*" # trace performance in browser
 wasm-bindgen = "=0.2.100" # interface with javascript
 wasm-bindgen-futures = "*" # interface with async javascript
 js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
-web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode", "BinaryType", "Blob", "CloseEvent", "ErrorEvent", "FileReader", "MessageEvent", "ProgressEvent", "WebSocket", "Storage"] }
+web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "GainNode", "AudioParam", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode", "BinaryType", "Blob", "CloseEvent", "ErrorEvent", "FileReader", "MessageEvent", "ProgressEvent", "WebSocket", "Storage"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "*" # configurable logging to stdout

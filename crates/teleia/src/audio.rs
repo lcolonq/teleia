@@ -21,13 +21,19 @@ impl Context {
 
 #[cfg(target_arch = "wasm32")]
 pub struct AudioPlayingHandle {
-    node: web_sys::AudioBufferSourceNode
+    node: web_sys::AudioBufferSourceNode,
+    gain: web_sys::GainNode,
 }
 
 #[cfg(target_arch = "wasm32")]
 impl AudioPlayingHandle {
-    pub fn stop(&self) {
+    pub fn stop(&self, _ctx: &Context) {
         self.node.stop().expect("failed to stop audio");
+    }
+    pub fn fade_out(&self, ctx: &Context, time: f32) {
+        let t = ctx.audio.current_time() + time as f64;
+        self.gain.gain().linear_ramp_to_value_at_time(0.0, t).expect("failed to fade out audio");
+        self.node.stop_with_when(t).expect("failed to stop audio while fading out");
     }
 }
 
@@ -74,9 +80,11 @@ impl Audio {
             if let Some(s) = ms { source.set_loop_start(s) }
             if let Some(e) = me { source.set_loop_end(e) }
         }
-        source.connect_with_audio_node(&ctx.audio.destination()).ok()?;
+        let gain = ctx.audio.create_gain().ok()?;
+        gain.connect_with_audio_node(&ctx.audio.destination()).ok()?;
+        source.connect_with_audio_node(&gain).ok()?;
         source.start().ok()?;
-        Some(AudioPlayingHandle { node: source })
+        Some(AudioPlayingHandle { node: source, gain })
     }
 }
 
@@ -115,7 +123,7 @@ impl Assets {
 
     pub fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>) {
         if let Some(s) = &self.music_node {
-            let _ = s.stop();
+            let _ = s.stop(&self.ctx);
         }
         if let Some(a) = self.audio.get(name) {
             self.music_node = a.play(&self.ctx, Some((start, end)));
