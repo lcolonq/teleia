@@ -20,6 +20,18 @@ impl Context {
 }
 
 #[cfg(target_arch = "wasm32")]
+pub struct AudioPlayingHandle {
+    node: web_sys::AudioBufferSourceNode
+}
+
+#[cfg(target_arch = "wasm32")]
+impl AudioPlayingHandle {
+    pub fn stop(&self) {
+        self.node.stop().expect("failed to stop audio");
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
 pub struct Audio {
     pub buffer: Arc<Mutex<Option<web_sys::AudioBuffer>>>,
 }
@@ -52,7 +64,7 @@ impl Audio {
         }
     }
 
-    pub fn play(&self, ctx: &Context, looping: Option<(Option<f64>, Option<f64>)>) -> Option<web_sys::AudioBufferSourceNode> {
+    pub fn play(&self, ctx: &Context, looping: Option<(Option<f64>, Option<f64>)>) -> Option<AudioPlayingHandle> {
         let source = ctx.audio.create_buffer_source().ok()?;
         if let Some(ab) = &*self.buffer.lock().unwrap() {
             source.set_buffer(Some(&ab));
@@ -64,7 +76,7 @@ impl Audio {
         }
         source.connect_with_audio_node(&ctx.audio.destination()).ok()?;
         source.start().ok()?;
-        Some(source)
+        Some(AudioPlayingHandle { node: source })
     }
 }
 
