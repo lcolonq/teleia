@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 #[cfg(target_arch = "wasm32")]
-use std::cell::RefCell;
+use std::{cell::RefCell, sync::{Arc, Mutex}};
 
 #[cfg(target_arch = "wasm32")]
 pub struct Context {
@@ -21,33 +21,42 @@ impl Context {
 
 #[cfg(target_arch = "wasm32")]
 pub struct Audio {
-    pub buffer: &'static RefCell<Option<web_sys::AudioBuffer>>,
-    //pub source: &'static web_sys::AudioBufferSourceNode,
+    pub buffer: Arc<Mutex<Option<web_sys::AudioBuffer>>>,
 }
 
 #[cfg(target_arch = "wasm32")]
 impl Audio {
     pub fn new(ctx: &Context, bytes: &[u8]) -> Self {
-        let sbuffer: &_ = Box::leak(Box::new(RefCell::new(None)));
-        let sclone: &'static RefCell<Option<web_sys::AudioBuffer>> =
-            <&_>::clone(&sbuffer);
+        let sbuffer = Arc::new(Mutex::new(None));
+        let sclone = sbuffer.clone();
         let ret = Audio {
             buffer: sclone,
         };
         let jsp = ctx.audio.decode_audio_data(&js_sys::Uint8Array::from(bytes).buffer()).expect("failed to decode audio");
         let promise = wasm_bindgen_futures::JsFuture::from(jsp);
-        wasm_bindgen_futures::spawn_local(async {
+        wasm_bindgen_futures::spawn_local(async move {
             if let Some(data) = promise.await.ok() {
-                *sbuffer.borrow_mut() = Some(web_sys::AudioBuffer::from(data));
+                *sbuffer.lock().unwrap() = Some(web_sys::AudioBuffer::from(data));
             }
             ()
         });
         ret
     }
 
+    pub fn from_samples(ctx: &Context, sample_rate: f32, samples: &[f32]) -> Self {
+        let buf = ctx.audio.create_buffer(1, samples.len() as u32, sample_rate)
+            .expect("failed to create audio buffer");
+        buf.copy_to_channel(samples, 0).expect("failed to populate audio samples");
+        Audio {
+            buffer: Arc::new(Mutex::new(Some(buf)))
+        }
+    }
+
     pub fn play(&self, ctx: &Context, looping: Option<(Option<f64>, Option<f64>)>) -> Option<web_sys::AudioBufferSourceNode> {
         let source = ctx.audio.create_buffer_source().ok()?;
-        source.set_buffer((&*self.buffer.borrow()).as_ref());
+        if let Some(ab) = &*self.buffer.lock().unwrap() {
+            source.set_buffer(Some(&ab));
+        } else { return None };
         if let Some((ms, me)) = looping {
             source.set_loop(true);
             if let Some(s) = ms { source.set_loop_start(s) }
@@ -62,9 +71,7 @@ impl Audio {
 #[cfg(target_arch = "wasm32")]
 pub struct Assets {
     pub ctx: Context,
-
     pub audio: HashMap<String, Audio>,
-
     pub music_node: Option<web_sys::AudioBufferSourceNode>, 
 }
 
