@@ -14,6 +14,8 @@ pub mod net;
 pub mod physics;
 pub mod save;
 pub mod level2d;
+
+#[cfg(not(target_arch = "wasm32"))]
 pub mod fig;
 
 pub use utils::{erm, install_error_handler, Erm};
@@ -295,19 +297,19 @@ where
                         ctx.maximize_canvas();
                         st.handle_resize(&ctx);
                     }
-                    if let Some(f) = &mut st.request {
-                        match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
-                            std::task::Poll::Pending => {},
-                            std::task::Poll::Ready(res) => {
-                                st.request = None;
-                                match res {
-                                    Ok(r) => st.request_returned(&ctx, game, r),
-                                    Err(e) => log::warn!("error during HTTP request: {}", e),
-                                }
-                            },
-                        }
-                        // f.poll();
-                    }
+                    // if let Some(f) = &mut st.request {
+                    //     match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
+                    //         std::task::Poll::Pending => {},
+                    //         std::task::Poll::Ready(res) => {
+                    //             st.request = None;
+                    //             match res {
+                    //                 Ok(r) => st.request_returned(&ctx, game, r),
+                    //                 Err(e) => log::warn!("error during HTTP request: {}", e),
+                    //             }
+                    //         },
+                    //     }
+                    //     // f.poll();
+                    // }
                     st.run_update(&ctx, game)?;
                     st.run_render(&ctx, game)?;
                     ctx.window.request_redraw();

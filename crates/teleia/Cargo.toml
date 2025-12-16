@@ -30,7 +30,7 @@ rapier3d = "*" # rigid-body physics
 parry3d = "*" # collision detection
 nalgebra = {version = "0.33.2", features = ["convert-glam029"]} # linear algebra library for rapier3d
 byteorder = "*" # read numbers in particular endianness
-lexpr = "*" # parse s-expressions
+base64 = "0.22.1" # encode/decode base64
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 winit = {version = "=0.29.15", features = ["serde"]} # windowing and events
