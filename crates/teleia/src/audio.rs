@@ -81,6 +81,7 @@ impl Audio {
             if let Some(e) = me { source.set_loop_end(e) }
         }
         let gain = ctx.audio.create_gain().ok()?;
+        gain.gain().set_value_at_time(0.0, ctx.audio.current_time()).ok()?;
         gain.connect_with_audio_node(&ctx.audio.destination()).ok()?;
         source.connect_with_audio_node(&gain).ok()?;
         source.start().ok()?;
