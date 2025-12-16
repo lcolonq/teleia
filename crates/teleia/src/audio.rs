@@ -32,7 +32,8 @@ impl AudioPlayingHandle {
     }
     pub fn fade_out(&self, ctx: &Context, time: f32) {
         let t = ctx.audio.current_time() + time as f64;
-        self.gain.gain().exponential_ramp_to_value_at_time(0.001, t).expect("failed to fade out audio");
+        self.gain.gain().set_target_at_time(0.0, ctx.audio.current_time(), time as f64)
+            .expect("failed to fade out audio");
         self.node.stop_with_when(t).expect("failed to stop audio while fading out");
     }
 }
