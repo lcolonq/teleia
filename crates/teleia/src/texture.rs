@@ -56,6 +56,28 @@ impl Texture {
         }
     }
 
+    pub fn upload_rgba8(&self, ctx: &context::Context, width: i32, height: i32, data: &[u8]) {
+        unsafe {
+            ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
+            ctx.gl.tex_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                glow::RGBA as i32,
+                width,
+                height,
+                0,
+                glow::RGBA,
+                glow::UNSIGNED_BYTE,
+                Some(data),
+            );
+            ctx.gl.generate_mipmap(glow::TEXTURE_2D);
+        }
+    }
+
     pub fn set_anisotropic_filtering(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
