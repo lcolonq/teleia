@@ -12,7 +12,7 @@ pub fn erm<E, T>(e: E) -> Erm<T> where E: std::error::Error + std::marker::Send 
 
 #[derive(Debug)]
 pub struct Error {
-    msg: String
+    pub msg: String
 }
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
