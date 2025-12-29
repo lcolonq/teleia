@@ -114,7 +114,7 @@
       };
 
       wasm = rec {
-        buildAtUrl = path: nm: url:
+        buildAtUrlInDir = path: nm: url: dir:
           let
             src = lib.cleanSourceWith {
               src = path;
@@ -154,7 +154,15 @@
                 inherit cargoExtraArgs;
                 doCheck = false;
               });
+              preBuild = ''
+                pushd ${dir}
+              '';
+              postBuild = ''
+                popd
+                mv ${dir}/dist .
+              '';
             });
+        buildAtUrl = path: nm: url: buildAtUrlInDir path nm url ".";
         build = path: nm: buildAtUrl path nm "";
       };
 
