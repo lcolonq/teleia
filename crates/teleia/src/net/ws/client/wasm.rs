@@ -49,7 +49,7 @@ impl Client {
         *self.ws.lock().unwrap() = Some(ws);
     }
     pub fn is_connected(&self) -> bool {
-        self.ws.lock().unwrap().is_none()
+        self.ws.lock().unwrap().is_some()
     }
     pub fn poll(&mut self) -> Option<Message> {
         self.messages.lock().unwrap().pop_front()
