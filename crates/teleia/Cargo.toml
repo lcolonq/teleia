@@ -49,3 +49,4 @@ glfw = { git = "https://github.com/lcolonq/glfw-rs", features = ["serde"] } # wi
 kira = { version = "=0.9.6", default-features = false, features = ["cpal", "ogg", "wav"] } # audio
 directories = { git = "https://github.com/lcolonq/directories-rs" } # standard system directories
 polling = "*" # interface to epoll
+tungstenite = { version = "*", features = ["native-tls"] } # websockets

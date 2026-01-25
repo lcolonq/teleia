@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-#[cfg(target_arch = "wasm32")]
 use std::sync::{Arc, Mutex};
 
 #[cfg(target_arch = "wasm32")]
@@ -71,7 +70,10 @@ impl Audio {
         }
     }
 
-    pub fn play(&self, ctx: &Context, looping: Option<(Option<f64>, Option<f64>)>) -> Option<AudioPlayingHandle> {
+    pub fn play(&self,
+        ctx: &mut Context,
+        looping: Option<(Option<f64>, Option<f64>)>
+    ) -> Option<AudioPlayingHandle> {
         let source = ctx.audio.create_buffer_source().ok()?;
         if let Some(ab) = &*self.buffer.lock().unwrap() {
             source.set_buffer(Some(&ab));
@@ -149,16 +151,46 @@ impl Context {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+pub struct AudioPlayingHandle {
+    handle: Arc<Mutex<kira::sound::static_sound::StaticSoundHandle>>
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl AudioPlayingHandle {
+    pub fn stop(&self, _ctx: &Context) {
+        self.handle.lock().unwrap().stop(kira::tween::Tween::default());
+    }
+    pub fn fade_out(&self, _ctx: &Context, time: f32) {
+        self.handle.lock().unwrap().stop(kira::tween::Tween {
+            duration: std::time::Duration::from_secs_f32(time + 0.5),
+            ..Default::default()
+        });
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub struct Audio {
     data: kira::sound::static_sound::StaticSoundData,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Audio {
-    pub fn new(_ctx: &Context, bytes: &'static [u8]) -> Self {
+    pub fn new(_ctx: &Context, bytes: &[u8]) -> Self {
         Self {
-            data: kira::sound::static_sound::StaticSoundData::from_cursor(std::io::Cursor::new(bytes))
+            data: kira::sound::static_sound::StaticSoundData::from_cursor(std::io::Cursor::new(bytes.to_owned()))
                 .expect("failed to decode audio"),
+        }
+    }
+
+    pub fn from_samples(_ctx: &Context, sample_rate: f32, samples: &[f32]) -> Self {
+        let frames: Vec<kira::Frame> = samples.iter().map(|f| kira::Frame { left: *f, right: *f }).collect();
+        Self {
+            data: kira::sound::static_sound::StaticSoundData {
+                sample_rate: sample_rate as u32,
+                frames: frames.into(),
+                settings: kira::sound::static_sound::StaticSoundSettings::default(),
+                slice: None,
+            },
         }
     }
 
@@ -166,7 +198,7 @@ impl Audio {
         &self,
         ctx: &mut Context,
         looping: Option<(Option<f64>, Option<f64>)>
-    ) -> Result<kira::sound::static_sound::StaticSoundHandle, String>
+    ) -> Option<AudioPlayingHandle>
     {
         let sd = if let Some((ss, se)) = looping {
             let start = if let Some(s) = ss { s } else { 0.0 };
@@ -178,10 +210,7 @@ impl Audio {
         } else {
             self.data.clone()
         };
-        match ctx.manager.play(sd) {
-            Ok(h) => Ok(h),
-            Err(e) => Err(e.to_string()),
-        }
+        ctx.manager.play(sd).ok().map(|h| AudioPlayingHandle { handle: Arc::new(Mutex::new(h)) })
     }
 }
 
@@ -189,7 +218,7 @@ impl Audio {
 pub struct Assets {
     pub ctx: Context,
     pub audio: HashMap<String, Audio>,
-    pub music_handle: Option<kira::sound::static_sound::StaticSoundHandle>, 
+    pub music_handle: Option<AudioPlayingHandle>, 
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -208,29 +237,29 @@ impl Assets {
 
     pub fn play_sfx(&mut self, name: &str) {
         if let Some(a) = self.audio.get(name) {
-            if let Err(e) = a.play(&mut self.ctx, None) {
-                log::warn!("failed to play sound {}: {}", name, e);
+            if a.play(&mut self.ctx, None).is_none() {
+                log::warn!("failed to play sound {}", name);
             }
         }
     }
 
     pub fn is_music_playing(&self) -> bool {
         if let Some(mh) = &self.music_handle {
-            mh.state() == kira::sound::PlaybackState::Playing
+            mh.handle.lock().unwrap().state() == kira::sound::PlaybackState::Playing
         } else { false }
     }
 
     pub fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>) {
         if let Some(s) = &mut self.music_handle {
-            let _ = s.stop(kira::tween::Tween::default());
+            let _ = s.stop(&self.ctx);
         }
         if let Some(a) = self.audio.get(name) {
             match a.play(&mut self.ctx, Some((start, end))) {
-                Ok(h) => {
+                Some(h) => {
                     self.music_handle = Some(h);
                 },
-                Err(e) => {
-                    log::warn!("failed to play music {}: {}", name, e);
+                _ => {
+                    log::warn!("failed to play music {}", name);
                 }
             }
         }

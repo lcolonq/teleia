@@ -1,3 +1,5 @@
+#![feature(try_blocks)]
+
 pub mod utils;
 pub mod ui;
 pub mod context;
@@ -14,9 +16,6 @@ pub mod net;
 pub mod physics;
 pub mod save;
 pub mod level2d;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub mod fig;
 
 pub use utils::{erm, install_error_handler, Erm};
 pub use audio::AudioPlayback;

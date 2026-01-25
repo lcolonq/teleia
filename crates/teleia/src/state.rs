@@ -9,20 +9,6 @@ use crate::{audio, context, framebuffer, mesh, shader, utils};
 
 const DELTA_TIME: f64 = 0.016; // todo
 
-// pub struct WinitWaker {}
-// impl WinitWaker {
-//     fn new() -> Self { Self {} }
-// }
-// impl std::task::Wake for WinitWaker {
-//     fn wake(self: std::sync::Arc<Self>) {}
-// }
-
-// pub struct Response {
-//     pub url: String,
-//     pub status: reqwest::StatusCode,
-//     pub body: bytes::Bytes,
-// }
-
 pub trait Game {
     fn initialize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
     fn finalize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
@@ -35,7 +21,6 @@ pub trait Game {
     fn finish_title(&mut self, st: &mut State) {}
     fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) {}
     fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) {}
-    // fn request_return(&mut self, ctx: &context::Context, st: &mut State, res: Response) {}
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
 }
@@ -188,10 +173,6 @@ pub struct State {
     pub lighting: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub point_lights: Vec<PointLight>,
 
-    // pub waker_ctx: std::task::Context<'static>,
-    // pub http_client: reqwest::Client,
-    // pub request: Option<std::pin::Pin<Box<dyn std::future::Future<Output = reqwest::Result<Response>>>>>,
-
     pub log: Vec<(u64, String)>,
 }
 
@@ -257,10 +238,6 @@ impl State {
             include_str!("assets/shaders/scale/frag.glsl"),
         );
         let mesh_square = mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/square.obj"));
-
-        // let waker = std::sync::Arc::new(WinitWaker::new());
-        // let cwaker = Box::leak(Box::new(waker.into()));
-        // let waker_ctx = std::task::Context::from_waker(cwaker);
 
         let nextframe = now(ctx);
 
@@ -520,30 +497,6 @@ impl State {
     pub fn rebind_key(&mut self, k: Key) {
         self.rebinding = Some(k);
     }
-
-    // pub fn request<F>(&mut self, f: F)
-    // where F: Fn(&reqwest::Client) -> reqwest::RequestBuilder
-    // {
-    //     let builder = f(&self.http_client);
-    //     let fut = async {
-    //         let resp = builder.send().await?;
-    //         let url = resp.url().clone().to_string();
-    //         let status = resp.status().clone();
-    //         let body = resp.bytes().await?;
-    //         reqwest::Result::Ok(Response {
-    //             url,
-    //             status,
-    //             body,
-    //         })
-    //     };
-    //     self.request = Some(Box::pin(fut));
-    // }
-    // pub fn requesting(&self) -> bool { self.request.is_some() }
-    // pub fn request_returned<G>(&mut self, ctx: &context::Context, game: &mut G, res: Response)
-    // where G: Game
-    // {
-    //     game.request_return(ctx, self, res);
-    // }
 
     pub fn run_update<G>(&mut self, ctx: &context::Context, game: &mut G) -> utils::Erm<()> where G: Game {
         let now = now(ctx);
