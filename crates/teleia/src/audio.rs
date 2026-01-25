@@ -115,7 +115,7 @@ impl Assets {
 
     pub fn play_sfx(&mut self, name: &str) {
         if let Some(a) = self.audio.get(name) {
-            a.play(&self.ctx, None);
+            a.play(&mut self.ctx, None);
         }
     }
 
@@ -130,7 +130,7 @@ impl Assets {
             let _ = s.stop(&self.ctx);
         }
         if let Some(a) = self.audio.get(name) {
-            self.music_node = a.play(&self.ctx, Some((start, end)));
+            self.music_node = a.play(&mut self.ctx, Some((start, end)));
         }
     }
 }
