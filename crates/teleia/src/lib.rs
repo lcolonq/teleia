@@ -62,7 +62,7 @@ where
 pub fn run<'a, F, G>(title: &str, w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
 where
     G: state::Game + 'static,
-    F: (Fn(&'a context::Context) -> G),
+    F: (FnOnce(&'a context::Context) -> G),
 {
     env_logger::Builder::new()
         .filter(None, log::LevelFilter::Info)

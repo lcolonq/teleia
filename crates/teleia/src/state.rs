@@ -10,8 +10,8 @@ use crate::{audio, context, framebuffer, mesh, shader, utils};
 const DELTA_TIME: f64 = 0.016; // todo
 
 pub trait Game {
-    fn initialize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
-    fn finalize(&self, ctx: &context::Context, st: &State) -> utils::Erm<()> { Ok(()) }
+    fn initialize(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
+    fn finalize(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn initialize_audio(
         &self, ctx: &context::Context, st: &State,
         actx: &audio::Context

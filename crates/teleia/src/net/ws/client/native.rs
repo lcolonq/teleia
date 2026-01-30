@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::thread::spawn;
 
 use crate::net::ws::Message;
-use crate::{Erm, WrapErr};
+use crate::{utils, Erm, WrapErr};
 
 const KEY: usize = 42;
 
@@ -24,63 +24,70 @@ impl Client {
         };
         let poller = match polling::Poller::new() {
             Ok(v) => v,
-            Err(e) => {
-                log::warn!("failed to create poller: {}", e);
-                return;
-            }
+            Err(e) => { log::warn!("failed to create poller: {}", e); return; }
         };
-        match socket.get_ref() {
+        let res: Erm<()> = try { match socket.get_ref() {
             tungstenite::stream::MaybeTlsStream::Plain(s) => unsafe {
-                if let Err(e) = poller.add(s, polling::Event::readable(KEY)) {
-                    log::warn!("failed to add event to poll: {}", e);
-                    let _ = socket.close(None);
-                    return;
-                };
+                s.set_nonblocking(true).wrap_err("failed to set socket nonblocking")?;
+                poller.add(s, polling::Event::readable(KEY)).wrap_err("failed to add event to poll")?;
             },
             tungstenite::stream::MaybeTlsStream::NativeTls(s) => unsafe {
-                if let Err(e) = poller.add(s.get_ref(), polling::Event::readable(KEY)) {
-                    log::warn!("failed to add event to poll: {}", e);
-                    let _ = socket.close(None);
-                    return;
-                };
+                s.get_ref().set_nonblocking(true).wrap_err("failed to set socket nonblocking")?;
+                poller.add(s.get_ref(), polling::Event::readable(KEY)).wrap_err("failed to add event to poll")?;
             },
-            _ => {
-                log::warn!("unknown socket type; cannot poll!");
-                let _ = socket.close(None);
-                return;
-            },
-        }
+            _ => utils::erm_msg("unknown socket type; cannot poll!")?,
+        }};
+        if let Err(e) = res {
+            log::warn!("failed to add event to poll: {}", e);
+            let _ = socket.close(None);
+            return;
+        };
         let (outgoing_sender, outgoing_receiver) = channel();
         let (incoming_sender, incoming_receiver) = channel();
         *self.channels.lock().unwrap() = Some((outgoing_sender, incoming_receiver));
-        let channels_ref = self.channels.clone();
+        let send_channels_ref = self.channels.clone();
+        let recv_channels_ref = self.channels.clone();
+        let send_socket_ref = Arc::new(Mutex::new(socket));
+        let recv_socket_ref = send_socket_ref.clone();
         let mut events = polling::Events::new();
         spawn(move || loop {
+            // write all outgoing messages
             let res: Erm<()> = try {
-                // send all outgoing messages
-                while let Ok(msg) = outgoing_receiver.try_recv() {
+                while let Ok(msg) = outgoing_receiver.recv() {
                     match msg {
-                        Message::Text(txt) => socket.send(tungstenite::Message::Text(txt))
+                        Message::Text(txt) => send_socket_ref.lock().unwrap()
+                            .send(tungstenite::Message::Text(txt))
                             .wrap_err("failed to send websocket text")?,
-                        Message::Binary(bytes) => socket.send(tungstenite::Message::Binary(bytes))
+                        Message::Binary(bytes) => send_socket_ref.lock().unwrap()
+                            .send(tungstenite::Message::Binary(bytes))
                             .wrap_err("failed to send websocket bytes")?,
                     }
                 }
-                // wait until we've received data
+            };
+            if let Err(e) = res {
+                log::warn!("error in websocket send thread: {}", e);
+                *send_channels_ref.lock().unwrap() = None;
+                return;
+            }
+        });
+        spawn(move || loop {
+            // wait for and receive all incoming messages
+            let res: Erm<()> = try {
                 events.clear();
                 poller.wait(&mut events, None).wrap_err("failed to wait on websocket poller")?;
                 for ev in events.iter() {
                     if ev.key == KEY {
-                        if ev.readable { match socket.read().wrap_err("failed to recv on websocket")? {
+                        if ev.readable { match recv_socket_ref.lock().unwrap().read().wrap_err("failed to recv on websocket")? {
                             tungstenite::Message::Text(txt) => incoming_sender.send(Message::Text(txt))
                                 .wrap_err("failed to send incoming websocket message on channel")?,
                             tungstenite::Message::Binary(bytes) => incoming_sender.send(Message::Binary(bytes))
                                 .wrap_err("failed to send incoming websocket message on channel")?,
-                            tungstenite::Message::Ping(bs) => socket.send(tungstenite::Message::Pong(bs))
+                            tungstenite::Message::Ping(bs) => recv_socket_ref.lock().unwrap()
+                                .send(tungstenite::Message::Pong(bs))
                                 .wrap_err("failed to send websocket pong")?,
                             m => log::warn!("unhandled incoming websocket message: {}", m),
                         }}
-                        match socket.get_ref() {
+                        match recv_socket_ref.lock().unwrap().get_ref() {
                             tungstenite::stream::MaybeTlsStream::Plain(s) =>
                                     poller.modify(s, polling::Event::readable(KEY))
                                         .wrap_err("failed to modify event to poll")?,
@@ -93,8 +100,8 @@ impl Client {
                 }
             };
             if let Err(e) = res {
-                log::warn!("error in websocket thread: {}", e);
-                *channels_ref.lock().unwrap() = None;
+                log::warn!("error in websocket recv thread: {}", e);
+                *recv_channels_ref.lock().unwrap() = None;
                 return;
             }
         });
