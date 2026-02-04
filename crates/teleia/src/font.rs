@@ -72,6 +72,7 @@ impl Bitmap {
         pos: &glam::Vec2, text: &str,
         params: BitmapParams,
     ) {
+        let fpos = pos.floor();
         let mut cur = glam::Vec2::new(0.0, 0.0);
         let mut vertices = Vec::new();
         let mut texcoords = Vec::new();
@@ -118,7 +119,7 @@ impl Bitmap {
             -st.render_dims.x / 2.0,
             st.render_dims.y / 2.0 - sdims.y,
         );
-        let npos = (glam::Vec2::new(pos.x, -pos.y) + offset) * scale;
+        let npos = (glam::Vec2::new(fpos.x, -fpos.y) + offset) * scale;
         self.shader.set_mat4(
             ctx, "transform",
             &glam::Mat4::from_scale_rotation_translation(
