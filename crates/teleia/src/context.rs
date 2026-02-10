@@ -231,6 +231,17 @@ impl Context {
         }
     }
 
+    pub fn flip_colors_blend(&self) {
+        unsafe {
+            self.gl.blend_func_separate(
+                glow::ONE_MINUS_DST_COLOR,
+                glow::ZERO,
+                glow::ZERO,
+                glow::ONE,
+            );
+        }
+    }
+
     pub fn enable_culling(&self) {
         unsafe {
             self.gl.enable(glow::CULL_FACE);
