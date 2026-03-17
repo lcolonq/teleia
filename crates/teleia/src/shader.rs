@@ -83,7 +83,10 @@ impl Shader {
     }
 
     pub fn new_nolib(ctx: &context::Context, vsrc: &str, fsrc: &str) -> Self {
-        Self::new_helper(ctx, vsrc, fsrc).expect("failed to load shader")
+        match Self::new_helper(ctx, vsrc, fsrc) {
+            Ok(x) => x,
+            Err(e) => panic!("failed to load no-library shader: {}", e)
+        }
     }
 
     pub fn new(ctx: &context::Context, vsrcstr: &str, fsrcstr: &str) -> Self {

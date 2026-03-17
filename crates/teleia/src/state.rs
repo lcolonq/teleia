@@ -2,6 +2,7 @@
 use std::{collections::HashMap, fmt::Display};
 use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
+use glow::HasContext;
 use serde::{Serialize, Deserialize};
 use strum::EnumIter;
 
@@ -533,6 +534,14 @@ impl State {
         self.shader_upscale.bind(&ctx);
         self.render_framebuffer.bind_texture(&ctx);
         ctx.render_no_geometry();
+        let err = unsafe { ctx.gl.get_error() };
+        if err != glow::NO_ERROR {
+            log::warn!("opengl error: {}", err);
+        }
+        let log = unsafe { ctx.gl.get_debug_message_log(5) };
+        for m in log {
+            log::warn!("opengl debug message: {:?}", m);
+        }
         Ok(())
     }
 }

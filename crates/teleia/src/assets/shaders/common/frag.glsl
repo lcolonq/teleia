@@ -113,7 +113,7 @@ vec3 compute_lighting(vec3 normal) {
         shadow_vector[i].x *= -1.0;
     }
 
-    // cannot only index array of samplers with a constant, hence the weird setup
+    // can only index array of samplers with a constant, hence the weird setup
     #define SAMPLE_SHADOW(n) n < light_count ? texture(light_shadowbuffer_point[n], shadow_vector[n]).r : 1.0
     float shadow_depth[5];
     shadow_depth[0] = SAMPLE_SHADOW(0);
