@@ -157,3 +157,4 @@ vec3 compute_lighting_billboard(vec3 normal) {
 
     return (ambient_light + from_dir + from_points);
 }
+#line 0

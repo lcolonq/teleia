@@ -74,6 +74,7 @@ where
     let (rglfw, rwindow, gl, events) = {
         use glfw::fail_on_errors;
         let mut glfw = glfw::init(glfw::fail_on_errors!()).expect("failed to initialize GLFW");
+        glfw.window_hint(glfw::WindowHint::ContextCreationApi(glfw::ContextCreationApi::Egl));
         // let gl_attr = video.gl_attr();
         // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
         // gl_attr.set_context_version(3, 0);
