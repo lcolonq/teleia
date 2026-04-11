@@ -24,7 +24,7 @@ enum-map = "*" # fast maps with enums as keys
 bimap = "*" # bijective maps
 # reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
-bitflags = "*" # bitwise flags
+bitflags = { version = "*", features = ["serde"] } # bitwise flags
 simple-eyre = { version = "*", default-features = false } # error reporting and formatting
 rapier3d = "*" # rigid-body physics
 parry3d = "*" # collision detection

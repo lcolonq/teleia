@@ -76,24 +76,20 @@ impl Field {
                 ents.push((d.enum_entry(&self.nm), exp));
             }
         }
-        if ents.len() > 0 {
-            let (enm, ty) = match self.nm.as_str() {
-                "meshes" => ("Mesh", "teleia::mesh::Mesh"),
-                "textures" => ("Texture", "teleia::texture::Texture"),
-                "materials" => ("Material", "teleia::texture::Material"),
-                "shaders" => ("Shader", "teleia::shader::Shader"),
-                _ => panic!("unknown asset type: {}", self.nm),
-            };
-            let enums: Vec<_> = ents.iter().map(|(e, _)| e.clone()).collect();
-            let edecl = format!("#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, enum_map::Enum)]
+        let (enm, ty) = match self.nm.as_str() {
+            "meshes" => ("Mesh", "teleia::mesh::Mesh"),
+            "textures" => ("Texture", "teleia::texture::Texture"),
+            "materials" => ("Material", "teleia::texture::Material"),
+            "shaders" => ("Shader", "teleia::shader::Shader"),
+            _ => return None,
+        };
+        let enums: Vec<_> = ents.iter().map(|(e, _)| e.clone()).collect();
+        let edecl = format!("#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, enum_map::Enum)]
 pub enum {} {{ {} }}", enm, enums.join(", "));
-            let decl = format!("pub {}: enum_map::EnumMap<{}, {}>", self.nm, enm, ty);
-            let inits: Vec<_> = ents.into_iter().map(|(e, exp)| format!("{}::{} => {}", enm, e, exp)).collect();
-            let init = format!("{}: enum_map::enum_map!({})", self.nm, inits.join(", "));
-            Some((edecl, decl, init))
-        } else {
-            None
-        }
+        let decl = format!("pub {}: enum_map::EnumMap<{}, {}>", self.nm, enm, ty);
+        let inits: Vec<_> = ents.into_iter().map(|(e, exp)| format!("{}::{} => {}", enm, e, exp)).collect();
+        let init = format!("{}: enum_map::enum_map!({})", self.nm, inits.join(", "));
+        Some((edecl, decl, init))
     }
 }
 
@@ -105,11 +101,24 @@ impl AssetData {
     fn new(base: &str) -> Self {
         let mut fields = Vec::new();
         let dirs = std::fs::read_dir(base).expect(&format!("failed to read assets directory: {}", base));
+        let (mut has_meshes, mut has_textures, mut has_materials, mut has_shaders) = (false, false, false, false);
         for dir in dirs {
             if let Ok(d) = dir {
-                fields.push(Field::new(base, &d.file_name().into_string().unwrap()));
+                let nm = d.file_name().into_string().unwrap();
+                fields.push(Field::new(base, &nm));
+                match &*nm {
+                    "meshes" => has_meshes = true,
+                    "textures" => has_textures = true,
+                    "materials" => has_materials = true,
+                    "shaders" => has_shaders = true,
+                    _ => {},
+                };
             }
         }
+        if !has_meshes { fields.push(Field { nm: "meshes".to_owned(), entries: HashSet::new() }); }
+        if !has_textures { fields.push(Field { nm: "textures".to_owned(), entries: HashSet::new() }); }
+        if !has_materials { fields.push(Field { nm: "materials".to_owned(), entries: HashSet::new() }); }
+        if !has_shaders { fields.push(Field { nm: "shaders".to_owned(), entries: HashSet::new() }); }
         Self {
             fields,
         }
@@ -121,16 +130,24 @@ impl AssetData {
             res += edecl; res += "\n";
         }
         res += "pub struct Assets {\n";
-        res += "pub font_default: teleia::font::Bitmap,\n";
         for (_, decl, _) in fdata.iter() {
             res += decl; res += ",\n";
         }
         res += "}\nimpl Assets {\npub fn new(ctx: &teleia::context::Context) -> Self {\nSelf {\n";
-        res += "font_default: teleia::font::Bitmap::new(ctx),\n";
         for (_, _, init) in fdata.iter() {
             res += init; res += ",\n";
         }
         res += "}\n}\n}\n";
+        res += "impl teleia::renderer::Assets for Assets {\n";
+        res += "type Shader = Shader;\n";
+        res += "fn shader(&self, i: Self::Shader) -> &teleia::shader::Shader { &self.shaders[i] }\n";
+        res += "type Texture = Texture;\n";
+        res += "fn texture(&self, i: Self::Texture) -> &teleia::texture::Texture { &self.textures[i] }\n";
+        res += "type Material = Material;\n";
+        res += "fn material(&self, i: Self::Material) -> &teleia::texture::Material { &self.materials[i] }\n";
+        res += "type Mesh = Mesh;\n";
+        res += "fn mesh(&self, i: Self::Mesh) -> &teleia::mesh::Mesh { &self.meshes[i] }\n";
+        res += "}\n";
         res
     }
 }

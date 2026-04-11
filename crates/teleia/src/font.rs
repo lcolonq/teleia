@@ -63,8 +63,8 @@ impl Bitmap {
         }
     }
 
-    pub fn new(ctx: &context::Context) -> Self {
-        Self::from_image(ctx, 7, 9, 112, 54, include_bytes!("assets/fonts/simple.png"))
+    pub fn default(ctx: &context::Context) -> Self {
+        Self::from_image(ctx, 7, 9, 112, 54, include_bytes!("assets/fonts/default.png"))
     }
 
     pub fn render_text_parameterized(&self,

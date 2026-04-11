@@ -11,6 +11,7 @@ pub mod texture;
 pub mod scene;
 pub mod font;
 pub mod shadow;
+pub mod renderer;
 pub mod audio;
 pub mod net;
 pub mod physics;

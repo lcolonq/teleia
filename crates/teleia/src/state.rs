@@ -6,7 +6,7 @@ use glow::HasContext;
 use serde::{Serialize, Deserialize};
 use strum::EnumIter;
 
-use crate::{audio, context, framebuffer, mesh, shader, utils};
+use crate::{audio, context, font, framebuffer, mesh, shader, utils};
 
 const DELTA_TIME: f64 = 0.016; // todo
 
@@ -167,6 +167,7 @@ pub struct State {
     pub render_dims: glam::Vec2,
     pub shader_upscale: shader::Shader,
     pub mesh_square: mesh::Mesh,
+    pub font_default: font::Bitmap,
     pub audio: Option<audio::Assets>,
 
     pub projection: glam::Mat4,
@@ -261,6 +262,7 @@ impl State {
             render_dims: glam::Vec2::new(ctx.render_width, ctx.render_height),
             shader_upscale,
             mesh_square,
+            font_default: font::Bitmap::default(ctx),
             audio: None,
 
             projection: glam::Mat4::perspective_lh(
@@ -534,13 +536,16 @@ impl State {
         self.shader_upscale.bind(&ctx);
         self.render_framebuffer.bind_texture(&ctx);
         ctx.render_no_geometry();
-        let err = unsafe { ctx.gl.get_error() };
-        if err != glow::NO_ERROR {
-            log::warn!("opengl error: {}", err);
-        }
-        let log = unsafe { ctx.gl.get_debug_message_log(5) };
-        for m in log {
-            log::warn!("opengl debug message: {:?}", m);
+        #[cfg(debug_assertions)]
+        {
+            let err = unsafe { ctx.gl.get_error() };
+            if err != glow::NO_ERROR {
+                log::warn!("opengl error: {}", err);
+            }
+            let log = unsafe { ctx.gl.get_debug_message_log(5) };
+            for m in log {
+                log::warn!("opengl debug message: {:?}", m);
+            }
         }
         Ok(())
     }
