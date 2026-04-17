@@ -8,28 +8,28 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-strum = { version = "*", features = ["derive"] } # utility macros for enums
+strum = { version = "0.27.1", features = ["derive"] } # utility macros for enums
 glow = { version = "=0.13.1", features = [] } # rendering
-tobj = "*" # loader for .obj meshes loader
+tobj = "4.0.1" # loader for .obj meshes loader
 gltf = { git = "https://github.com/lcolonq/gltf", features = ["extras", "import", "names", "utils"] } # loader for .gltf scenes
-image = { version = "0.25", default-features = false, features = ["jpeg", "png"] } # texture loader
-cosmic-text = { version = "*", default-features = false, features = ["std", "swash"] }  # advanced text rendering
-glam = "0.29" # linear algebra
-log = "*" # logging
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] } # texture loader
+# cosmic-text = { version = "*", default-features = false, features = ["std", "swash"] }  # advanced text rendering
+glam = "0.29.2" # linear algebra
+log = "0.4.21" # logging
 rand = { version = "=0.8.5", features = ["small_rng"] } # rng
-serde = { version = "*", features = ["derive"] } # serialization
-serde_json = "*" # serialize JSON
-bincode = { version = "*", features = ["serde"] } # binary serialization
-enum-map = "*" # fast maps with enums as keys
-bimap = "*" # bijective maps
+serde = { version = "1.0.228", features = ["derive"] } # serialization
+serde_json = "1.0.128" # serialize JSON
+bincode = { version = "2.0.1", features = ["serde"] } # binary serialization
+enum-map = "2.7.3" # fast maps with enums as keys
+bimap = "0.6.3" # bijective maps
 # reqwest = "*" # http requests
 bytes = "*" # bytes for http responses
-bitflags = { version = "*", features = ["serde"] } # bitwise flags
-simple-eyre = { version = "*", default-features = false } # error reporting and formatting
-rapier3d = "*" # rigid-body physics
-parry3d = "*" # collision detection
+bitflags = { version = "2.6.0", features = ["serde"] } # bitwise flags
+simple-eyre = { version = "0.3.1", default-features = false } # error reporting and formatting
+rapier3d = "0.23.1" # rigid-body physics
+parry3d = "0.18.0" # collision detection
 nalgebra = {version = "0.33.2", features = ["convert-glam029"]} # linear algebra library for rapier3d
-byteorder = "*" # read numbers in particular endianness
+byteorder = "1.5.0" # read numbers in particular endianness
 base64 = "0.22.1" # encode/decode base64
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -44,9 +44,9 @@ js-sys = "*" # browser APIs to interact with JS runtime (e.g. run WASM)
 web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCanvasElement", "WebGl2RenderingContext", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Performance", "PerformanceTiming", "AudioContext", "AudioNode", "GainNode", "AudioParam", "AudioDestinationNode", "AudioBuffer", "AudioBufferSourceNode", "BinaryType", "Blob", "CloseEvent", "ErrorEvent", "FileReader", "MessageEvent", "ProgressEvent", "WebSocket", "Storage"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "*" # configurable logging to stdout
+env_logger = "0.11.5" # configurable logging to stdout
 glfw = { git = "https://github.com/lcolonq/glfw-rs", features = ["serde"] } # window management
 kira = { version = "=0.9.6", default-features = false, features = ["cpal", "ogg", "wav"] } # audio
 directories = { git = "https://github.com/lcolonq/directories-rs" } # standard system directories
-polling = "*" # interface to epoll
+polling = "3.11.0" # interface to epoll
 tungstenite = { version = "0.24.0", features = ["native-tls"] } # websockets

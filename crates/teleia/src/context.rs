@@ -101,7 +101,7 @@ impl Context {
             self.gl.clear_color(0.1, 0.1, 0.1, 1.0);
             self.gl.clear_depth_f32(1.0);
 
-            #[cfg(debug_assertions)]
+            #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
             self.gl.enable(glow::DEBUG_OUTPUT);
 
             self.gl.enable(glow::DEPTH_TEST);

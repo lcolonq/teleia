@@ -1,5 +1,4 @@
-#version 300 es
-precision highp float;
+uniform highp int flags;
 
 in vec3 vertex;
 in vec3 normal;
@@ -18,6 +17,10 @@ out vec3 vertex_normal;
 out vec3 vertex_fragpos;
 out vec4 vertex_fragpos_shadow_dir;
 out vec3 vertex_view_vector;
+
+bool flag(int mask) {
+    return (flags & mask) != 0;
+}
 
 void main() {
     vertex_texcoord = texcoord;

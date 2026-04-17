@@ -10,6 +10,9 @@ use crate::{audio, context, font, framebuffer, mesh, shader, utils};
 
 const DELTA_TIME: f64 = 0.016; // todo
 
+pub const ORTH_WIDTH: f32 = 7.55869;
+pub const ORTH_HEIGHT: f32 = 5.03913;
+
 pub trait Game {
     fn initialize(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn finalize(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
@@ -171,6 +174,7 @@ pub struct State {
     pub audio: Option<audio::Assets>,
 
     pub projection: glam::Mat4,
+    pub projection_orth: glam::Mat4,
     pub camera: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub lighting: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub point_lights: Vec<PointLight>,
@@ -272,6 +276,12 @@ impl State {
                 0.5,
                 50.0,
             ),
+            projection_orth: glam::Mat4::orthographic_lh(
+                -ORTH_WIDTH, ORTH_WIDTH,
+                -ORTH_HEIGHT, ORTH_HEIGHT,
+                0.5,
+                50.0,
+            ),
             camera: (glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(0.0, 0.0, 1.0), glam::Vec3::new(0.0, 1.0, 0.0)),
             lighting: (
                 glam::Vec3::new(1.0, 1.0, 1.0),
@@ -358,9 +368,9 @@ impl State {
         )
     }
 
-    pub fn bind_3d_helper(&mut self, ctx: &context::Context, shader: &shader::Shader, plc: usize) {
+    pub fn bind_3d_helper(&mut self, ctx: &context::Context, shader: &shader::Shader, plc: usize, orth: bool) {
         shader.bind(ctx);
-        shader.set_mat4(ctx, "projection", &self.projection);
+        shader.set_mat4(ctx, "projection", if orth { &self.projection_orth } else { &self.projection });
         shader.set_mat4(ctx, "view", &self.view());
         shader.set_vec3(
             ctx, "light_ambient_color",
@@ -381,12 +391,12 @@ impl State {
     }
 
     pub fn bind_3d_no_point_lights(&mut self, ctx: &context::Context, shader: &shader::Shader) {
-        self.bind_3d_helper(ctx, shader, 0);
+        self.bind_3d_helper(ctx, shader, 0, false);
     }
 
-    pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+    pub fn bind_3d_with_point_lights(&mut self, ctx: &context::Context, shader: &shader::Shader, orth: bool) {
         let plc = self.point_lights.len().min(5);
-        self.bind_3d_helper(ctx, shader, plc);
+        self.bind_3d_helper(ctx, shader, plc, orth);
         if plc > 0 {
             let lpos: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.pos).collect();
             shader.set_vec3_array(
@@ -404,6 +414,14 @@ impl State {
                 &lattenuation,
             );
         }
+    }
+
+    pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+        self.bind_3d_with_point_lights(ctx, shader, false)
+    }
+
+    pub fn bind_3d_orth(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+        self.bind_3d_with_point_lights(ctx, shader, true)
     }
 
     pub fn bind_2d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
@@ -536,7 +554,7 @@ impl State {
         self.shader_upscale.bind(&ctx);
         self.render_framebuffer.bind_texture(&ctx);
         ctx.render_no_geometry();
-        #[cfg(debug_assertions)]
+        #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
         {
             let err = unsafe { ctx.gl.get_error() };
             if err != glow::NO_ERROR {

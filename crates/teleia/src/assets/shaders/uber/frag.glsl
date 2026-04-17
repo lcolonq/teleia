@@ -1,4 +1,4 @@
-uniform int flags;
+uniform highp int flags;
 
 uniform vec3 camera_pos;
 uniform float time;

@@ -5,14 +5,15 @@ use bitflags::bitflags;
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct UberFlags: u32 {
-        const TEXTURE_COLOR       = 0b00000001;
-        const TEXTURE_NORMAL      = 0b00000010;
-        const FLIP_TEXTURE        = 0b00000100;
-        const LIGHT_AMBIENT       = 0b00001000;
-        const LIGHT_DIR           = 0b00010000;
-        const LIGHT_POINT         = 0b00100000;
-        const SPRITE              = 0b01000000;
-        const EFFECTS             = 0b10000000;
+        const TEXTURE_COLOR       = 0b000000001;
+        const TEXTURE_NORMAL      = 0b000000010;
+        const FLIP_TEXTURE        = 0b000000100;
+        const LIGHT_AMBIENT       = 0b000001000;
+        const LIGHT_DIR           = 0b000010000;
+        const LIGHT_POINT         = 0b000100000;
+        const SPRITE              = 0b001000000;
+        const EFFECTS             = 0b010000000;
+        const SCREENSPACE         = 0b100000000;
     }
 }
 impl UberFlags {
@@ -41,7 +42,7 @@ pub trait Assets {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ShaderMode { TwoDimension, ThreeDimension, }
+enum ShaderMode { TwoDimension, ThreeDimension, ThreeDimensionOrth }
 #[derive(Debug, Clone, Copy)]
 enum BoundShader<A: Assets> { None, Uber(UberFlags, ShaderMode), Shader(A::Shader, ShaderMode) }
 impl<A: Assets> PartialEq for BoundShader<A> {
@@ -76,7 +77,7 @@ impl<A: Assets> Renderer<A> {
     pub fn new<F>(ctx: &context::Context, f: F) -> Self
     where F: FnOnce(&context::Context) -> A {
         let shader_uber = shader::Shader::new_nolib(ctx,
-            include_str!("assets/shaders/uber/vert.glsl"),
+            &format!("{}{}", UberFlags::prelude(), include_str!("assets/shaders/uber/vert.glsl")),
             &format!("{}{}", UberFlags::prelude(), include_str!("assets/shaders/uber/frag.glsl")),
         );
         shader_uber.bind(ctx);
@@ -121,6 +122,7 @@ impl<A: Assets> Renderer<A> {
         match mode {
             ShaderMode::TwoDimension => st.bind_2d(ctx, &self.shader_uber),
             ShaderMode::ThreeDimension => st.bind_3d(ctx, &self.shader_uber),
+            ShaderMode::ThreeDimensionOrth => st.bind_3d_orth(ctx, &self.shader_uber),
         }
         flags.set_flags(ctx, &self.shader_uber);
         self.shader = BoundShader::Uber(flags, mode)
@@ -137,6 +139,7 @@ impl<A: Assets> Renderer<A> {
         match mode {
             ShaderMode::TwoDimension => st.bind_2d(ctx, &self.assets.shader(shader)),
             ShaderMode::ThreeDimension => st.bind_3d(ctx, &self.assets.shader(shader)),
+            ShaderMode::ThreeDimensionOrth => st.bind_3d_orth(ctx, &self.assets.shader(shader)),
         }
         self.shader = BoundShader::Shader(shader, mode)
     }
@@ -145,6 +148,9 @@ impl<A: Assets> Renderer<A> {
     }
     pub fn bind_uber_3d(&mut self, ctx: &context::Context, st: &mut state::State, flags: UberFlags) {
         self.bind_uber(ctx, st, flags, ShaderMode::ThreeDimension);
+    }
+    pub fn bind_uber_3d_orth(&mut self, ctx: &context::Context, st: &mut state::State, flags: UberFlags) {
+        self.bind_uber(ctx, st, flags, ShaderMode::ThreeDimensionOrth);
     }
     pub fn bind_shader_2d(&mut self, ctx: &context::Context, st: &mut state::State, shader: A::Shader) {
         self.bind_shader(ctx, st, shader, ShaderMode::TwoDimension);
@@ -166,7 +172,9 @@ impl<A: Assets> Renderer<A> {
     }
     pub fn set_position_3d(&self, ctx: &context::Context, st: &state::State, pos: glam::Mat4) {
         if let Some((s, sm)) = self.shader() {
-            debug_assert!(sm == ShaderMode::ThreeDimension, "attempted to set_position_3d in wrong mode");
+            debug_assert!(sm == ShaderMode::ThreeDimension || sm == ShaderMode::ThreeDimensionOrth,
+                "attempted to set_position_3d in wrong mode"
+            );
             s.set_position_3d(ctx, st, &pos)
         }
     }
