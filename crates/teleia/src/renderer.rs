@@ -13,7 +13,7 @@ bitflags! {
         const LIGHT_POINT         = 0b000100000;
         const SPRITE              = 0b001000000;
         const EFFECTS             = 0b010000000;
-        const SCREENSPACE         = 0b100000000;
+        const YSKEW               = 0b100000000;
     }
 }
 impl UberFlags {
@@ -248,6 +248,22 @@ impl<A: Assets> Renderer<A> {
         self.bind_texture(ctx, st, texture);
         self.set_position_2d(ctx, st, pos, dims);
         self.render_square(ctx, st);
+    }
+
+    pub fn texture_screen_recolor(&mut self,
+        ctx: &context::Context, st: &mut state::State,
+        texture: A::Texture, hue: f32,
+        pos: glam::Vec2,
+        dims: glam::Vec2,
+    ) {
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::EFFECTS);
+        self.bind_texture(ctx, st, texture);
+        self.set_f32(ctx, st, "effect_huescale", 0.0);
+        self.set_f32(ctx, st, "effect_hueshift", hue);
+        self.set_position_2d(ctx, st, pos, dims);
+        self.render_square(ctx, st);
+        self.set_f32(ctx, st, "effect_huescale", 1.0);
+        self.set_f32(ctx, st, "effect_hueshift", 0.0);
     }
 
     /// Common case: text in the default font (units are pixels, pos is top left)

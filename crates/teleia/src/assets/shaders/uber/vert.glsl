@@ -11,6 +11,7 @@ uniform mat4 normal_matrix;
 uniform mat4 lightspace_matrix;
 uniform vec3 camera_pos;
 uniform vec3 offset;
+uniform float yskew;
 
 out vec2 vertex_texcoord;
 out vec3 vertex_normal;
@@ -31,4 +32,7 @@ void main() {
     vertex_view_vector = camera_pos - pos;
     gl_Position = projection * view * vec4(pos, 1.0);
     gl_Position.xyz += offset;
+    if (flag(YSKEW)) {
+        gl_Position.y += yskew * pos.z;
+    }
 }

@@ -34,6 +34,7 @@ pub enum Key {
     Up, Down, Left, Right,
     A, B, X, Y, L, R,
     Start, Select,
+    Debug,
 }
 pub struct Keys {
     pub pressed: EnumMap<Key, bool>,
@@ -47,12 +48,14 @@ impl Keys {
                 Key::A => false, Key::B => false, Key::X => false, Key::Y => false,
                 Key::L => false, Key::R => false,
                 Key::Start => false, Key::Select => false,
+                Key::Debug => false,
             },
             new: enum_map! {
                 Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
                 Key::A => false, Key::B => false, Key::X => false, Key::Y => false,
                 Key::L => false, Key::R => false,
                 Key::Start => false, Key::Select => false,
+                Key::Debug => false,
             },
         }
     }
@@ -68,6 +71,7 @@ impl Keys {
     pub fn r(&self) -> bool { self.pressed[Key::R] }
     pub fn start(&self) -> bool { self.pressed[Key::Start] }
     pub fn select(&self) -> bool { self.pressed[Key::Select] }
+    pub fn debug(&self) -> bool { self.pressed[Key::Debug] }
     pub fn new_up(&mut self) -> bool { let ret = self.new[Key::Up]; self.new[Key::Up] = false; ret }
     pub fn new_down(&mut self) -> bool { let ret = self.new[Key::Down]; self.new[Key::Down] = false; ret }
     pub fn new_left(&mut self) -> bool { let ret = self.new[Key::Left]; self.new[Key::Left] = false; ret }
@@ -80,6 +84,7 @@ impl Keys {
     pub fn new_r(&mut self) -> bool { let ret = self.new[Key::R]; self.new[Key::R] = false; ret }
     pub fn new_start(&mut self) -> bool { let ret = self.new[Key::Start]; self.new[Key::Start] = false; ret }
     pub fn new_select(&mut self) -> bool { let ret = self.new[Key::Select]; self.new[Key::Select] = false; ret }
+    pub fn new_debug(&mut self) -> bool { let ret = self.new[Key::Debug]; self.new[Key::Debug] = false; ret }
 }
 
 pub struct PointLight {
@@ -209,6 +214,7 @@ pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
         (Keycode::new(winit::keyboard::KeyCode::KeyE), Key::R),
         (Keycode::new(winit::keyboard::KeyCode::Tab), Key::Start),
         (Keycode::new(winit::keyboard::KeyCode::Space), Key::Select),
+        (Keycode::new(winit::keyboard::KeyCode::Backquote), Key::Debug),
     ])
 }
 
@@ -227,6 +233,7 @@ pub fn default_keybindings() -> BiHashMap<Keycode, Key> {
         (Keycode::new(glfw::Key::E), Key::R),
         (Keycode::new(glfw::Key::Tab), Key::Start),
         (Keycode::new(glfw::Key::Space), Key::Select),
+        (Keycode::new(glfw::Key::GraveAccent), Key::Debug),
     ])
 }
 
