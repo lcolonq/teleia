@@ -45,6 +45,9 @@
         postPatch = "true";
       });
 
+      LIBCOLONQ_PIT_NATIVE="${inputs.pit.packages.x86_64-linux.default}/lib";
+      LIBCOLONQ_PIT_WASM="${inputs.pit.packages.x86_64-linux.wasm}/lib";
+
       native = rec {
         nativeBuildInputs = [
           pkgs.pkg-config
@@ -61,7 +64,6 @@
           pkgs.xorg.libxcb  
           pkgs.libglvnd
           pkgs.alsa-lib
-          inputs.pit.packages.x86_64-linux.default
         ];
         deps = path: nm:
           let
@@ -77,6 +79,7 @@
             };
             commonArgs = {
               inherit src nativeBuildInputs buildInputs;
+              inherit LIBCOLONQ_PIT_NATIVE;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
               CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
@@ -101,6 +104,7 @@
             };
             commonArgs = {
               inherit src nativeBuildInputs buildInputs;
+              inherit LIBCOLONQ_PIT_NATIVE;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
               CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
@@ -133,6 +137,7 @@
             };
             commonArgs = {
               inherit src;
+              inherit LIBCOLONQ_PIT_WASM;
               strictDeps = true;
               CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
               buildInputs = [];
@@ -230,6 +235,7 @@
         LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         RUSTFLAGS="-L ${glfw}/lib";
         LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
+        inherit LIBCOLONQ_PIT_NATIVE LIBCOLONQ_PIT_WASM;
       };
     in {
       inherit shell native wasm windows;
