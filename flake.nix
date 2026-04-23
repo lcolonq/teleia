@@ -11,14 +11,18 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
+    pit = {
+      url = "github:lcolonq/pit";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, crane, flake-utils, rust-overlay, ... }:
+  outputs = inputs@{ self, nixpkgs, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ (import rust-overlay) ];
+        overlays = [ (import inputs.rust-overlay) ];
       };
       inherit (pkgs) lib;
 
@@ -29,7 +33,7 @@
           "x86_64-pc-windows-gnu"
         ];
       };
-      craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchainFor;
+      craneLib = (inputs.crane.mkLib pkgs).overrideToolchain rustToolchainFor;
 
       glfw = pkgs.glfw.overrideAttrs (cur: prev: {
         cmakeFlags = []; # by default, static linking is disabled here
@@ -57,6 +61,7 @@
           pkgs.xorg.libxcb  
           pkgs.libglvnd
           pkgs.alsa-lib
+          inputs.pit.packages.x86_64-linux.default
         ];
         deps = path: nm:
           let

@@ -10,6 +10,7 @@ pub mod mesh;
 pub mod texture;
 pub mod scene;
 pub mod font;
+pub mod script;
 pub mod shadow;
 pub mod renderer;
 pub mod audio;
@@ -71,6 +72,13 @@ where
     install_error_handler();
 
     log::info!("hello computer, starting up...");
+
+    unsafe {
+        let mut out = vec![' ' as u8; 1024];
+        let buf = std::alloc::alloc(std::alloc::Layout::from_size_align(256 * 1024 * 1024, 64).unwrap());
+        log::info!("pit_runtime_test: {:?}", crate::script::pit_runtime_test(out.as_mut_ptr(), out.len() as i64, buf, 256 * 1024 * 1024));
+        log::info!("out: {}", String::from_utf8(out).unwrap());
+    }
 
     let (rglfw, rwindow, gl, events) = {
         use glfw::fail_on_errors;
