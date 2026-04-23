@@ -82,7 +82,7 @@
               inherit LIBCOLONQ_PIT_NATIVE;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
-              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
+              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib -L ${LIBCOLONQ_PIT_NATIVE}";
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
             };
             cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
@@ -107,7 +107,7 @@
               inherit LIBCOLONQ_PIT_NATIVE;
               strictDeps = true;
               CARGO_BUILD_TARGET = "x86_64-unknown-linux-gnu";
-              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib";
+              CARGO_BUILD_RUSTFLAGS="-L ${glfw}/lib -L ${LIBCOLONQ_PIT_NATIVE}";
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
             };
             cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
@@ -140,6 +140,7 @@
               inherit LIBCOLONQ_PIT_WASM;
               strictDeps = true;
               CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
+              CARGO_BUILD_RUSTFLAGS="-L ${LIBCOLONQ_PIT_WASM}";
               buildInputs = [];
               inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
               wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
