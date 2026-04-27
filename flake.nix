@@ -184,7 +184,7 @@
           env = {};
           postPatch = "true";
         });
-        rustflags = "-L ${glfw}/lib -L $ -L ${LIBCOLONQ_PIT_WINDOWS} {pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
+        rustflags = "-L ${glfw}/lib -L ${LIBCOLONQ_PIT_WINDOWS} -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
         shell = craneLib.devShell {
           packages = [
             pkgs.pkgsCross.mingwW64.buildPackages.gcc
