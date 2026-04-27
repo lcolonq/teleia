@@ -47,7 +47,7 @@
 
       LIBCOLONQ_PIT_NATIVE="${inputs.pit.packages.x86_64-linux.default}/lib";
       LIBCOLONQ_PIT_WASM="${inputs.pit.packages.x86_64-linux.wasm}/lib";
-      LIBCOLONQ_PIT_WINDOWS="${inputs.pit.packages.x86_64-linux.windows}/lib";
+      LIBCOLONQ_ PIT_WINDOWS="${inputs.pit.packages.x86_64-linux.windows}/lib";
 
       native = rec {
         nativeBuildInputs = [
