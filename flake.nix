@@ -47,6 +47,7 @@
 
       LIBCOLONQ_PIT_NATIVE="${inputs.pit.packages.x86_64-linux.default}/lib";
       LIBCOLONQ_PIT_WASM="${inputs.pit.packages.x86_64-linux.wasm}/lib";
+      LIBCOLONQ_PIT_WINDOWS="${inputs.pit.packages.x86_64-linux.windows}/lib";
 
       native = rec {
         nativeBuildInputs = [
@@ -183,7 +184,7 @@
           env = {};
           postPatch = "true";
         });
-        rustflags = "-L ${glfw}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
+        rustflags = "-L ${glfw}/lib -L $ -L ${LIBCOLONQ_PIT_WINDOWS} {pkgs.pkgsCross.mingwW64.windows.pthreads}/lib";
         shell = craneLib.devShell {
           packages = [
             pkgs.pkgsCross.mingwW64.buildPackages.gcc
