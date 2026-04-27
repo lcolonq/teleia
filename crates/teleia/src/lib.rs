@@ -41,6 +41,7 @@ bitflags! {
         const OVERLAY  = 0b00000001;
         const HIDDEN   = 0b00000010;
         const NORESIZE = 0b00000100;
+        const EGL      = 0b00001000;
     }
 }
 
@@ -83,7 +84,10 @@ where
     let (rglfw, rwindow, gl, events) = {
         use glfw::fail_on_errors;
         let mut glfw = glfw::init(glfw::fail_on_errors!()).expect("failed to initialize GLFW");
-        glfw.window_hint(glfw::WindowHint::ContextCreationApi(glfw::ContextCreationApi::Egl));
+
+        if options.contains(Options::EGL) {
+            glfw.window_hint(glfw::WindowHint::ContextCreationApi(glfw::ContextCreationApi::Egl));
+        }
         // let gl_attr = video.gl_attr();
         // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
         // gl_attr.set_context_version(3, 0);
