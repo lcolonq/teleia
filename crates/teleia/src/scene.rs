@@ -233,7 +233,7 @@ impl Scene {
                     Some(&i.as_bytes()),
                 );
                 ctx.gl.generate_mipmap(glow::TEXTURE_2D);
-                texture::Texture { tex }
+                texture::Texture { tex, width: i.width() as i32, height: i.height() as i32 }
             }
         }).collect();
         let materials: Vec<Material> = gltf.materials().map(|m| {

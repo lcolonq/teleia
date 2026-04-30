@@ -38,10 +38,11 @@ use glfw::Context;
 use bitflags::bitflags;
 bitflags! {
     pub struct Options: u32 {
-        const OVERLAY  = 0b00000001;
-        const HIDDEN   = 0b00000010;
-        const NORESIZE = 0b00000100;
-        const EGL      = 0b00001000;
+        const OVERLAY          = 0b00000001;
+        const HIDDEN           = 0b00000010;
+        const NORESIZE         = 0b00000100;
+        const EGL              = 0b00001000;
+        const FULLSCREEN_MOUSE = 0b00010000;
     }
 }
 
@@ -161,10 +162,10 @@ where
                     st.keys = state::Keys::new();
                 },
                 glfw::WindowEvent::CursorPos(x, y) => {
-                    st.mouse_moved(&ctx, x as f32, y as f32, game);
+                    st.mouse_moved(&ctx, x as f32, y as f32, game)?;
                 }
                 glfw::WindowEvent::MouseButton(_, glfw::Action::Press, _) => {
-                    st.mouse_pressed(&ctx, game)
+                    st.mouse_pressed(&ctx, game)?;
                 },
                 glfw::WindowEvent::MouseButton(_, glfw::Action::Release, _) => {
                     st.mouse_released(&ctx)
@@ -272,14 +273,14 @@ where
                         st.keys = state::Keys::new();
                     },
                     winit::event::WindowEvent::CursorMoved { position, ..} => {
-                        st.mouse_moved(&ctx, position.x as f32, position.y as f32, game);
+                        st.mouse_moved(&ctx, position.x as f32, position.y as f32, game)?;
                     },
                     winit::event::WindowEvent::MouseInput {
                         state,
                         ..
                     } => match state {
                         winit::event::ElementState::Pressed => {
-                            st.mouse_pressed(&ctx, game)
+                            st.mouse_pressed(&ctx, game)?;
                         },
                         winit::event::ElementState::Released => {
                             st.mouse_released(&ctx)

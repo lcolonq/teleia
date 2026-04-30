@@ -5,6 +5,8 @@ use crate::context;
 
 pub struct Texture {
     pub tex: glow::Texture,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl Texture {
@@ -18,6 +20,7 @@ impl Texture {
             ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
             Self {
                 tex,
+                width: 0, height: 0,
             }
         }
     }
@@ -52,11 +55,24 @@ impl Texture {
 
             Self {
                 tex,
+                width: rgba.width() as i32,
+                height: rgba.height() as i32,
             }
         }
     }
 
-    pub fn upload_rgba8(&self, ctx: &context::Context, width: i32, height: i32, data: &[u8]) {
+    pub fn upload(&mut self, ctx: &context::Context, bytes: &[u8]) {
+        let rgba = image::ImageReader::new(std::io::Cursor::new(bytes))
+            .with_guessed_format()
+            .expect("failed to guess image format")
+            .decode()
+            .expect("failed to decode image")
+            .into_rgba8();
+        let pixels = rgba.as_bytes();
+        self.upload_rgba8(ctx, rgba.width() as i32, rgba.height() as i32, &pixels);
+    }
+
+    pub fn upload_rgba8(&mut self, ctx: &context::Context, width: i32, height: i32, data: &[u8]) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
             ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
@@ -75,6 +91,16 @@ impl Texture {
                 Some(data),
             );
             ctx.gl.generate_mipmap(glow::TEXTURE_2D);
+        }
+        self.width = width;
+        self.height = height;
+    }
+
+    pub fn set_repeat(&self, ctx: &context::Context) {
+        unsafe {
+            ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
         }
     }
 

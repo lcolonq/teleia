@@ -1,6 +1,7 @@
 use crate::Options;
 
 use glow::HasContext;
+use glfw::Context as _;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -254,6 +255,17 @@ impl Context {
     pub fn disable_culling(&self) {
         unsafe {
             self.gl.disable(glow::CULL_FACE);
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn lock_mouse(&self) {
+        unsafe {
+            glfw::ffi::glfwSetInputMode(
+                self.window.borrow_mut().window_ptr(),
+                glfw::ffi::CURSOR,
+                glfw::ffi::CURSOR_DISABLED,
+            );
         }
     }
 

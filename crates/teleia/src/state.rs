@@ -22,9 +22,9 @@ pub trait Game {
     ) -> HashMap<String, audio::Audio> {
         HashMap::new()
     }
-    fn finish_title(&mut self, st: &mut State) {}
-    fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) {}
-    fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) {}
+    fn finish_title(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
+    fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) -> utils::Erm<()> { Ok(()) }
+    fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
 }
@@ -451,28 +451,37 @@ impl State {
         ctx: &context::Context,
         x: f32, y: f32,
         game: &mut G
-    ) where G: Game
+    ) -> utils::Erm<()> where G: Game
     {
-        let rx = ((x - self.screen.offsets.x) * ctx.render_width / self.screen.dims.x) as i32;
-        let ry = ((y - self.screen.offsets.y) * ctx.render_height / self.screen.dims.y) as i32;
-        if !(rx < 0 || rx >= ctx.render_width as i32 || ry < 0 || ry >= ctx.render_height as i32) {
-            game.mouse_move(ctx, self, rx, ry);
+        if ctx.options.contains(crate::Options::FULLSCREEN_MOUSE) {
+            game.mouse_move(ctx, self,
+                (x * ctx.render_width / self.screen.dims.x) as i32,
+                (y * ctx.render_height / self.screen.dims.y) as i32,
+            )?;
+        } else {
+            let rx = ((x - self.screen.offsets.x) * ctx.render_width / self.screen.dims.x) as i32;
+            let ry = ((y - self.screen.offsets.y) * ctx.render_height / self.screen.dims.y) as i32;
+            if !(rx < 0 || rx >= ctx.render_width as i32 || ry < 0 || ry >= ctx.render_height as i32) {
+                game.mouse_move(ctx, self, rx, ry)?;
+            }
         }
+        Ok(())
     }
 
     pub fn mouse_pressed<G>(
         &mut self,
         ctx: &context::Context,
         game: &mut G
-    ) where G: Game {
+    ) -> utils::Erm<()> where G: Game {
         log::info!("click");
         if self.audio.is_none() {
             self.audio = Some(audio::Assets::new(|actx| {
                 game.initialize_audio(ctx, &self, actx)
             }));
-            game.finish_title(self);
+            game.finish_title(ctx, self)?;
         }
-        game.mouse_press(ctx, self);
+        game.mouse_press(ctx, self)?;
+        Ok(())
     }
 
     pub fn mouse_released(

@@ -46,7 +46,7 @@ web-sys = { version = "*", features = ["Document", "Window", "Element", "HtmlCan
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11.5" # configurable logging to stdout
 glfw = { git = "https://github.com/lcolonq/glfw-rs", features = ["serde"] } # window management
-kira = { version = "=0.9.6", default-features = false, features = ["cpal", "ogg", "wav"] } # audio
+kira = { version = "=0.9.6", default-features = false, features = ["cpal", "ogg", "mp3", "wav"] } # audio
 directories = { git = "https://github.com/lcolonq/directories-rs" } # standard system directories
 polling = "3.11.0" # interface to epoll
 tungstenite = { version = "0.24.0", features = ["native-tls"] } # websockets
