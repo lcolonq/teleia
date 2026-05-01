@@ -1,4 +1,4 @@
-use crate::utils;
+use crate::{state, utils};
 
 fn compute_reverse(frames: u64, tick: u64, start: u64) -> u64 {
     let leftover = frames - (tick - start)
@@ -14,7 +14,6 @@ pub enum ModeToggle {
 pub struct Mode {
     frames: u64,
     toggle: ModeToggle,
-    locked: bool,
 }
 
 impl Mode {
@@ -22,7 +21,6 @@ impl Mode {
         Self {
             frames,
             toggle: ModeToggle::Inactive { start: 0 },
-            locked: false,
         }
     }
 
@@ -32,10 +30,6 @@ impl Mode {
             ModeToggle::Inactive {..} => false,
             ModeToggle::Active {..} => true,
         }
-    }
-
-    pub fn is_locked(&self) -> bool {
-        self.locked
     }
 
     /// Has the current transition finished?
@@ -61,35 +55,22 @@ impl Mode {
     }
 
     pub fn reset(&mut self) {
-        self.locked = false;
         self.toggle = ModeToggle::Inactive { start: 0 };
     }
 
-    pub fn reverse(&mut self, tick: u64) -> bool {
-        if !self.locked {
-            self.locked = true;
-            match self.toggle {
-                ModeToggle::Inactive { start } => {
-                    self.toggle = ModeToggle::Active {
-                        start: compute_reverse(self.frames, tick, start)
-                    };
-                },
-                ModeToggle::Active { start } => {
-                    self.toggle = ModeToggle::Inactive {
-                        start: compute_reverse(self.frames, tick, start)
-                    };
-                },
-            }
-            true
-        } else { false }
-    }
-
-    pub fn lock(&mut self) {
-        self.locked = true;
-    }
-
-    pub fn unlock(&mut self) {
-        self.locked = false;
+    pub fn toggle(&mut self, tick: u64) {
+        match self.toggle {
+            ModeToggle::Inactive { start } => {
+                self.toggle = ModeToggle::Active {
+                    start: compute_reverse(self.frames, tick, start)
+                };
+            },
+            ModeToggle::Active { start } => {
+                self.toggle = ModeToggle::Inactive {
+                    start: compute_reverse(self.frames, tick, start)
+                };
+            },
+        }
     }
 }
 
@@ -99,7 +80,6 @@ pub struct Cursor {
     pub change_started: u64,
     pub bound: i32,
     pub frames: u64,
-    pub locked: bool,
 }
 
 impl Cursor {
@@ -110,7 +90,6 @@ impl Cursor {
             change_started: 0,
             bound,
             frames,
-            locked: false,
         }
     }
 
@@ -129,25 +108,63 @@ impl Cursor {
     }
 
     pub fn set(&mut self, val: i32, tick: u64) -> bool {
-        if self.is_ready(tick) || !self.locked {
+        if self.is_ready(tick) {
             self.change_started = tick;
             self.prev_index = self.index;
             self.index = val;
             self.index %= self.bound;
-            self.locked = true;
             true
         } else { false }
     }
+    pub fn increment(&mut self, tick: u64) -> bool { self.set(self.index + 1, tick) }
+    pub fn decrement(&mut self, tick: u64) -> bool { self.set(self.index + self.bound - 1, tick) }
 
-    pub fn increment(&mut self, tick: u64) -> bool {
-        self.set(self.index + 1, tick)
+    pub fn set_unlocked(&mut self, val: i32, tick: u64) {
+        self.change_started = tick;
+        self.prev_index = self.index;
+        self.index = val;
+        self.index %= self.bound;
+    }
+    pub fn increment_unlocked(&mut self, tick: u64) -> bool { self.set_unlocked(self.index + 1, tick); true }
+    pub fn decrement_unlocked(&mut self, tick: u64) -> bool { self.set_unlocked(self.index + self.bound - 1, tick); true }
+
+    /// Read keypresses to update this cursor (assuming that the left/right keys decrement/increment)
+    /// Returns true if an update was performed (e.g. to determine whether to play a sound).
+    pub fn update_horizontal(&mut self, st: &state::State) -> bool {
+        if st.keys.new_left() {
+            self.decrement_unlocked(st.tick);
+            true
+        } else if st.keys.new_right() {
+            self.increment_unlocked(st.tick);
+            true
+        } else if st.keys.left() {
+            self.decrement(st.tick)
+        } else if st.keys.right() {
+            self.increment(st.tick)
+        } else { false }
     }
 
-    pub fn decrement(&mut self, tick: u64) -> bool {
-        self.set(self.index + self.bound - 1, tick)
+    pub fn update_vertical(&mut self, st: &state::State) -> bool {
+        if st.keys.new_up() {
+            self.decrement_unlocked(st.tick)
+        } else if st.keys.new_down() {
+            self.increment_unlocked(st.tick)
+        } else if st.keys.up() {
+            self.decrement(st.tick)
+        } else if st.keys.down() {
+            self.increment(st.tick)
+        } else { false }
     }
 
-    pub fn unlock(&mut self) {
-        self.locked = false;
+    pub fn update_lr(&mut self, st: &state::State) -> bool {
+        if st.keys.new_l() {
+            self.decrement_unlocked(st.tick)
+        } else if st.keys.new_r() {
+            self.increment_unlocked(st.tick)
+        } else if st.keys.l() {
+            self.decrement(st.tick)
+        } else if st.keys.r() {
+            self.increment(st.tick)
+        } else { false }
     }
 }

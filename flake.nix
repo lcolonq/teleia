@@ -56,13 +56,13 @@
         buildInputs = [
           pkgs.openssl.dev
           glfw
-          pkgs.xorg.libX11 
-          pkgs.xorg.libXcursor 
-          pkgs.xorg.libXi 
-          pkgs.xorg.libXrandr
-          pkgs.xorg.libXinerama
+          pkgs.libX11 
+          pkgs.libXcursor 
+          pkgs.libXi 
+          pkgs.libXrandr
+          pkgs.libXinerama
           pkgs.libxkbcommon 
-          pkgs.xorg.libxcb  
+          pkgs.libxcb
           pkgs.libglvnd
           pkgs.alsa-lib
         ];
@@ -230,7 +230,6 @@
         packages = [
           pkgs.trunk
           pkgs.rust-analyzer
-          pkgs.glxinfo
           pkgs.cmake
           pkgs.mold
         ] ++ native.nativeBuildInputs ++ native.buildInputs;

@@ -72,19 +72,19 @@ impl Keys {
     pub fn start(&self) -> bool { self.pressed[Key::Start] }
     pub fn select(&self) -> bool { self.pressed[Key::Select] }
     pub fn debug(&self) -> bool { self.pressed[Key::Debug] }
-    pub fn new_up(&mut self) -> bool { let ret = self.new[Key::Up]; self.new[Key::Up] = false; ret }
-    pub fn new_down(&mut self) -> bool { let ret = self.new[Key::Down]; self.new[Key::Down] = false; ret }
-    pub fn new_left(&mut self) -> bool { let ret = self.new[Key::Left]; self.new[Key::Left] = false; ret }
-    pub fn new_right(&mut self) -> bool { let ret = self.new[Key::Right]; self.new[Key::Right] = false; ret }
-    pub fn new_a(&mut self) -> bool { let ret = self.new[Key::A]; self.new[Key::A] = false; ret }
-    pub fn new_b(&mut self) -> bool { let ret = self.new[Key::B]; self.new[Key::B] = false; ret }
-    pub fn new_x(&mut self) -> bool { let ret = self.new[Key::X]; self.new[Key::X] = false; ret }
-    pub fn new_y(&mut self) -> bool { let ret = self.new[Key::Y]; self.new[Key::Y] = false; ret }
-    pub fn new_l(&mut self) -> bool { let ret = self.new[Key::L]; self.new[Key::L] = false; ret }
-    pub fn new_r(&mut self) -> bool { let ret = self.new[Key::R]; self.new[Key::R] = false; ret }
-    pub fn new_start(&mut self) -> bool { let ret = self.new[Key::Start]; self.new[Key::Start] = false; ret }
-    pub fn new_select(&mut self) -> bool { let ret = self.new[Key::Select]; self.new[Key::Select] = false; ret }
-    pub fn new_debug(&mut self) -> bool { let ret = self.new[Key::Debug]; self.new[Key::Debug] = false; ret }
+    pub fn new_up(&self) -> bool { self.new[Key::Up] }
+    pub fn new_down(&self) -> bool { self.new[Key::Down] }
+    pub fn new_left(&self) -> bool { self.new[Key::Left] }
+    pub fn new_right(&self) -> bool { self.new[Key::Right] }
+    pub fn new_a(&self) -> bool { self.new[Key::A] }
+    pub fn new_b(&self) -> bool { self.new[Key::B] }
+    pub fn new_x(&self) -> bool { self.new[Key::X] }
+    pub fn new_y(&self) -> bool { self.new[Key::Y] }
+    pub fn new_l(&self) -> bool { self.new[Key::L] }
+    pub fn new_r(&self) -> bool { self.new[Key::R] }
+    pub fn new_start(&self) -> bool { self.new[Key::Start] }
+    pub fn new_select(&self) -> bool { self.new[Key::Select] }
+    pub fn new_debug(&self) -> bool { self.new[Key::Debug] }
 }
 
 pub struct PointLight {
@@ -544,6 +544,7 @@ impl State {
             self.tick += 1;
             self.frames_this_second += 1;
             game.update(ctx, self)?;
+            self.keys.new = enum_map! { _ => false };
         }
         if now - self.start_this_second > 1.0 { // track FPS
             self.start_this_second = now;
