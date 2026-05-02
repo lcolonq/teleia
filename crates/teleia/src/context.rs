@@ -1,6 +1,8 @@
 use crate::Options;
 
 use glow::HasContext;
+
+#[cfg(not(target_arch = "wasm32"))]
 use glfw::Context as _;
 
 #[cfg(target_arch = "wasm32")]
@@ -256,6 +258,12 @@ impl Context {
         unsafe {
             self.gl.disable(glow::CULL_FACE);
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn lock_mouse(&self) {
+        self.window.set_cursor_grab(winit::window::CursorGrabMode::Locked);
+        self.window.set_cursor_visible(false);
     }
 
     #[cfg(not(target_arch = "wasm32"))]

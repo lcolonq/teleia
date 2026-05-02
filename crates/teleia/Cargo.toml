@@ -10,7 +10,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 strum = { version = "0.27.1", features = ["derive"] } # utility macros for enums
 glow = { version = "=0.13.1", features = [] } # rendering
-tobj = "4.0.1" # loader for .obj meshes loader
+tobj = "=4.0.1" # loader for .obj meshes loader
+ahash = "=0.8.10" # dependency of tobj
 gltf = { git = "https://github.com/lcolonq/gltf", features = ["extras", "import", "names", "utils"] } # loader for .gltf scenes
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] } # texture loader
 # cosmic-text = { version = "*", default-features = false, features = ["std", "swash"] }  # advanced text rendering
