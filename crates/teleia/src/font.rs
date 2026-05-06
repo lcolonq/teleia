@@ -1,16 +1,16 @@
-use crate::{context, mesh, shader, state, texture};
+use crate::{context, mesh, state, texture};
 use glow::HasContext;
 
 pub struct BitmapParams<'color> {
     pub color: &'color [glam::Vec3],
     pub scale: glam::Vec2,
+    pub offset: glam::Vec2,
 }
 pub struct Bitmap {
     pub char_width: i32,
     pub char_height: i32,
     pub font_width: i32,
     pub font_height: i32,
-    pub shader: shader::Shader,
     pub font: texture::Texture,
     pub vao: glow::VertexArray,
     pub vertex_buf: glow::Buffer,
@@ -26,11 +26,6 @@ impl Bitmap {
         font_width: i32, font_height: i32,
         data: &[u8],
     ) -> Self {
-        let shader = shader::Shader::new_nolib(
-            &ctx,
-            include_str!("assets/shaders/bitmap/vert.glsl"),
-            include_str!("assets/shaders/bitmap/frag.glsl"),
-        );
         let font = texture::Texture::new(ctx, data);
         unsafe {
             let vao = ctx.gl.create_vertex_array().expect("failed to initialize vao");
@@ -52,7 +47,6 @@ impl Bitmap {
             Self {
                 char_width, char_height,
                 font_width, font_height,
-                shader,
                 font,
                 vao,
                 vertex_buf,
@@ -67,20 +61,23 @@ impl Bitmap {
         Self::from_image(ctx, 7, 9, 112, 54, include_bytes!("assets/fonts/default.png"))
     }
 
+    pub fn small(ctx: &context::Context) -> Self {
+        Self::from_image(ctx, 6, 7, 96, 42, include_bytes!("assets/fonts/small.png"))
+    }
+
     pub fn render_text_parameterized(&self,
         ctx: &context::Context, st: &state::State,
-        pos: &glam::Vec2, text: &str,
+        text: &str,
         params: BitmapParams,
     ) {
-        let fpos = pos.floor();
-        let mut cur = glam::Vec2::new(0.0, 0.0);
+        let mut cur = params.offset;
         let mut vertices = Vec::new();
         let mut texcoords = Vec::new();
         let mut colors = Vec::new();
         let mut indices = Vec::new();
         let cwidth = self.char_width as f32 / self.font_width as f32;
         let cheight = self.char_height as f32 / self.font_height as f32;
-        let sdims = glam::Vec2::new(self.char_width as f32, self.char_height as f32) * params.scale;
+        let sdims = glam::Vec2::new(2.0, 2.0) * params.scale;
         let row_len = self.font_width as u32 / self.char_width as u32;
         for (i, c) in text.chars().enumerate() {
             if c == '\n' {
@@ -112,22 +109,7 @@ impl Bitmap {
             }
         }
         let index_bytes: Vec<u8> = indices.iter().flat_map(|x| x.to_ne_bytes()).collect();
-        self.shader.bind(ctx);
         self.font.bind(ctx);
-        let scale = glam::Vec2::new(2.0 / st.render_dims.x, 2.0 / st.render_dims.y);
-        let offset = glam::Vec2::new(
-            -st.render_dims.x / 2.0,
-            st.render_dims.y / 2.0 - sdims.y,
-        );
-        let npos = (glam::Vec2::new(fpos.x, -fpos.y) + offset) * scale;
-        self.shader.set_mat4(
-            ctx, "transform",
-            &glam::Mat4::from_scale_rotation_translation(
-                glam::Vec3::new(scale.x, scale.y, 1.0),
-                glam::Quat::IDENTITY,
-                glam::Vec3::new(npos.x, npos.y, 0.0),
-            ),
-        );
         unsafe {
             ctx.gl.bind_vertex_array(Some(self.vao));
             ctx.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.vertex_buf));
@@ -167,14 +149,25 @@ impl Bitmap {
         }
     }
 
-    pub fn render_text_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str, color: &[glam::Vec3]) {
-        self.render_text_parameterized(ctx, st, pos, text, BitmapParams {
-            color,
-            scale: glam::Vec2::ONE,
-        })
+    pub fn render_text_helper(&self,
+        ctx: &context::Context, st: &state::State,
+        text: &str, color: &[glam::Vec3]
+    ) {
+        self.render_text_parameterized(
+            ctx, st,
+            text,
+            BitmapParams {
+                color,
+                scale: glam::Vec2::ONE,
+                offset: glam::Vec2::ZERO,
+            }
+        )
     }
 
-    pub fn render_text(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, text: &str) {
-        self.render_text_helper(ctx, st, pos, text, &[]);
+    pub fn render_text(&self,
+        ctx: &context::Context, st: &state::State,
+        text: &str
+    ) {
+        self.render_text_helper(ctx, st, text, &[]);
     }
 }

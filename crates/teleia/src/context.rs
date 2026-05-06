@@ -201,10 +201,24 @@ impl Context {
         }
     }
 
+    pub fn write_and_use_stencil(&self) {
+        unsafe {
+            self.gl.stencil_func(glow::EQUAL, 1, 0xff);
+            self.gl.stencil_op(glow::KEEP, glow::KEEP, glow::REPLACE);
+        }
+    }
+
     pub fn use_inverse_stencil(&self) {
         unsafe {
             self.gl.stencil_func(glow::NOTEQUAL, 1, 0xff);
             self.gl.stencil_op(glow::KEEP, glow::KEEP, glow::KEEP);
+        }
+    }
+
+    pub fn write_and_use_inverse_stencil(&self) {
+        unsafe {
+            self.gl.stencil_func(glow::NOTEQUAL, 1, 0xff);
+            self.gl.stencil_op(glow::KEEP, glow::KEEP, glow::REPLACE);
         }
     }
 

@@ -3,6 +3,7 @@ uniform highp int flags;
 in vec3 vertex;
 in vec3 normal;
 in vec2 texcoord;
+in vec3 color;
 
 uniform mat4 view;
 uniform mat4 position;
@@ -14,6 +15,7 @@ uniform vec3 offset;
 uniform float yskew;
 
 out vec2 vertex_texcoord;
+out vec3 vertex_color;
 out vec3 vertex_normal;
 out vec3 vertex_fragpos;
 out vec4 vertex_fragpos_shadow_dir;
@@ -25,6 +27,7 @@ bool flag(int mask) {
 
 void main() {
     vertex_texcoord = texcoord;
+    vertex_color = color;
     vertex_normal = (normal_matrix * vec4(normal, 1.0)).xyz;
     vec3 pos = (position * vec4(vertex, 1.0)).xyz;
     vertex_fragpos = pos;

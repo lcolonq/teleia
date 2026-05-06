@@ -5,15 +5,16 @@ use bitflags::bitflags;
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct UberFlags: u32 {
-        const TEXTURE_COLOR       = 0b000000001;
-        const TEXTURE_NORMAL      = 0b000000010;
-        const FLIP_TEXTURE        = 0b000000100;
-        const LIGHT_AMBIENT       = 0b000001000;
-        const LIGHT_DIR           = 0b000010000;
-        const LIGHT_POINT         = 0b000100000;
-        const SPRITE              = 0b001000000;
-        const EFFECTS             = 0b010000000;
-        const YSKEW               = 0b100000000;
+        const TEXTURE_COLOR       = 0b0000000001;
+        const TEXTURE_NORMAL      = 0b0000000010;
+        const FLIP_TEXTURE        = 0b0000000100;
+        const LIGHT_AMBIENT       = 0b0000001000;
+        const LIGHT_DIR           = 0b0000010000;
+        const LIGHT_POINT         = 0b0000100000;
+        const SPRITE              = 0b0001000000;
+        const EFFECTS             = 0b0010000000;
+        const YSKEW               = 0b0100000000;
+        const VERTEX_COLOR        = 0b1000000000;
     }
 }
 impl UberFlags {
@@ -91,6 +92,9 @@ impl<A: Assets> Renderer<A> {
     }
     pub fn font_char_width(&self, st: &state::State) -> f32 { st.font_default.char_width as f32 }
     pub fn font_char_height(&self, st: &state::State) -> f32 { st.font_default.char_height as f32 }
+    pub fn unbind_texture(&mut self, _ctx: &context::Context, _st: &mut state::State) {
+        self.texture = BoundTexture::None;
+    }
     pub fn bind_texture(&mut self, ctx: &context::Context, _st: &mut state::State, texture: A::Texture) {
         if self.texture != BoundTexture::Texture(texture) {
             self.assets.texture(texture).bind(ctx);
@@ -272,9 +276,13 @@ impl<A: Assets> Renderer<A> {
         pos: glam::Vec2,
         s: &str,
     ) {
-        // drawing text might bind the shader and texture
-        self.shader = BoundShader::None; self.texture = BoundTexture::None;
-        st.font_default.render_text(ctx, st, &pos, s);
+        // drawing text might bind the texture
+        self.texture = BoundTexture::None;
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
+        let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
+        let fpos = (pos + glam::Vec2::new(-dims.x / 2.0, st.font_default.char_height as f32 / 2.0));
+        self.set_position_2d(ctx, st, fpos, dims);
+        st.font_default.render_text(ctx, st, s);
     }
 
     /// Common case: text in the default font, with a color (units are pixels, pos is top left)
@@ -284,9 +292,12 @@ impl<A: Assets> Renderer<A> {
         col: glam::Vec3,
         s: &str,
     ) {
-        // drawing text might bind the shader and texture
-        self.shader = BoundShader::None; self.texture = BoundTexture::None;
-        st.font_default.render_text_helper(ctx, st, &pos, s, &[col]);
+        self.texture = BoundTexture::None;
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
+        let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
+        let fpos = (pos + glam::Vec2::new(-dims.x / 2.0, st.font_default.char_height as f32 / 2.0));
+        self.set_position_2d(ctx, st, fpos, dims);
+        st.font_default.render_text_helper(ctx, st, s, &[col]);
     }
 
     /// Common case: text in the default font (units are pixels, pos is center)
@@ -295,13 +306,13 @@ impl<A: Assets> Renderer<A> {
         pos: glam::Vec2,
         s: &str,
     ) {
-        // drawing text might bind the shader and texture
-        self.shader = BoundShader::None; self.texture = BoundTexture::None;
+        self.texture = BoundTexture::None;
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
         let width = s.len() as f32 * st.font_default.char_width as f32;
         let height = st.font_default.char_height as f32;
-        st.font_default.render_text(ctx, st,
-            &(pos - glam::Vec2::new((width / 2.0).round(), (height / 2.0).round())),
-            s
-        );
+        let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
+        let fpos = (pos + glam::Vec2::new(-dims.x / 2.0 - (width / 2.0).round(), st.font_default.char_height as f32 / 2.0));
+        self.set_position_2d(ctx, st, fpos, dims);
+        st.font_default.render_text(ctx, st, s);
     }
 }

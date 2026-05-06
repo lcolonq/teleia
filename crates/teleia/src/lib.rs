@@ -168,13 +168,13 @@ where
                     st.mouse_pressed(&ctx, game)?;
                 },
                 glfw::WindowEvent::MouseButton(_, glfw::Action::Release, _) => {
-                    st.mouse_released(&ctx)
+                    st.mouse_released(&ctx, game)?;
                 },
                 glfw::WindowEvent::Key(key, _, glfw::Action::Press, _) => {
-                    st.key_pressed(&ctx, state::Keycode::new(key))
+                    st.key_pressed(&ctx, game, state::Keycode::new(key))?;
                 },
                 glfw::WindowEvent::Key(key, _, glfw::Action::Release, _) => {
-                    st.key_released(&ctx, state::Keycode::new(key))
+                    st.key_released(&ctx, game, state::Keycode::new(key))?;
                 },
                 _ => {},
             }
@@ -283,7 +283,7 @@ where
                             st.mouse_pressed(&ctx, game)?;
                         },
                         winit::event::ElementState::Released => {
-                            st.mouse_released(&ctx)
+                            st.mouse_released(&ctx)?;
                         },
                     }
                     winit::event::WindowEvent::KeyboardInput {
@@ -296,10 +296,10 @@ where
                         ..
                     } => match state {
                         winit::event::ElementState::Pressed => {
-                            st.key_pressed(&ctx, state::Keycode { kc: *key })
+                            st.key_pressed(&ctx, state::Keycode { kc: *key })?;
                         },
                         winit::event::ElementState::Released => {
-                            st.key_released(&ctx, state::Keycode { kc: *key })
+                            st.key_released(&ctx, state::Keycode { kc: *key })?;
                         },
                     }
                     _ => {},

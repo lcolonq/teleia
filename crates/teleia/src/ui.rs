@@ -130,13 +130,11 @@ impl Cursor {
 
     /// Read keypresses to update this cursor (assuming that the left/right keys decrement/increment)
     /// Returns true if an update was performed (e.g. to determine whether to play a sound).
-    pub fn update_horizontal(&mut self, st: &state::State) -> bool {
+    pub fn update_horizontal(&mut self, st: &mut state::State) -> bool {
         if st.keys.new_left() {
-            self.decrement_unlocked(st.tick);
-            true
+            self.decrement_unlocked(st.tick)
         } else if st.keys.new_right() {
-            self.increment_unlocked(st.tick);
-            true
+            self.increment_unlocked(st.tick)
         } else if st.keys.left() {
             self.decrement(st.tick)
         } else if st.keys.right() {
@@ -144,7 +142,7 @@ impl Cursor {
         } else { false }
     }
 
-    pub fn update_vertical(&mut self, st: &state::State) -> bool {
+    pub fn update_vertical(&mut self, st: &mut state::State) -> bool {
         if st.keys.new_up() {
             self.decrement_unlocked(st.tick)
         } else if st.keys.new_down() {
@@ -156,7 +154,7 @@ impl Cursor {
         } else { false }
     }
 
-    pub fn update_lr(&mut self, st: &state::State) -> bool {
+    pub fn update_lr(&mut self, st: &mut state::State) -> bool {
         if st.keys.new_l() {
             self.decrement_unlocked(st.tick)
         } else if st.keys.new_r() {

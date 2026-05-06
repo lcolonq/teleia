@@ -23,6 +23,7 @@ pub trait Game {
         HashMap::new()
     }
     fn finish_title(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
+    fn keybindings_were_reset(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) -> utils::Erm<()> { Ok(()) }
     fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
@@ -72,19 +73,19 @@ impl Keys {
     pub fn start(&self) -> bool { self.pressed[Key::Start] }
     pub fn select(&self) -> bool { self.pressed[Key::Select] }
     pub fn debug(&self) -> bool { self.pressed[Key::Debug] }
-    pub fn new_up(&self) -> bool { self.new[Key::Up] }
-    pub fn new_down(&self) -> bool { self.new[Key::Down] }
-    pub fn new_left(&self) -> bool { self.new[Key::Left] }
-    pub fn new_right(&self) -> bool { self.new[Key::Right] }
-    pub fn new_a(&self) -> bool { self.new[Key::A] }
-    pub fn new_b(&self) -> bool { self.new[Key::B] }
-    pub fn new_x(&self) -> bool { self.new[Key::X] }
-    pub fn new_y(&self) -> bool { self.new[Key::Y] }
-    pub fn new_l(&self) -> bool { self.new[Key::L] }
-    pub fn new_r(&self) -> bool { self.new[Key::R] }
-    pub fn new_start(&self) -> bool { self.new[Key::Start] }
-    pub fn new_select(&self) -> bool { self.new[Key::Select] }
-    pub fn new_debug(&self) -> bool { self.new[Key::Debug] }
+    pub fn new_up(&mut self) -> bool { let ret = self.new[Key::Up]; self.new[Key::Up] = false; ret }
+    pub fn new_down(&mut self) -> bool { let ret = self.new[Key::Down]; self.new[Key::Down] = false; ret }
+    pub fn new_left(&mut self) -> bool { let ret = self.new[Key::Left]; self.new[Key::Left] = false; ret }
+    pub fn new_right(&mut self) -> bool { let ret = self.new[Key::Right]; self.new[Key::Right] = false; ret }
+    pub fn new_a(&mut self) -> bool { let ret = self.new[Key::A]; self.new[Key::A] = false; ret }
+    pub fn new_b(&mut self) -> bool { let ret = self.new[Key::B]; self.new[Key::B] = false; ret }
+    pub fn new_x(&mut self) -> bool { let ret = self.new[Key::X]; self.new[Key::X] = false; ret }
+    pub fn new_y(&mut self) -> bool { let ret = self.new[Key::Y]; self.new[Key::Y] = false; ret }
+    pub fn new_l(&mut self) -> bool { let ret = self.new[Key::L]; self.new[Key::L] = false; ret }
+    pub fn new_r(&mut self) -> bool { let ret = self.new[Key::R]; self.new[Key::R] = false; ret }
+    pub fn new_start(&mut self) -> bool { let ret = self.new[Key::Start]; self.new[Key::Start] = false; ret }
+    pub fn new_select(&mut self) -> bool { let ret = self.new[Key::Select]; self.new[Key::Select] = false; ret }
+    pub fn new_debug(&mut self) -> bool { let ret = self.new[Key::Debug]; self.new[Key::Debug] = false; ret }
 }
 
 pub struct PointLight {
@@ -176,6 +177,7 @@ pub struct State {
     pub shader_upscale: shader::Shader,
     pub mesh_square: mesh::Mesh,
     pub font_default: font::Bitmap,
+    pub font_small: font::Bitmap,
     pub audio: Option<audio::Assets>,
 
     pub projection: glam::Mat4,
@@ -183,8 +185,6 @@ pub struct State {
     pub camera: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub lighting: (glam::Vec3, glam::Vec3, glam::Vec3),
     pub point_lights: Vec<PointLight>,
-
-    pub log: Vec<(u64, String)>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -274,6 +274,7 @@ impl State {
             shader_upscale,
             mesh_square,
             font_default: font::Bitmap::default(ctx),
+            font_small: font::Bitmap::small(ctx),
             audio: None,
 
             projection: glam::Mat4::perspective_lh(
@@ -300,14 +301,7 @@ impl State {
             // waker_ctx,
             // http_client: reqwest::Client::new(),
             // request: None,
-
-            log: Vec::new(),
         }
-    }
-
-    pub fn write_log(&mut self, e: &str) {
-        log::info!("log: {}", e.to_owned());
-        self.log.push((self.tick, e.to_owned()));
     }
 
     pub fn handle_resize(&mut self, ctx: &context::Context) {
@@ -484,17 +478,20 @@ impl State {
         Ok(())
     }
 
-    pub fn mouse_released(
+    pub fn mouse_released<G>(
         &mut self,
         _ctx: &context::Context,
-    ) {
+        _game: &mut G
+    ) -> utils::Erm<()> where G: Game {
+        Ok(())
     }
 
-    pub fn key_pressed(
+    pub fn key_pressed<G>(
         &mut self,
-        _ctx: &context::Context,
+        ctx: &context::Context,
+        game: &mut G,
         key: Keycode,
-    ) {
+    ) -> utils::Erm<()> where G: Game {
         #[cfg(target_arch = "wasm32")]
         let rebind = key.kc == winit::keyboard::KeyCode::F12;
         #[cfg(not(target_arch = "wasm32"))]
@@ -502,7 +499,7 @@ impl State {
         if rebind {
             self.keybindings = default_keybindings();
             self.rebinding = None;
-            self.write_log("Reset keybindings!");
+            game.keybindings_were_reset(ctx, self)?;
         } else if let Some(k) = self.rebinding {
             self.keybindings.insert(key, k);
             self.rebinding = None;
@@ -510,16 +507,19 @@ impl State {
             self.keys.pressed[*k] = true;
             self.keys.new[*k] = true;
         }
+        Ok(())
     }
 
-    pub fn key_released(
+    pub fn key_released<G>(
         &mut self,
         _ctx: &context::Context,
+        _game: &mut G,
         key: Keycode,
-    ) {
+    ) -> utils::Erm<()> where G: Game {
         if let Some(k) = self.keybindings.get_by_left(&key) {
             self.keys.pressed[*k] = false;
         }
+        Ok(())
     }
 
     /// Return the first keybinding for the given virtual key

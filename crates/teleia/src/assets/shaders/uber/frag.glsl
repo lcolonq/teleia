@@ -23,6 +23,7 @@ uniform float effect_hueshift;
 uniform float effect_huescale;
 
 in vec2 vertex_texcoord;
+in vec3 vertex_color;
 in vec3 vertex_normal;
 in vec3 vertex_fragpos;
 in vec4 vertex_fragpos_shadow_dir;
@@ -185,5 +186,8 @@ void main() {
     frag_color.rgb *= (from_ambient + from_dir + from_points);
     if (frag_color.a == 0.0) {
         discard;
+    }
+    if (flag(VERTEX_COLOR)) {
+        frag_color.rgb = vertex_color;
     }
 }
