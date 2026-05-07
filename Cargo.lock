@@ -2369,6 +2369,7 @@ dependencies = [
 name = "teleia"
 version = "0.1.0"
 dependencies = [
+ "ahash",
  "base64 0.22.1",
  "bimap",
  "bincode",
