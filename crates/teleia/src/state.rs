@@ -175,6 +175,7 @@ pub struct State {
     pub render_framebuffer: framebuffer::Framebuffer,
     pub render_dims: glam::Vec2,
     pub shader_upscale: shader::Shader,
+    pub shader_text_bitmap: shader::Shader,
     pub mesh_square: mesh::Mesh,
     pub font_default: font::Bitmap,
     pub font_small: font::Bitmap,
@@ -250,6 +251,11 @@ impl State {
             include_str!("assets/shaders/scale/vert.glsl"),
             include_str!("assets/shaders/scale/frag.glsl"),
         );
+        let shader_text_bitmap = shader::Shader::new_nolib(
+            ctx,
+            include_str!("assets/shaders/bitmap/vert.glsl"),
+            include_str!("assets/shaders/bitmap/frag.glsl"),
+        );
         let mesh_square = mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/square.obj"));
 
         let nextframe = now(ctx);
@@ -272,6 +278,7 @@ impl State {
             render_framebuffer,
             render_dims: glam::Vec2::new(ctx.render_width, ctx.render_height),
             shader_upscale,
+            shader_text_bitmap,
             mesh_square,
             font_default: font::Bitmap::default(ctx),
             font_small: font::Bitmap::small(ctx),
@@ -369,7 +376,7 @@ impl State {
         )
     }
 
-    pub fn bind_3d_helper(&mut self, ctx: &context::Context, shader: &shader::Shader, plc: usize, orth: bool) {
+    pub fn bind_3d_helper(&self, ctx: &context::Context, shader: &shader::Shader, plc: usize, orth: bool) {
         shader.bind(ctx);
         shader.set_mat4(ctx, "projection", if orth { &self.projection_orth } else { &self.projection });
         shader.set_mat4(ctx, "view", &self.view());
@@ -391,11 +398,11 @@ impl State {
         );
     }
 
-    pub fn bind_3d_no_point_lights(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+    pub fn bind_3d_no_point_lights(&self, ctx: &context::Context, shader: &shader::Shader) {
         self.bind_3d_helper(ctx, shader, 0, false);
     }
 
-    pub fn bind_3d_with_point_lights(&mut self, ctx: &context::Context, shader: &shader::Shader, orth: bool) {
+    pub fn bind_3d_with_point_lights(&self, ctx: &context::Context, shader: &shader::Shader, orth: bool) {
         let plc = self.point_lights.len().min(5);
         self.bind_3d_helper(ctx, shader, plc, orth);
         if plc > 0 {
@@ -417,15 +424,15 @@ impl State {
         }
     }
 
-    pub fn bind_3d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+    pub fn bind_3d(&self, ctx: &context::Context, shader: &shader::Shader) {
         self.bind_3d_with_point_lights(ctx, shader, false)
     }
 
-    pub fn bind_3d_orth(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+    pub fn bind_3d_orth(&self, ctx: &context::Context, shader: &shader::Shader) {
         self.bind_3d_with_point_lights(ctx, shader, true)
     }
 
-    pub fn bind_2d(&mut self, ctx: &context::Context, shader: &shader::Shader) {
+    pub fn bind_2d(&self, ctx: &context::Context, shader: &shader::Shader) {
         shader.bind(ctx);
         shader.set_mat4(&ctx, "projection", &glam::Mat4::IDENTITY);
         shader.set_mat4(

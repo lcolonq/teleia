@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use glow::HasContext;
 
-use crate::{context, state, mesh};
+use crate::{context, font, mesh, state};
 
 const COMMON_VERT: &'static str = include_str!("assets/shaders/common/vert.glsl");
 const COMMON_FRAG: &'static str = include_str!("assets/shaders/common/frag.glsl");
@@ -237,6 +237,15 @@ impl Shader {
 
     pub fn set_position_2d(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, dims: &glam::Vec2) {
         self.set_position_2d_helper(ctx, st, pos, dims, &glam::Quat::IDENTITY)
+    }
+
+    pub fn set_position_text_bitmap(&self,
+        ctx: &context::Context, st: &state::State,
+        font: &font::Bitmap,
+        pos: &glam::Vec2
+    ) {
+        let dims = glam::Vec2::new(font.char_width as f32, font.char_height as f32);
+        self.set_position_2d_helper(ctx, st, pos, &dims, &glam::Quat::IDENTITY)
     }
 
     pub fn bind(&self, ctx: &context::Context) {
