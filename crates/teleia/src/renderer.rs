@@ -295,7 +295,7 @@ impl<A: Assets> Renderer<A> {
         self.texture = BoundTexture::None;
         self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
         let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
-        let fpos = (pos + glam::Vec2::new(-dims.x / 2.0, st.font_default.char_height as f32 / 2.0));
+        let fpos = pos + glam::Vec2::new(-dims.x / 2.0, st.font_default.char_height as f32 / 2.0);
         self.set_position_2d(ctx, st, fpos, dims);
         st.font_default.render_text_helper(ctx, st, s, &[col]);
     }
@@ -309,9 +309,8 @@ impl<A: Assets> Renderer<A> {
         self.texture = BoundTexture::None;
         self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
         let width = s.len() as f32 * st.font_default.char_width as f32;
-        let height = st.font_default.char_height as f32;
         let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
-        let fpos = (pos + glam::Vec2::new(-dims.x / 2.0 - (width / 2.0).round(), st.font_default.char_height as f32 / 2.0));
+        let fpos = pos + glam::Vec2::new(-dims.x / 2.0 - (width / 2.0).round(), st.font_default.char_height as f32 / 2.0);
         self.set_position_2d(ctx, st, fpos, dims);
         st.font_default.render_text(ctx, st, s);
     }

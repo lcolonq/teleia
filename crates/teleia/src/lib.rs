@@ -141,6 +141,7 @@ where
     }
 
     game.initialize(ctx, st)?;
+    st.initialize_audio(ctx, game)?;
     'running: loop {
         if ctx.window.borrow().should_close() {
             game.finalize(ctx, st)?;
@@ -244,6 +245,7 @@ where
     }
 
     let _ = game.initialize(ctx, st);
+    let _ = st.initialize_audio(ctx, game);
     let res = std::rc::Rc::new(std::cell::RefCell::new(Ok(())));
     let result = res.clone();
     event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);

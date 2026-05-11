@@ -75,7 +75,7 @@ impl Bitmap {
     }
 
     pub fn render_text_parameterized(&self,
-        ctx: &context::Context, st: &state::State,
+        ctx: &context::Context, _st: &state::State,
         text: &str,
         params: BitmapParams,
     ) {

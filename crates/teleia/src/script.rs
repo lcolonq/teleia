@@ -58,6 +58,7 @@ struct PitParser {
     cur: PitParserTokenInfo, next: PitParserTokenInfo,
 }
 
+#[allow(dead_code)]
 unsafe extern "C" {
     pub fn pit_runtime_test(out: *mut u8, out_len: i64, buf: *mut u8, len: i64) -> c_int;
     fn pit_runtime_new(buf: *mut MaybeUninit<u8>, len: i64) -> *mut PitRuntime;

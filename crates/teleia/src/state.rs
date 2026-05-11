@@ -22,10 +22,10 @@ pub trait Game {
     ) -> HashMap<String, audio::Audio> {
         HashMap::new()
     }
-    fn finish_title(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn keybindings_were_reset(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn mouse_move(&mut self, ctx: &context::Context, st: &mut State, x: i32, y: i32) -> utils::Erm<()> { Ok(()) }
     fn mouse_press(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
+    fn mouse_released(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn update(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
     fn render(&mut self, ctx: &context::Context, st: &mut State) -> utils::Erm<()> { Ok(()) }
 }
@@ -447,6 +447,20 @@ impl State {
         );
     }
 
+    pub fn initialize_audio<G>(
+        &mut self,
+        ctx: &context::Context,
+        game: &mut G
+    ) -> utils::Erm<()> where G: Game
+    {
+        if self.audio.is_none() {
+            self.audio = Some(audio::Assets::new(|actx| {
+                game.initialize_audio(ctx, &self, actx)
+            }));
+        }
+        Ok(())
+    }
+
     pub fn mouse_moved<G>(
         &mut self,
         ctx: &context::Context,
@@ -474,22 +488,17 @@ impl State {
         ctx: &context::Context,
         game: &mut G
     ) -> utils::Erm<()> where G: Game {
-        log::info!("click");
-        if self.audio.is_none() {
-            self.audio = Some(audio::Assets::new(|actx| {
-                game.initialize_audio(ctx, &self, actx)
-            }));
-            game.finish_title(ctx, self)?;
-        }
+        self.initialize_audio(ctx, game)?;
         game.mouse_press(ctx, self)?;
         Ok(())
     }
 
     pub fn mouse_released<G>(
         &mut self,
-        _ctx: &context::Context,
-        _game: &mut G
+        ctx: &context::Context,
+        game: &mut G
     ) -> utils::Erm<()> where G: Game {
+        game.mouse_released(ctx, self)?;
         Ok(())
     }
 
@@ -584,10 +593,10 @@ impl State {
             if err != glow::NO_ERROR {
                 log::warn!("opengl error: {}", err);
             }
-            let log = unsafe { ctx.gl.get_debug_message_log(5) };
-            for m in log {
-                log::warn!("opengl debug message: {:?}", m);
-            }
+            // let log = unsafe { ctx.gl.get_debug_message_log(5) };
+            // for m in log {
+            //     log::warn!("opengl debug message: {:?}", m);
+            // }
         }
         Ok(())
     }
