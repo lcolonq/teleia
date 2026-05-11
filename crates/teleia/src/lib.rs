@@ -75,13 +75,6 @@ where
 
     log::info!("hello computer, starting up...");
 
-    unsafe {
-        let mut out = vec![' ' as u8; 1024];
-        let buf = std::alloc::alloc(std::alloc::Layout::from_size_align(256 * 1024 * 1024, 64).unwrap());
-        log::info!("pit_runtime_test: {:?}", crate::script::pit_runtime_test(out.as_mut_ptr(), out.len() as i64, buf, 256 * 1024 * 1024));
-        log::info!("out: {}", String::from_utf8(out).unwrap());
-    }
-
     let (rglfw, rwindow, gl, events) = {
         use glfw::fail_on_errors;
         let mut glfw = glfw::init(glfw::fail_on_errors!()).expect("failed to initialize GLFW");
@@ -283,7 +276,7 @@ where
                             st.mouse_pressed(&ctx, game)?;
                         },
                         winit::event::ElementState::Released => {
-                            st.mouse_released(&ctx)?;
+                            st.mouse_released(&ctx, game)?;
                         },
                     }
                     winit::event::WindowEvent::KeyboardInput {
@@ -296,10 +289,10 @@ where
                         ..
                     } => match state {
                         winit::event::ElementState::Pressed => {
-                            st.key_pressed(&ctx, state::Keycode { kc: *key })?;
+                            st.key_pressed(&ctx, game, state::Keycode { kc: *key })?;
                         },
                         winit::event::ElementState::Released => {
-                            st.key_released(&ctx, state::Keycode { kc: *key })?;
+                            st.key_released(&ctx, game, state::Keycode { kc: *key })?;
                         },
                     }
                     _ => {},

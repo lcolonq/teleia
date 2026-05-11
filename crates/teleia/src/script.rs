@@ -2,7 +2,7 @@ use std::{ffi::c_int, mem::MaybeUninit};
 
 use crate::utils;
 
-const NIL: Value = Value { val: PitValue { data: 0xfff4000000000000 } };
+pub const NIL: Value = Value { val: PitValue { data: 0xfff4000000000000 } };
 
 #[derive(Debug)]
 pub struct Error {
