@@ -1,3 +1,8 @@
+pub mod bencode;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod nrepl;
+
 use std::{ffi::c_int, mem::MaybeUninit};
 
 use crate::utils;
