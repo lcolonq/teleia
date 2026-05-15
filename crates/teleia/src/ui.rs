@@ -1,23 +1,24 @@
 use crate::{state, utils};
+use crate::state::Tick;
 
-fn compute_reverse(frames: u64, tick: u64, start: u64) -> u64 {
+fn compute_reverse(frames: Tick, tick: Tick, start: Tick) -> Tick {
     let leftover = frames - (tick - start)
         .clamp(0, frames);
     tick - leftover
 }
 
 pub enum ModeToggle {
-    Inactive { start: u64 },
-    Active { start: u64 },
+    Inactive { start: Tick },
+    Active { start: Tick },
 }
 
 pub struct Mode {
-    frames: u64,
+    frames: Tick,
     toggle: ModeToggle,
 }
 
 impl Mode {
-    pub fn new(frames: u64) -> Self {
+    pub fn new(frames: Tick) -> Self {
         Self {
             frames,
             toggle: ModeToggle::Inactive { start: 0 },
@@ -33,7 +34,7 @@ impl Mode {
     }
 
     /// Has the current transition finished?
-    pub fn is_ready(&self, tick: u64) -> bool {
+    pub fn is_ready(&self, tick: Tick) -> bool {
         let started = match self.toggle {
             ModeToggle::Inactive { start } => start,
             ModeToggle::Active { start } => start,
@@ -41,7 +42,7 @@ impl Mode {
         tick - started > self.frames
     }
 
-    pub fn progress(&self, tick: u64) -> f32 {
+    pub fn progress(&self, tick: Tick) -> f32 {
         match self.toggle {
             ModeToggle::Inactive { start } => {
                 1.0 - (((tick - start) as f32) / self.frames as f32)
@@ -58,7 +59,7 @@ impl Mode {
         self.toggle = ModeToggle::Inactive { start: 0 };
     }
 
-    pub fn toggle(&mut self, tick: u64) {
+    pub fn toggle(&mut self, tick: Tick) {
         match self.toggle {
             ModeToggle::Inactive { start } => {
                 self.toggle = ModeToggle::Active {
@@ -77,13 +78,13 @@ impl Mode {
 pub struct Cursor {
     pub index: i32,
     pub prev_index: i32,
-    pub change_started: u64,
+    pub change_started: Tick,
     pub bound: i32,
-    pub frames: u64,
+    pub frames: Tick,
 }
 
 impl Cursor {
-    pub fn new(bound: i32, frames: u64) -> Self {
+    pub fn new(bound: i32, frames: Tick) -> Self {
         Self {
             index: 0,
             prev_index: 0,
@@ -93,7 +94,7 @@ impl Cursor {
         }
     }
 
-    pub fn animation_index(&self, tick: u64) -> f32 {
+    pub fn animation_index(&self, tick: Tick) -> f32 {
         let progress = ((tick - self.change_started) as f32)
             / (self.frames as f32 / 2.0);
         utils::lerp(
@@ -103,11 +104,11 @@ impl Cursor {
         )
     }
 
-    pub fn is_ready(&self, tick: u64) -> bool {
+    pub fn is_ready(&self, tick: Tick) -> bool {
         tick - self.change_started > self.frames
     }
 
-    pub fn set(&mut self, val: i32, tick: u64) -> bool {
+    pub fn set(&mut self, val: i32, tick: Tick) -> bool {
         if self.is_ready(tick) {
             self.change_started = tick;
             self.prev_index = self.index;
@@ -116,17 +117,17 @@ impl Cursor {
             true
         } else { false }
     }
-    pub fn increment(&mut self, tick: u64) -> bool { self.set(self.index + 1, tick) }
-    pub fn decrement(&mut self, tick: u64) -> bool { self.set(self.index + self.bound - 1, tick) }
+    pub fn increment(&mut self, tick: Tick) -> bool { self.set(self.index + 1, tick) }
+    pub fn decrement(&mut self, tick: Tick) -> bool { self.set(self.index + self.bound - 1, tick) }
 
-    pub fn set_unlocked(&mut self, val: i32, tick: u64) {
+    pub fn set_unlocked(&mut self, val: i32, tick: Tick) {
         self.change_started = tick;
         self.prev_index = self.index;
         self.index = val;
         self.index %= self.bound;
     }
-    pub fn increment_unlocked(&mut self, tick: u64) -> bool { self.set_unlocked(self.index + 1, tick); true }
-    pub fn decrement_unlocked(&mut self, tick: u64) -> bool { self.set_unlocked(self.index + self.bound - 1, tick); true }
+    pub fn increment_unlocked(&mut self, tick: Tick) -> bool { self.set_unlocked(self.index + 1, tick); true }
+    pub fn decrement_unlocked(&mut self, tick: Tick) -> bool { self.set_unlocked(self.index + self.bound - 1, tick); true }
 
     /// Read keypresses to update this cursor (assuming that the left/right keys decrement/increment)
     /// Returns true if an update was performed (e.g. to determine whether to play a sound).

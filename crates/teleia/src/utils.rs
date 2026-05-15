@@ -117,7 +117,7 @@ impl Cardinal {
         }
     }
 
-    pub fn turn_by(&self, o: &Self) -> Self {
+    pub fn turn_by(&self, o: Self) -> Self {
         match o {
             Self::North => self.clone(),
             Self::South => self.turn_cw().turn_cw(),

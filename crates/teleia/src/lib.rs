@@ -20,6 +20,7 @@ pub mod save;
 pub mod level2d;
 
 pub use utils::{erm, install_error_handler, Erm};
+pub use state::Tick;
 pub use audio::AudioPlayback;
 pub use simple_eyre::eyre::WrapErr;
 

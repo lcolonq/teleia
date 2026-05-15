@@ -8,6 +8,8 @@ use strum::EnumIter;
 
 use crate::{audio, context, font, framebuffer, mesh, shader, utils};
 
+pub type Tick = u64;
+
 const DELTA_TIME: f64 = 0.016; // todo
 
 pub const ORTH_WIDTH: f32 = 7.55869;
@@ -161,7 +163,7 @@ impl<'de> Deserialize<'de> for Keycode {
 }
 
 pub struct State {
-    pub tick: u64,
+    pub tick: Tick,
     pub nextframe: Timestamp,
     pub fps: u32,
     pub frames_this_second: u32,
