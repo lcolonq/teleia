@@ -138,7 +138,6 @@ impl Runtime {
         let e = unsafe { pit_get_error(self.rt) };
         let ve = Value { val: e };
         if self.eq(ve, NIL) { return Ok(()) };
-        eprintln!("ve: {}", ve.val.data);
         Err(Error { msg: self.dump(ve).unwrap_or("<unable to dump>".to_owned()) }.into())
     }
     pub fn parse(&mut self, s: &str) -> utils::Erm<Value> {

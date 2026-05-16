@@ -1,8 +1,8 @@
 use super::bencode;
-use crate::{utils, Erm, WrapErr};
+use crate::{Erm, WrapErr, script, utils};
 
 use std::io::{BufReader, Read, Write};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{Sender, Receiver, channel};
 use std::sync::{Arc, Mutex};
@@ -137,6 +137,68 @@ impl Server {
             }
         } else {
             log::warn!("tried to send message to client {}, but nREPL is not connected", client);
+        }
+    }
+    pub fn reply<'a, I>(&self, client: ClientId, id: bencode::Value, dict: I)
+    where I: Iterator<Item = (&'a [u8], bencode::Value)> {
+        self.send(client, bencode::Value::Dictionary(BTreeMap::from_iter(dict.map(|(k, v)| {
+            (Vec::from(k), v)
+        }).chain([
+            (Vec::from(b"id"), id),
+            (Vec::from(b"session"), bencode::Value::Bytestring(Vec::from(b"global"))),
+            (Vec::from(b"status"), bencode::Value::List(vec![
+                bencode::Value::Bytestring(Vec::from(b"done"))
+            ])),
+        ]))));
+    }
+    pub fn update(&mut self, rt: &mut script::Runtime) {
+        while let Some((cid, msg)) = self.poll() {
+            let d = if let bencode::Value::Dictionary(d) = &msg { d } else {
+                log::warn!("non-dictionary message from nREPL client: {}", msg);
+                return;
+            };
+            let (id, op) = if let Some(id) = d.get(&b"id"[..])
+            && let Some(vop) = d.get(&b"op"[..])
+            && let bencode::Value::Bytestring(op) = vop {
+                (id, op)
+            } else {
+                log::warn!("message with no id/op from nREPL client: {}", msg);
+                return;
+            };
+            let res: Erm<()> = try {
+                match &op[..] {
+                    b"clone" => self.reply(cid, id.clone(), [
+                        (&b"new-session"[..], bencode::Value::Bytestring(Vec::from(b"global"))),
+                    ].into_iter()),
+                    b"describe" => self.reply(cid, id.clone(), [
+                        (&b"aux"[..], bencode::Value::Dictionary(BTreeMap::new())),
+                        (&b"middleware"[..], bencode::Value::List(Vec::new())),
+                        (&b"ops"[..], bencode::Value::Dictionary(BTreeMap::new())),
+                        (&b"versions"[..], bencode::Value::Dictionary(BTreeMap::new())),
+                    ].into_iter()),
+                    b"eval" => {
+                        if let Some(bencode::Value::Bytestring(code)) = d.get(&b"code"[..]) {
+                            let scode = str::from_utf8(&code)
+                                .or(utils::erm_msg("failed to decode utf-8"))?;
+                            let expr = rt.parse(scode)?;
+                            let v = rt.eval(expr)?;
+                            let res = rt.dump(v)?;
+                            self.reply(cid, id.clone(), [
+                                (&b"value"[..], bencode::Value::Bytestring(res.into_bytes())),
+                            ].into_iter())
+                        } else {
+                            utils::erm_msg(&format!("eval with no code: {}", msg))?;
+                        }
+                    },
+                    _ => utils::erm_msg(&format!("message with unknown op: {}", msg))?,
+                }
+            };
+            if let Err(e) = res {
+                self.reply(cid, id.clone(), [
+                    (&b"ex"[..], bencode::Value::Bytestring(Vec::from(b"teleia"))),
+                    (&b"err"[..], bencode::Value::Bytestring(format!("{}", e).into_bytes())),
+                ].into_iter());
+            }
         }
     }
 }
