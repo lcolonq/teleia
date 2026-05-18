@@ -20,10 +20,10 @@ pub struct Mesh {
 impl Mesh {
     pub fn build(
         ctx: &context::Context,
-        vertices: &Vec<f32>,
-        indices: &Vec<u32>,
-        snormals: &Option<Vec<f32>>,
-        stexcoords: &Option<Vec<f32>>,
+        vertices: &[f32],
+        indices: &[u32],
+        snormals: Option<&[f32]>,
+        stexcoords: Option<&[f32]>,
     ) -> Self {
         unsafe {
             let vao = ctx.gl.create_vertex_array().expect("failed to initialize vao");
@@ -35,7 +35,7 @@ impl Mesh {
                 glow::ARRAY_BUFFER,
                 std::slice::from_raw_parts(
                     vertices.as_ptr() as _,
-                    vertices.len() * std::mem::size_of::<f32>(),
+                    std::mem::size_of_val(vertices),
                 ),
                 glow::STATIC_DRAW,
             );
@@ -48,7 +48,7 @@ impl Mesh {
                 glow::ELEMENT_ARRAY_BUFFER,
                 std::slice::from_raw_parts(
                     indices.as_ptr() as _,
-                    indices.len() * std::mem::size_of::<f32>(),
+                    std::mem::size_of_val(indices),
                 ),
                 glow::STATIC_DRAW,
             );
@@ -60,7 +60,7 @@ impl Mesh {
                     glow::ARRAY_BUFFER,
                     std::slice::from_raw_parts(
                         normals.as_ptr() as _,
-                        normals.len() * std::mem::size_of::<f32>(),
+                        std::mem::size_of_val(normals),
                     ),
                     glow::STATIC_DRAW,
                 );
@@ -75,7 +75,7 @@ impl Mesh {
                     glow::ARRAY_BUFFER,
                     std::slice::from_raw_parts(
                         texcoords.as_ptr() as _,
-                        texcoords.len() * std::mem::size_of::<f32>(),
+                        std::mem::size_of_val(texcoords),
                     ),
                     glow::STATIC_DRAW,
                 );
@@ -111,8 +111,8 @@ impl Mesh {
             ctx,
             &mesh.positions,
             &mesh.indices,
-            &Some(mesh.normals),
-            &Some(mesh.texcoords),
+            Some(&mesh.normals),
+            Some(&mesh.texcoords),
         )
     }
 

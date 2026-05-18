@@ -69,7 +69,7 @@ impl Texture {
             .expect("failed to decode image")
             .into_rgba8();
         let pixels = rgba.as_bytes();
-        self.upload_rgba8(ctx, rgba.width() as i32, rgba.height() as i32, &pixels);
+        self.upload_rgba8(ctx, rgba.width() as i32, rgba.height() as i32, pixels);
     }
 
     pub fn upload_rgba8(&mut self, ctx: &context::Context, width: i32, height: i32, data: &[u8]) {

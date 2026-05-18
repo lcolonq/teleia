@@ -7,16 +7,14 @@ use crate::{utils, Erm, WrapErr};
 
 const KEY: usize = 42;
 
+type ClientChannels = (Sender<Message>, Receiver<Message>);
+#[derive(Default)]
 pub struct Client {
-    channels: Arc<Mutex<Option<(Sender<Message>, Receiver<Message>)>>>,
+    channels: Arc<Mutex<Option<ClientChannels>>>,
 }
 
 impl Client {
-    pub fn new() -> Self {
-        Self {
-            channels: Arc::new(Mutex::new(None)),
-        }
-    }
+    pub fn new() -> Self { Self::default() }
     pub fn connect(&mut self, url: &str) {
         let (mut socket, _resp) = if let Ok(v) = tungstenite::connect(url) { v } else {
             log::warn!("failed to connect to websocket: {}", url);

@@ -39,29 +39,13 @@ pub enum Key {
     Start, Select,
     Debug,
 }
+#[derive(Default)]
 pub struct Keys {
     pub pressed: EnumMap<Key, bool>,
     pub new: EnumMap<Key, bool>,
 }
 impl Keys {
-    pub fn new() -> Self {
-        Self {
-            pressed: enum_map! {
-                Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
-                Key::A => false, Key::B => false, Key::X => false, Key::Y => false,
-                Key::L => false, Key::R => false,
-                Key::Start => false, Key::Select => false,
-                Key::Debug => false,
-            },
-            new: enum_map! {
-                Key::Up => false, Key::Down => false, Key::Left => false, Key::Right => false,
-                Key::A => false, Key::B => false, Key::X => false, Key::Y => false,
-                Key::L => false, Key::R => false,
-                Key::Start => false, Key::Select => false,
-                Key::Debug => false,
-            },
-        }
-    }
+    pub fn new() -> Self { Self::default() }
     pub fn up(&self) -> bool { self.pressed[Key::Up] }
     pub fn down(&self) -> bool { self.pressed[Key::Down] }
     pub fn left(&self) -> bool { self.pressed[Key::Left] }
@@ -324,7 +308,7 @@ impl State {
         dir: &glam::Vec3,
         up: &glam::Vec3,
     ) {
-        self.camera = (pos.clone(), dir.clone(), up.clone());
+        self.camera = (*pos, *dir, *up);
     }
 
     pub fn bind_framebuffer(&mut self, ctx: &context::Context, fb: &framebuffer::Framebuffer) {
@@ -333,11 +317,11 @@ impl State {
     }
 
     pub fn bind_render_framebuffer(&mut self, ctx: &context::Context) {
-        self.render_framebuffer.bind(&ctx); self.render_dims = self.render_framebuffer.dims;
+        self.render_framebuffer.bind(ctx); self.render_dims = self.render_framebuffer.dims;
     }
 
     pub fn bind_screen(&mut self, ctx: &context::Context) {
-        self.screen.bind(&ctx); self.render_dims = self.screen.dims;
+        self.screen.bind(ctx); self.render_dims = self.screen.dims;
     }
 
     pub fn set_lighting(
@@ -347,7 +331,7 @@ impl State {
         color: &glam::Vec3,
         dir: &glam::Vec3,
     ) {
-        self.lighting = (ambient.clone(), color.clone(), dir.clone());
+        self.lighting = (*ambient, *color, *dir);
     }
 
     pub fn add_point_light(
@@ -359,9 +343,9 @@ impl State {
     ) {
         self.point_lights.push(
             PointLight {
-                pos: pos.clone(),
-                color: color.clone(),
-                attenuation: attenuation.clone(),
+                pos: *pos,
+                color: *color,
+                attenuation: *attenuation,
             },
         );
     }
@@ -395,7 +379,7 @@ impl State {
             &self.lighting.2.normalize(),
         );
         shader.set_i32(
-            ctx, &format!("light_count"),
+            ctx, "light_count",
             plc as _,
         );
     }
@@ -410,17 +394,17 @@ impl State {
         if plc > 0 {
             let lpos: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.pos).collect();
             shader.set_vec3_array(
-                ctx, &format!("light_pos[0]"),
+                ctx, "light_pos[0]",
                 &lpos,
             );
             let lcolor: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.color).collect();
             shader.set_vec3_array(
-                ctx, &format!("light_color[0]"),
+                ctx, "light_color[0]",
                 &lcolor,
             );
             let lattenuation: Vec<_> = self.point_lights.iter().take(plc).map(|l| l.attenuation).collect();
             shader.set_vec2_array(
-                ctx, &format!("light_attenuation[0]"),
+                ctx, "light_attenuation[0]",
                 &lattenuation,
             );
         }
@@ -436,7 +420,7 @@ impl State {
 
     pub fn bind_2d(&self, ctx: &context::Context, shader: &shader::Shader) {
         shader.bind(ctx);
-        shader.set_mat4(&ctx, "projection", &glam::Mat4::IDENTITY);
+        shader.set_mat4(ctx, "projection", &glam::Mat4::IDENTITY);
         shader.set_mat4(
             ctx, "view",
             &glam::Mat4::from_scale(
@@ -457,7 +441,7 @@ impl State {
     {
         if self.audio.is_none() {
             self.audio = Some(audio::Assets::new(|actx| {
-                game.initialize_audio(ctx, &self, actx)
+                game.initialize_audio(ctx, self, actx)
             }));
         }
         Ok(())
@@ -542,11 +526,7 @@ impl State {
 
     /// Return the first keybinding for the given virtual key
     pub fn keybinding_for(&self, k: Key) -> Option<String> {
-        if let Some(kc) = self.keybindings.get_by_right(&k) {
-            Some(format!("{}", kc))
-        } else {
-            None
-        }
+        self.keybindings.get_by_right(&k).map(|kc| format!("{}", kc))
     }
 
     pub fn rebind_key(&mut self, k: Key) {
@@ -557,7 +537,7 @@ impl State {
         let now = now(ctx);
         if now > self.nextframe {
             while self.nextframe < now { // find the next target frame that isn't in the past
-                self.nextframe = self.nextframe + DELTA_TIME;
+                self.nextframe += DELTA_TIME;
             }
             self.tick += 1;
             self.frames_this_second += 1;
@@ -586,8 +566,8 @@ impl State {
             }
         );
         ctx.clear();
-        self.shader_upscale.bind(&ctx);
-        self.render_framebuffer.bind_texture(&ctx);
+        self.shader_upscale.bind(ctx);
+        self.render_framebuffer.bind_texture(ctx);
         ctx.render_no_geometry();
         #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
         {

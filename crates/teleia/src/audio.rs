@@ -142,6 +142,7 @@ pub struct Context {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Context {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             manager: kira::manager::AudioManager::new(kira::manager::AudioManagerSettings::default())
@@ -201,7 +202,7 @@ impl Audio {
     ) -> Option<AudioPlayingHandle>
     {
         let sd = if let Some((ss, se)) = looping {
-            let start = if let Some(s) = ss { s } else { 0.0 };
+            let start = ss.unwrap_or(0.0);
             if let Some(e) = se {
                 self.data.loop_region(start..e)
             } else {
@@ -251,7 +252,7 @@ impl Assets {
 
     pub fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>) {
         if let Some(s) = &mut self.music_handle {
-            let _ = s.stop(&self.ctx);
+            s.stop(&self.ctx);
         }
         if let Some(a) = self.audio.get(name) {
             match a.play(&mut self.ctx, Some((start, end))) {

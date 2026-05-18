@@ -12,18 +12,15 @@ const ACCEPT_KEY: usize = 1;
 type ClientId = usize;
 type ClientMessage = (ClientId, Message);
 
+type ServerChannels = (Sender<ClientMessage>, Receiver<ClientMessage>);
+#[derive(Default)]
 pub struct Server {
     clients: Arc<Mutex<HashMap<ClientId, tungstenite::WebSocket<TcpStream>>>>,
-    channels: Arc<Mutex<Option<(Sender<ClientMessage>, Receiver<ClientMessage>)>>>,
+    channels: Arc<Mutex<Option<ServerChannels>>>,
 }
 
 impl Server {
-    pub fn new() -> Self {
-        Self {
-            clients: Arc::new(Mutex::new(HashMap::new())),
-            channels: Arc::new(Mutex::new(None)),
-        }
-    }
+    pub fn new() -> Self { Self::default() }
     pub fn start(&mut self, addr: &str) {
         let recv_clients_ref = self.clients.clone();
         let send_clients_ref = self.clients.clone();

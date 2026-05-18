@@ -141,9 +141,9 @@ impl<A: Assets> Renderer<A> {
             }
         }
         match mode {
-            ShaderMode::TwoDimension => st.bind_2d(ctx, &self.assets.shader(shader)),
-            ShaderMode::ThreeDimension => st.bind_3d(ctx, &self.assets.shader(shader)),
-            ShaderMode::ThreeDimensionOrth => st.bind_3d_orth(ctx, &self.assets.shader(shader)),
+            ShaderMode::TwoDimension => st.bind_2d(ctx, self.assets.shader(shader)),
+            ShaderMode::ThreeDimension => st.bind_3d(ctx, self.assets.shader(shader)),
+            ShaderMode::ThreeDimensionOrth => st.bind_3d_orth(ctx, self.assets.shader(shader)),
         }
         self.shader = BoundShader::Shader(shader, mode)
     }

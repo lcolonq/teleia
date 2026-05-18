@@ -127,7 +127,7 @@ impl Value {
             Self::Integer(i) => w.write_all(format!("i{}e", i).as_bytes()).map_err(Error::IO)?,
             Self::Bytestring(bs) => {
                 w.write_all(format!("{}:", bs.len()).as_bytes()).map_err(Error::IO)?;
-                w.write_all(&bs).map_err(Error::IO)?;
+                w.write_all(bs).map_err(Error::IO)?;
             },
             Self::List(xs) => {
                 w.write_all(b"l").map_err(Error::IO)?;

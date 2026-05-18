@@ -4,8 +4,8 @@ use glow::HasContext;
 
 use crate::{context, font, mesh, state};
 
-const COMMON_VERT: &'static str = include_str!("assets/shaders/common/vert.glsl");
-const COMMON_FRAG: &'static str = include_str!("assets/shaders/common/frag.glsl");
+const COMMON_VERT: &str = include_str!("assets/shaders/common/vert.glsl");
+const COMMON_FRAG: &str = include_str!("assets/shaders/common/frag.glsl");
 
 #[derive(Clone)]
 pub struct Shader {
@@ -19,7 +19,7 @@ impl Shader {
             let program = ctx.gl.create_program()?;
 
             let vert = ctx.gl.create_shader(glow::VERTEX_SHADER)?;
-            ctx.gl.shader_source(vert, &vsrc);
+            ctx.gl.shader_source(vert, vsrc);
             ctx.gl.compile_shader(vert);
             if !ctx.gl.get_shader_compile_status(vert) {
                 return Err(format!(
@@ -30,7 +30,7 @@ impl Shader {
             ctx.gl.attach_shader(program, vert);
 
             let frag = ctx.gl.create_shader(glow::FRAGMENT_SHADER)?;
-            ctx.gl.shader_source(frag, &fsrc);
+            ctx.gl.shader_source(frag, fsrc);
             ctx.gl.compile_shader(frag);
             if !ctx.gl.get_shader_compile_status(frag) {
                 return Err(format!(
@@ -214,18 +214,18 @@ impl Shader {
     }
 
     pub fn set_position_3d(&self, ctx: &context::Context, _st: &state::State, position: &glam::Mat4) {
-        self.set_mat4(&ctx, "position", &position);
-        self.set_mat4(&ctx, "normal_matrix", &position.inverse().transpose());
+        self.set_mat4(ctx, "position", position);
+        self.set_mat4(ctx, "normal_matrix", &position.inverse().transpose());
     }
 
     pub fn set_position_2d_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, dims: &glam::Vec2, rot: &glam::Quat) {
         let halfwidth = dims.x / 2.0;
         let halfheight = dims.y / 2.0;
         self.set_mat4(
-            &ctx, "position",
+            ctx, "position",
             &glam::Mat4::from_scale_rotation_translation(
                 glam::Vec3::new(halfwidth, halfheight, 1.0),
-                rot.clone(),
+                *rot,
                 glam::Vec3::new(
                     -st.render_dims.x / 2.0 + pos.x + halfwidth,
                     st.render_dims.y / 2.0 - pos.y - halfheight,

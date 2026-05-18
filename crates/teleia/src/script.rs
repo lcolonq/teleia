@@ -23,8 +23,9 @@ impl std::error::Error for Error {}
 type PitNativeFunc = extern "C" fn(rt: *mut PitRuntime, args: PitValue, data: *mut PitNativeFuncData) -> PitValue;
 #[repr(C)]
 struct PitNativeFuncDataShim { _data: () }
+type BoxedNativeFuncClosure = Box<dyn FnMut(&mut Runtime, Value) -> Value>;
 struct PitNativeFuncData {
-    f: Box<dyn FnMut(&mut Runtime, Value) -> Value>,
+    f: BoxedNativeFuncClosure,
 }
 extern "C" fn unwrap_nativefunc(rt: *mut PitRuntime, args: PitValue, data: *mut PitNativeFuncData) -> PitValue {
     unsafe {

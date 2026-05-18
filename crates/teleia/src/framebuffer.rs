@@ -86,8 +86,8 @@ impl Framebuffer {
             Self {
                 tex: Some(tex),
                 fbo: Some(fbo),
-                dims: dims.clone(),
-                offsets: offsets.clone(),
+                dims: *dims,
+                offsets: *offsets,
             }
         }
     }

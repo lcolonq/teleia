@@ -24,7 +24,7 @@ impl Designator {
         }
     }
     fn enum_entry(&self, _fnm: &str) -> String {
-        format!("{}", self.parts.join(" ").to_upper_camel_case())
+        self.parts.join(" ").to_upper_camel_case().to_string()
     }
     fn load_expr(&self, fnm: &str) -> Option<String> {
         let i = format!("assets/{}/{}", fnm, self.parts.join("/"));
@@ -54,14 +54,12 @@ impl Field {
     fn new(base: &str, nm: &str) -> Self {
         let mut entries = HashSet::new();
         let fbase = format!("{}{}", base, nm);
-        for mf in WalkDir::new(&fbase) {
-            if let Ok(f) = mf {
-                if f.file_type().is_file() {
-                    entries.insert(Designator::new(
-                        &fbase, f.path(),
-                        nm == "shaders" || nm == "materials",
-                    ));
-                }
+        for f in WalkDir::new(&fbase).into_iter().flatten() {
+            if f.file_type().is_file() {
+                entries.insert(Designator::new(
+                    &fbase, f.path(),
+                    nm == "shaders" || nm == "materials",
+                ));
             }
         }
         Self {
@@ -100,20 +98,18 @@ struct AssetData {
 impl AssetData {
     fn new(base: &str) -> Self {
         let mut fields = Vec::new();
-        let dirs = std::fs::read_dir(base).expect(&format!("failed to read assets directory: {}", base));
+        let dirs = std::fs::read_dir(base).unwrap_or_else(|_| panic!("failed to read assets directory: {}", base));
         let (mut has_meshes, mut has_textures, mut has_materials, mut has_shaders) = (false, false, false, false);
-        for dir in dirs {
-            if let Ok(d) = dir {
-                let nm = d.file_name().into_string().unwrap();
-                fields.push(Field::new(base, &nm));
-                match &*nm {
-                    "meshes" => has_meshes = true,
-                    "textures" => has_textures = true,
-                    "materials" => has_materials = true,
-                    "shaders" => has_shaders = true,
-                    _ => {},
-                };
-            }
+        for d in dirs.flatten() {
+            let nm = d.file_name().into_string().unwrap();
+            fields.push(Field::new(base, &nm));
+            match &*nm {
+                "meshes" => has_meshes = true,
+                "textures" => has_textures = true,
+                "materials" => has_materials = true,
+                "shaders" => has_shaders = true,
+                _ => {},
+            };
         }
         if !has_meshes { fields.push(Field { nm: "meshes".to_owned(), entries: HashSet::new() }); }
         if !has_textures { fields.push(Field { nm: "textures".to_owned(), entries: HashSet::new() }); }
@@ -160,5 +156,5 @@ pub fn generate_assets(s: TokenStream) -> TokenStream {
     let manifest = env::var("CARGO_MANIFEST_DIR").expect("failed to get manifest path");
     let assets = AssetData::new(&format!("{}/{}", manifest, base));
     // println!("{}", assets.generate());
-    format!("{}", assets.generate()).parse().expect("failed to parse generate_assets result")
+    assets.generate().to_string().parse().expect("failed to parse generate_assets result")
 }

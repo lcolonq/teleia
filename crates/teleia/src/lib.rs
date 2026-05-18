@@ -133,7 +133,7 @@ where
         w as f32, h as f32, options,
     )));
     let game = Box::leak(Box::new(gnew(ctx)));
-    let st = Box::leak(Box::new(state::State::new(&ctx)));
+    let st = Box::leak(Box::new(state::State::new(ctx)));
 
     unsafe {
         CTX = Some(ctx as _);
@@ -152,30 +152,30 @@ where
         ctx.glfw.borrow_mut().poll_events();
         for (_, event) in glfw::flush_messages(&events) {
             match event {
-                glfw::WindowEvent::Size(_, _) => st.handle_resize(&ctx),
+                glfw::WindowEvent::Size(_, _) => st.handle_resize(ctx),
                 glfw::WindowEvent::Focus(false) => {
                     st.keys = state::Keys::new();
                 },
                 glfw::WindowEvent::CursorPos(x, y) => {
-                    st.mouse_moved(&ctx, x as f32, y as f32, game)?;
+                    st.mouse_moved(ctx, x as f32, y as f32, game)?;
                 }
                 glfw::WindowEvent::MouseButton(_, glfw::Action::Press, _) => {
-                    st.mouse_pressed(&ctx, game)?;
+                    st.mouse_pressed(ctx, game)?;
                 },
                 glfw::WindowEvent::MouseButton(_, glfw::Action::Release, _) => {
-                    st.mouse_released(&ctx, game)?;
+                    st.mouse_released(ctx, game)?;
                 },
                 glfw::WindowEvent::Key(key, _, glfw::Action::Press, _) => {
-                    st.key_pressed(&ctx, game, state::Keycode::new(key))?;
+                    st.key_pressed(ctx, game, state::Keycode::new(key))?;
                 },
                 glfw::WindowEvent::Key(key, _, glfw::Action::Release, _) => {
-                    st.key_released(&ctx, game, state::Keycode::new(key))?;
+                    st.key_released(ctx, game, state::Keycode::new(key))?;
                 },
                 _ => {},
             }
         }
         if ctx.resize_necessary() {
-            st.handle_resize(&ctx);
+            st.handle_resize(ctx);
         }
         // if let Some(f) = &mut st.request {
         //     match std::future::Future::poll(f.as_mut(), &mut st.waker_ctx) {
@@ -189,8 +189,8 @@ where
         //         },
         //     }
         // }
-        st.run_update(&ctx, game)?;
-        st.run_render(&ctx, game)?;
+        st.run_update(ctx, game)?;
+        st.run_render(ctx, game)?;
         ctx.window.borrow_mut().swap_buffers();
     }
     Ok(())

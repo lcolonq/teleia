@@ -92,11 +92,12 @@ pub struct Asset {
     tileset: Tileset,
     texture: texture::Texture,
 }
+#[derive(Default)]
 pub struct Assets {
     entries: HashMap<String, Asset>,
 }
 impl Assets {
-    pub fn new() -> Self { Self { entries: HashMap::new() } }
+    pub fn new() -> Self { Self::default() }
     pub fn load(&mut self, ctx: &context::Context, nm: &str, ts: &str, img: &[u8]) -> Erm<()> {
         let ass = Asset {
             tileset: Tileset::new(ts)?,
@@ -118,7 +119,7 @@ impl Assets {
                 ))
             }
         }
-        return erm(Err::GIDNotFound(gid));
+        erm(Err::GIDNotFound(gid))
     }
 }
 
@@ -165,7 +166,7 @@ impl LevelRenderer {
             layers.push(LayerRenderer::new(ctx)?);
         }
         let shader = shader::Shader::new_nolib(
-            &ctx,
+            ctx,
             include_str!("../assets/shaders/tiled/vert.glsl"),
             include_str!("../assets/shaders/tiled/frag.glsl"),
         );
@@ -210,8 +211,8 @@ impl LevelRenderer {
                 texcoords.push(uvbase + glam::Vec2::new(twidth, theight));
                 texcoords.push(uvbase + glam::Vec2::new(twidth, 0.0));
                 texcoords.push(uvbase);
-                indices.push(i + 0); indices.push(i + 1); indices.push(i + 2);
-                indices.push(i + 0); indices.push(i + 3); indices.push(i + 2);
+                indices.push(i); indices.push(i + 1); indices.push(i + 2);
+                indices.push(i); indices.push(i + 3); indices.push(i + 2);
             }
         }
         let index_bytes: Vec<u8> = indices.iter().flat_map(|x| x.to_ne_bytes()).collect();

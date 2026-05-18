@@ -92,7 +92,7 @@ impl Scene {
             buffers.get(b.index()).map(|gltf::buffer::Data(bytes)| bytes.as_slice())
         };
         let objects = gltf.meshes().map(|m| {
-            let primitives = m.primitives().filter_map(|p| {
+            let primitives = m.primitives().map(|p| {
                 let mode = match p.mode() {
                     gltf::mesh::Mode::Points => glow::POINTS,
                     gltf::mesh::Mode::Lines => glow::LINES,
@@ -196,7 +196,7 @@ impl Scene {
                     ctx.gl.vertex_attrib_pointer_f32(mesh::ATTRIB_WEIGHT, 4, glow::FLOAT, false, vertex_size, offset_of!(Vertex, weights) as _);
 
 
-                    Some(Primitive {
+                    Primitive {
                         mesh: mesh::Mesh {
                             vao,
                             mode,
@@ -205,7 +205,7 @@ impl Scene {
                             index_offset: 0,
                         },
                         material: p.material().index().unwrap(),
-                    })
+                    }
                 }
             }).collect();
             Object {
@@ -230,7 +230,7 @@ impl Scene {
                     0,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
-                    Some(&i.as_bytes()),
+                    Some(i.as_bytes()),
                 );
                 ctx.gl.generate_mipmap(glow::TEXTURE_2D);
                 texture::Texture { tex, width: i.width() as i32, height: i.height() as i32 }
@@ -378,21 +378,18 @@ impl Scene {
                 } else {
                     (c.keyframes.len() - 1, 0)
                 };
-                match &c.values {
-                    ChannelValues::Rotation(vs) => {
-                        let prevt = c.keyframes[previ];
-                        let nextt = c.keyframes[nexti];
-                        let prev = vs[previ];
-                        let next = vs[nexti];
-                        let new = prev.slerp(next, (time - prevt) / (nextt - prevt));
-                        let (scale, _, trans) = self.nodes[c.target].transform.to_scale_rotation_translation();
-                        self.nodes[c.target].transform = glam::Mat4::from_scale_rotation_translation(
-                            scale,
-                            new,
-                            trans,
-                        );
-                    },
-                    _ => {},
+                if let ChannelValues::Rotation(vs) = &c.values {
+                    let prevt = c.keyframes[previ];
+                    let nextt = c.keyframes[nexti];
+                    let prev = vs[previ];
+                    let next = vs[nexti];
+                    let new = prev.slerp(next, (time - prevt) / (nextt - prevt));
+                    let (scale, _, trans) = self.nodes[c.target].transform.to_scale_rotation_translation();
+                    self.nodes[c.target].transform = glam::Mat4::from_scale_rotation_translation(
+                        scale,
+                        new,
+                        trans,
+                    );
                 }
             }
         }

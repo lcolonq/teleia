@@ -12,3 +12,8 @@ name = "teleia"
 
 [profile.dev.package."*"]
 opt-level = 2
+
+[workspace.lints.clippy]
+all = "deny"
+pedantic = "deny"
+nursery = "deny"

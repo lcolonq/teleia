@@ -106,14 +106,14 @@ impl Bitmap {
                 texcoords.push(tcbase + glam::Vec2::new(cwidth, cheight));
                 texcoords.push(tcbase + glam::Vec2::new(cwidth, 0.0));
                 texcoords.push(tcbase);
-                let c = if let Some(c) = params.color.get(if params.color.len() == 0 { 0 } else { i % params.color.len() }) {
+                let c = if let Some(c) = params.color.get(if params.color.is_empty() { 0 } else { i % params.color.len() }) {
                     *c
                 } else {
                     glam::Vec3::new(1.0, 1.0, 1.0)
                 };
                 colors.push(c); colors.push(c); colors.push(c); colors.push(c);
-                indices.push(idx + 0); indices.push(idx + 1); indices.push(idx + 2);
-                indices.push(idx + 0); indices.push(idx + 3); indices.push(idx + 2);
+                indices.push(idx); indices.push(idx + 1); indices.push(idx + 2);
+                indices.push(idx); indices.push(idx + 3); indices.push(idx + 2);
                 cur.x += sdims.x; 
             }
         }
@@ -188,7 +188,7 @@ impl Bitmap {
         st.bind_2d(ctx, &st.shader_text_bitmap);
         let dims = glam::Vec2::new(self.char_width as f32, self.char_height as f32);
         let fpos = pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0);
-        st.shader_text_bitmap.set_position_text_bitmap(ctx, st, &self, &fpos);
+        st.shader_text_bitmap.set_position_text_bitmap(ctx, st, self, &fpos);
         self.render_text_parameterized(ctx, st, text, params);
     }
 }

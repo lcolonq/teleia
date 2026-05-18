@@ -119,7 +119,7 @@ impl Cardinal {
 
     pub fn turn_by(&self, o: Self) -> Self {
         match o {
-            Self::North => self.clone(),
+            Self::North => *self,
             Self::South => self.turn_cw().turn_cw(),
             Self::West => self.turn_cw(),
             Self::East => self.turn_ccw(),
@@ -138,10 +138,10 @@ pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + t.clamp(0.0, 1.0) * (b - a)
 }
 
-pub fn dir_lerp(a: &glam::Vec3, b: glam::Vec3, t: f32) -> glam::Vec3 {
+pub fn dir_lerp(a: glam::Vec3, b: glam::Vec3, t: f32) -> glam::Vec3 {
     let dirrotaxis = a.cross(b).normalize();
     let dirrotangle = a.angle_between(b);
     let dirrotfull = glam::Quat::from_axis_angle(dirrotaxis, dirrotangle);
     let dirrot = glam::Quat::IDENTITY.slerp(dirrotfull, t);
-    dirrot.mul_vec3(a.clone())
+    dirrot.mul_vec3(a)
 }

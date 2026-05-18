@@ -61,10 +61,10 @@ impl BinaryClient {
     fn pop_incoming_message(&mut self) -> Option<BinaryMessage> {
         let mut reader = std::io::Cursor::new(&self.in_buf);
         let event_len = reader.read_u32::<byteorder::LE>().ok()?;
-        let mut event = vec![0 as u8; event_len as usize];
+        let mut event = vec![0; event_len as usize];
         reader.read_exact(&mut event).ok()?;
         let data_len = reader.read_u32::<byteorder::LE>().ok()?;
-        let mut data = vec![0 as u8; data_len as usize];
+        let mut data = vec![0; data_len as usize];
         reader.read_exact(&mut data).ok()?;
         let len = reader.position() as usize;
         self.in_buf.drain(..len);
