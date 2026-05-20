@@ -31,6 +31,7 @@ type ServerChannels = (Sender<ClientMessage>, Receiver<ClientMessage>);
 pub struct Server {
     clients: Arc<Mutex<HashMap<ClientId, ClientConnection>>>,
     channels: Arc<Mutex<Option<ServerChannels>>>,
+    next_session: u64,
 }
 impl Server {
     pub fn new() -> Self { Self::default() }
@@ -135,17 +136,26 @@ impl Server {
             log::warn!("tried to send message to client {}, but nREPL is not connected", client);
         }
     }
-    pub fn reply<'a, I>(&self, client: ClientId, id: bencode::Value, dict: I)
-    where I: Iterator<Item = (&'a [u8], bencode::Value)> {
+    pub fn reply<'a, I>(&self, client: ClientId,
+        id: bencode::Value, session: Option<bencode::Value>,
+        dict: I
+    ) where I: Iterator<Item = (&'a [u8], bencode::Value)> {
         self.send(client, bencode::Value::Dictionary(BTreeMap::from_iter(dict.map(|(k, v)| {
             (Vec::from(k), v)
         }).chain([
             (Vec::from(b"id"), id),
-            (Vec::from(b"session"), bencode::Value::Bytestring(Vec::from(b"global"))),
-            (Vec::from(b"status"), bencode::Value::List(vec![
+            (Vec::from(b"session"), session.unwrap_or(bencode::Value::Bytestring(Vec::from(b"global")))),
+        ]))));
+    }
+    pub fn reply_done<'a, I>(&self, client: ClientId,
+        id: bencode::Value, session: Option<bencode::Value>,
+        dict: I
+    ) where I: Iterator<Item = (&'a [u8], bencode::Value)> {
+        self.reply(client, id, session, dict.chain([
+            (&b"status"[..], bencode::Value::List(vec![
                 bencode::Value::Bytestring(Vec::from(b"done"))
             ])),
-        ]))));
+        ].into_iter()))
     }
     pub fn update(&mut self, rt: &mut script::Runtime) {
         while let Some((cid, msg)) = self.poll() {
@@ -161,12 +171,18 @@ impl Server {
                 log::warn!("message with no id/op from nREPL client: {}", msg);
                 return;
             };
+            let session = d.get(&b"session"[..]).cloned();
             let res: Erm<()> = try {
                 match &op[..] {
-                    b"clone" => self.reply(cid, id.clone(), [
-                        (&b"new-session"[..], bencode::Value::Bytestring(Vec::from(b"global"))),
-                    ].into_iter()),
-                    b"describe" => self.reply(cid, id.clone(), [
+                    b"clone" => {
+                        self.reply(cid, id.clone(), session.clone(), [
+                            (&b"new-session"[..], bencode::Value::Bytestring(
+                                format!("session{}", self.next_session).into_bytes()
+                            )),
+                        ].into_iter());
+                        self.next_session += 1;
+                    },
+                    b"describe" => self.reply(cid, id.clone(), session.clone(), [
                         (&b"aux"[..], bencode::Value::Dictionary(BTreeMap::new())),
                         (&b"middleware"[..], bencode::Value::List(Vec::new())),
                         (&b"ops"[..], bencode::Value::Dictionary(BTreeMap::new())),
@@ -179,8 +195,9 @@ impl Server {
                             let expr = rt.parse(scode)?;
                             let v = rt.eval(expr)?;
                             let res = rt.dump(v)?;
-                            self.reply(cid, id.clone(), [
+                            self.reply(cid, id.clone(), session.clone(), [
                                 (&b"value"[..], bencode::Value::Bytestring(res.into_bytes())),
+                                (&b"ns"[..], bencode::Value::Bytestring(Vec::from(b"teleia"))),
                             ].into_iter())
                         } else {
                             utils::erm_msg(&format!("eval with no code: {}", msg))?;
@@ -190,10 +207,12 @@ impl Server {
                 }
             };
             if let Err(e) = res {
-                self.reply(cid, id.clone(), [
+                self.reply_done(cid, id.clone(), session, [
                     (&b"ex"[..], bencode::Value::Bytestring(Vec::from(b"teleia"))),
                     (&b"err"[..], bencode::Value::Bytestring(format!("{}", e).into_bytes())),
                 ].into_iter());
+            } else {
+                self.reply_done(cid, id.clone(), session, [].into_iter());
             }
         }
     }

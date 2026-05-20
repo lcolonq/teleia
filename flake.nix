@@ -228,6 +228,7 @@
         packages = [
           pkgs.trunk
           pkgs.rust-analyzer
+          pkgs.cargo-flamegraph
           pkgs.cmake
           pkgs.mold
         ] ++ native.nativeBuildInputs ++ native.buildInputs;

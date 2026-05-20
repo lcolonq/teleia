@@ -190,6 +190,13 @@ impl Runtime {
             Ok(Value { val: ret })
         }
     }
+    pub fn car(&mut self, x: Value) -> utils::Erm<Value> {
+        unsafe {
+            let ret = pit_car(self.rt, x.val);
+            self.error()?;
+            Ok(Value { val: ret})
+        }
+    }
 }
 
 pub struct Lexer {
