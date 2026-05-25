@@ -6,10 +6,11 @@ use heck::ToUpperCamelCase;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 struct Designator {
+    path: String,
     parts: Vec<String>,
 }
 impl Designator {
-    fn new(fbase: &str, path: &Path, shorten: bool) -> Self {
+    fn new(fbase: &str, mut path: &Path, shorten: bool) -> Self {
         let mut parts: Vec<_> = path.strip_prefix(fbase).unwrap().with_extension("").components()
             .filter_map(|c| match c {
                 std::path::Component::Normal(o) => Some(o.to_str().unwrap().to_owned()),
@@ -18,13 +19,27 @@ impl Designator {
             .collect();
         if shorten {
             parts.pop();
+            path = path.parent().expect("path has no parent");
         }
         Self {
+            path: path.to_str().expect("path is not a string").to_owned(),
             parts
         }
     }
-    fn enum_entry(&self, _fnm: &str) -> String {
-        self.parts.join(" ").to_upper_camel_case().to_string()
+    fn enum_entry(&self, fnm: &str) -> String {
+        let singular = match fnm {
+            "meshes" => "mesh",
+            "textures" => "texture",
+            "materials" => "material",
+            "shaders" => "shader",
+            _ => fnm,
+        };
+        let mut ret = format!("\n#[doc=\"newton-{}: {}\"]\n", singular, self.path);
+        ret += &self.parts.join(" ").to_upper_camel_case();
+        ret
+    }
+    fn enum_element(&self, _fnm: &str) -> String {
+        self.parts.join(" ").to_upper_camel_case()
     }
     fn load_expr(&self, fnm: &str) -> Option<String> {
         let i = format!("assets/{}/{}", fnm, self.parts.join("/"));
@@ -71,7 +86,7 @@ impl Field {
         let mut ents = Vec::new();
         for d in self.entries.iter() {
             if let Some(exp) = d.load_expr(&self.nm) {
-                ents.push((d.enum_entry(&self.nm), exp));
+                ents.push((d.enum_entry(&self.nm), d.enum_element(&self.nm), exp));
             }
         }
         let (enm, ty) = match self.nm.as_str() {
@@ -81,11 +96,11 @@ impl Field {
             "shaders" => ("Shader", "teleia::shader::Shader"),
             _ => return None,
         };
-        let enums: Vec<_> = ents.iter().map(|(e, _)| e.clone()).collect();
+        let enums: Vec<_> = ents.iter().map(|(e, _, _)| e.clone()).collect();
         let edecl = format!("#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, enum_map::Enum)]
 pub enum {} {{ {} }}", enm, enums.join(", "));
         let decl = format!("pub {}: enum_map::EnumMap<{}, {}>", self.nm, enm, ty);
-        let inits: Vec<_> = ents.into_iter().map(|(e, exp)| format!("{}::{} => {}", enm, e, exp)).collect();
+        let inits: Vec<_> = ents.into_iter().map(|(_, e, exp)| format!("{}::{} => {}", enm, e, exp)).collect();
         let init = format!("{}: enum_map::enum_map!({})", self.nm, inits.join(", "));
         Some((edecl, decl, init))
     }

@@ -199,6 +199,10 @@ impl Scene {
                     Primitive {
                         mesh: mesh::Mesh {
                             vao,
+                            vbo_vertex: vertices_buf,
+                            vbo_index: indices_buf,
+                            vbo_normal: None,
+                            vbo_texcoord: None,
                             mode,
                             index_count: indices.len(),
                             index_type: glow::UNSIGNED_INT,
