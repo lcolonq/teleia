@@ -9,12 +9,14 @@ pub const ATTRIB_JOINT: u32 = 3;
 pub const ATTRIB_WEIGHT: u32 = 4;
 pub const ATTRIB_COLOR: u32 = 5;
 
+type Buffer = <glow::Context as glow::HasContext>::Buffer;
+
 pub struct Mesh {
     pub vao: glow::VertexArray,
-    pub vbo_vertex: glow::NativeBuffer,
-    pub vbo_index: glow::NativeBuffer,
-    pub vbo_normal: Option<glow::NativeBuffer>,
-    pub vbo_texcoord: Option<glow::NativeBuffer>,
+    pub vbo_vertex: Buffer,
+    pub vbo_index: Buffer,
+    pub vbo_normal: Option<Buffer>,
+    pub vbo_texcoord: Option<Buffer>,
     pub mode: u32, // glow::TRIANGLES, etc.
     pub index_count: usize,
     pub index_type: u32, // glow::BYTE, glow::FLOAT, etc.
