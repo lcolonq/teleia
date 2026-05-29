@@ -214,9 +214,13 @@ where
 
     let resize = !options.contains(Options::NORESIZE);
     let (window, gl) = {
-        let window = winit::window::WindowBuilder::new()
+        let mut builder = winit::window::WindowBuilder::new()
             .with_maximized(resize)
-            .with_decorations(false)
+            .with_decorations(false);
+        if options.contains(Options::OVERLAY) {
+            builder = builder.with_transparent(true);
+        }
+        let window = builder
             .build(&event_loop)
             .expect("failed to initialize window");
         let gl = web_sys::window()
