@@ -2,9 +2,11 @@
 use std::{collections::HashMap, fmt::Display};
 use bimap::BiHashMap;
 use enum_map::{enum_map, Enum, EnumMap};
-use glow::HasContext;
 use serde::{Serialize, Deserialize};
 use strum::EnumIter;
+
+#[cfg(not(target_arch = "wasm32"))]
+use glow::HasContext;
 
 use crate::{audio, context, font, framebuffer, mesh, shader, utils};
 

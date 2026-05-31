@@ -276,7 +276,7 @@ impl Context {
 
     #[cfg(target_arch = "wasm32")]
     pub fn lock_mouse(&self) {
-        self.window.set_cursor_grab(winit::window::CursorGrabMode::Locked);
+        let _ = self.window.set_cursor_grab(winit::window::CursorGrabMode::Locked);
         self.window.set_cursor_visible(false);
     }
 
