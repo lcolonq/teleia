@@ -168,6 +168,18 @@ impl<A: Assets> Renderer<A> {
     pub fn render_square(&self, ctx: &context::Context, st: &state::State) {
         st.mesh_square.render(ctx)
     }
+    pub fn set_position_2d_mat(&self, ctx: &context::Context, st: &state::State, pos: glam::Mat4) {
+        if let Some((s, sm)) = self.shader() {
+            debug_assert!(sm == ShaderMode::TwoDimension, "attempted to set_position_2d in wrong mode");
+            s.set_position_2d_mat(ctx, st, &pos);
+        }
+    }
+    pub fn set_position_2d_rotate(&self, ctx: &context::Context, st: &state::State, pos: glam::Vec2, dims: glam::Vec2, rot: glam::Quat) {
+        if let Some((s, sm)) = self.shader() {
+            debug_assert!(sm == ShaderMode::TwoDimension, "attempted to set_position_2d in wrong mode");
+            s.set_position_2d_helper(ctx, st, &pos, &dims, &rot)
+        }
+    }
     pub fn set_position_2d(&self, ctx: &context::Context, st: &state::State, pos: glam::Vec2, dims: glam::Vec2) {
         if let Some((s, sm)) = self.shader() {
             debug_assert!(sm == ShaderMode::TwoDimension, "attempted to set_position_2d in wrong mode");
@@ -242,7 +254,6 @@ impl<A: Assets> Renderer<A> {
 
     /// Common case: draw the given texture on the screen (units are pixels, pos is top left)
     pub fn texture_screen(&mut self,
-
         ctx: &context::Context, st: &mut state::State,
         texture: A::Texture,
         pos: glam::Vec2,
@@ -251,6 +262,19 @@ impl<A: Assets> Renderer<A> {
         self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR);
         self.bind_texture(ctx, st, texture);
         self.set_position_2d(ctx, st, pos, dims);
+        self.render_square(ctx, st);
+    }
+
+    pub fn texture_screen_rotate(&mut self,
+        ctx: &context::Context, st: &mut state::State,
+        texture: A::Texture,
+        pos: glam::Vec2,
+        dims: glam::Vec2,
+        rot: glam::Quat,
+    ) {
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR);
+        self.bind_texture(ctx, st, texture);
+        self.set_position_2d_rotate(ctx, st, pos, dims, rot);
         self.render_square(ctx, st);
     }
 

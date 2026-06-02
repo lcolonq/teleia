@@ -218,6 +218,10 @@ impl Shader {
         self.set_mat4(ctx, "normal_matrix", &position.inverse().transpose());
     }
 
+    pub fn set_position_2d_mat(&self, ctx: &context::Context, st: &state::State, position: &glam::Mat4) {
+        self.set_mat4(ctx, "position", position);
+    }
+
     pub fn set_position_2d_helper(&self, ctx: &context::Context, st: &state::State, pos: &glam::Vec2, dims: &glam::Vec2, rot: &glam::Quat) {
         let halfwidth = dims.x / 2.0;
         let halfheight = dims.y / 2.0;

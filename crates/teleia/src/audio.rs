@@ -226,9 +226,7 @@ pub struct Assets {
 impl Assets {
     pub fn new<F>(f : F) -> Self where F: Fn(&Context) -> HashMap<String, Audio> {
         let ctx = Context::new();
-
         let audio = f(&ctx);
-
         Self {
             ctx,
             audio,
