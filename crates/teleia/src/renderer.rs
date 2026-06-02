@@ -118,11 +118,7 @@ impl<A: Assets> Renderer<A> {
         ctx: &context::Context, st: &mut state::State,
         flags: UberFlags, mode: ShaderMode,
     ) {
-        if let BoundShader::Uber(f, sm) = self.shader {
-            if f == flags && sm == mode {
-                return;
-            }
-        }
+        if let BoundShader::Uber(f, sm) = self.shader && f == flags && sm == mode { return }
         match mode {
             ShaderMode::TwoDimension => st.bind_2d(ctx, &self.shader_uber),
             ShaderMode::ThreeDimension => st.bind_3d(ctx, &self.shader_uber),
@@ -135,11 +131,7 @@ impl<A: Assets> Renderer<A> {
         ctx: &context::Context, st: &mut state::State,
         shader: A::Shader, mode: ShaderMode,
     ) {
-        if let BoundShader::Shader(s, sm) = self.shader {
-            if s == shader && sm == mode {
-                return;
-            }
-        }
+        if let BoundShader::Shader(s, sm) = self.shader && s == shader && sm == mode { return }
         match mode {
             ShaderMode::TwoDimension => st.bind_2d(ctx, self.assets.shader(shader)),
             ShaderMode::ThreeDimension => st.bind_3d(ctx, self.assets.shader(shader)),
@@ -212,16 +204,20 @@ impl<A: Assets> Renderer<A> {
     pub fn set_mat4(&self, ctx: &context::Context, _st: &state::State, nm: &str, val: glam::Mat4) {
         if let Some((s, _)) = self.shader() { s.set_mat4(ctx, nm, &val) }
     }
-    pub fn set_texture_offset(&self, ctx: &context::Context, st: &state::State, inc: i32, x: i32, y: i32) {
-        let count = inc as f32;
-        let ratio = 1.0 / count;
+    pub fn set_texture_offset(&self,
+        ctx: &context::Context, st: &state::State,
+        xinc: i32, yinc: i32,
+        x: i32, y: i32
+    ) {
+        let xcount = xinc as f32; let xratio = 1.0 / xcount;
+        let ycount = yinc as f32; let yratio = 1.0 / ycount;
         self.set_vec2(
             ctx, st, "sprite_dims",
-            glam::Vec2::new(ratio, ratio),
+            glam::Vec2::new(xratio, yratio),
         );
         self.set_vec2(
             ctx, st, "sprite_offset",
-            glam::Vec2::new((x % inc) as f32 * ratio, (y % inc) as f32 * ratio),
+            glam::Vec2::new((x % xinc) as f32 * xratio, (y % yinc) as f32 * yratio),
         );
     }
 
