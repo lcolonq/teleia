@@ -218,7 +218,7 @@ impl Shader {
         self.set_mat4(ctx, "normal_matrix", &position.inverse().transpose());
     }
 
-    pub fn set_position_2d_mat(&self, ctx: &context::Context, st: &state::State, position: &glam::Mat4) {
+    pub fn set_position_2d_mat(&self, ctx: &context::Context, _st: &state::State, position: &glam::Mat4) {
         self.set_mat4(ctx, "position", position);
     }
 

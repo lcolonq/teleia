@@ -195,7 +195,6 @@ impl Scene {
                     ctx.gl.enable_vertex_attrib_array(mesh::ATTRIB_WEIGHT);
                     ctx.gl.vertex_attrib_pointer_f32(mesh::ATTRIB_WEIGHT, 4, glow::FLOAT, false, vertex_size, offset_of!(Vertex, weights) as _);
 
-
                     Primitive {
                         mesh: mesh::Mesh {
                             vao,

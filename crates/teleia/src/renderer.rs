@@ -1,4 +1,4 @@
-use crate::{context, state, shader, texture, mesh};
+use crate::{context, mesh, postprocessing, shader, state, texture};
 
 use bitflags::bitflags;
 
@@ -40,6 +40,8 @@ pub trait Assets {
     fn mesh(&self, i: Self::Mesh) -> &mesh::Mesh;
     type Material: PartialEq + Eq + Clone + Copy;
     fn material(&self, i: Self::Material) -> &texture::Material;
+    type Effect: PartialEq + Eq + Clone + Copy;
+    fn effect(&self, i: Self::Effect) -> &postprocessing::Effect;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -75,8 +77,8 @@ pub struct Renderer<A: Assets> {
     texture: BoundTexture<A>,
 }
 impl<A: Assets> Renderer<A> {
-    pub fn new<F>(ctx: &context::Context, f: F) -> Self
-    where F: FnOnce(&context::Context) -> A {
+    pub fn new<F>(ctx: &context::Context, st: &mut state::State, f: F) -> Self
+    where F: FnOnce(&context::Context, &mut state::State) -> A {
         let shader_uber = shader::Shader::new_nolib(ctx,
             &format!("{}{}", UberFlags::prelude(), include_str!("assets/shaders/uber/vert.glsl")),
             &format!("{}{}", UberFlags::prelude(), include_str!("assets/shaders/uber/frag.glsl")),
@@ -84,7 +86,7 @@ impl<A: Assets> Renderer<A> {
         shader_uber.bind(ctx);
         shader_uber.set_i32(ctx, "texture_normal", 1);
         Self {
-            assets: f(ctx),
+            assets: f(ctx, st),
             shader_uber,
             shader: BoundShader::None,
             texture: BoundTexture::None,

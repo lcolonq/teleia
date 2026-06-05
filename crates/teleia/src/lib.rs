@@ -6,6 +6,7 @@ pub mod context;
 pub mod state;
 pub mod framebuffer;
 pub mod shader;
+pub mod postprocessing;
 pub mod mesh;
 pub mod texture;
 pub mod scene;
@@ -67,7 +68,7 @@ where
 pub fn run<'a, F, G>(title: &str, w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
 where
     G: state::Game + 'static,
-    F: (FnOnce(&'a context::Context) -> G),
+    F: (FnOnce(&'a context::Context, &mut state::State) -> G),
 {
     env_logger::Builder::new()
         .filter(None, log::LevelFilter::Info)
@@ -132,8 +133,8 @@ where
         glfw, window, gl,
         w as f32, h as f32, options,
     )));
-    let game = Box::leak(Box::new(gnew(ctx)));
     let st = Box::leak(Box::new(state::State::new(ctx)));
+    let game = Box::leak(Box::new(gnew(ctx, st)));
 
     unsafe {
         CTX = Some(ctx as _);
@@ -200,7 +201,7 @@ where
 pub fn run<'a, F, G>(w: u32, h: u32, options: Options, gnew: F)
 where
     G: state::Game + 'static,
-    F: (Fn(&'a context::Context) -> G),
+    F: (Fn(&'a context::Context, &mut state::State) -> G),
 {
     console_log::init_with_level(log::Level::Debug).unwrap();
     console_error_panic_hook::set_once();
@@ -240,8 +241,8 @@ where
 
     let ctx = Box::leak(Box::new(context::Context::new(window, gl, w as f32, h as f32, options)));
     ctx.maximize_canvas();
-    let game = Box::leak(Box::new(gnew(ctx)));
     let st = Box::leak(Box::new(state::State::new(&ctx)));
+    let game = Box::leak(Box::new(gnew(ctx, st)));
 
     unsafe {
         CTX = Some(ctx as _);

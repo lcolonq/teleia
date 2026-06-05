@@ -8,11 +8,11 @@ use strum::EnumIter;
 #[cfg(not(target_arch = "wasm32"))]
 use glow::HasContext;
 
-use crate::{audio, context, font, framebuffer, mesh, shader, utils};
+use crate::{audio, context, font, framebuffer, mesh, postprocessing, shader, utils};
 
 pub type Tick = u64;
 
-const DELTA_TIME: f64 = 0.016; // todo
+pub const DELTA_TIME: f64 = 0.016; // todo
 
 pub const ORTH_WIDTH: f32 = 7.55869;
 pub const ORTH_HEIGHT: f32 = 5.03913;
@@ -162,7 +162,7 @@ pub struct State {
     pub screen: framebuffer::Framebuffer,
     pub render_framebuffer: framebuffer::Framebuffer,
     pub render_dims: glam::Vec2,
-    pub shader_upscale: shader::Shader,
+    pub postprocessing: postprocessing::Pipeline,
     pub shader_text_bitmap: shader::Shader,
     pub mesh_square: mesh::Mesh,
     pub font_default: font::Bitmap,
@@ -234,11 +234,6 @@ impl State {
             &glam::Vec2::new(ctx.render_width, ctx.render_height),
             &glam::Vec2::new(0.0, 0.0),
         );
-        let shader_upscale = shader::Shader::new_nolib(
-            ctx,
-            include_str!("assets/shaders/scale/vert.glsl"),
-            include_str!("assets/shaders/scale/frag.glsl"),
-        );
         let shader_text_bitmap = shader::Shader::new_nolib(
             ctx,
             include_str!("assets/shaders/bitmap/vert.glsl"),
@@ -265,7 +260,7 @@ impl State {
             screen,
             render_framebuffer,
             render_dims: glam::Vec2::new(ctx.render_width, ctx.render_height),
-            shader_upscale,
+            postprocessing: postprocessing::Pipeline::new(ctx),
             shader_text_bitmap,
             mesh_square,
             font_default: font::Bitmap::default(ctx),
@@ -568,9 +563,8 @@ impl State {
             }
         );
         ctx.clear();
-        self.shader_upscale.bind(ctx);
-        self.render_framebuffer.bind_texture(ctx);
-        ctx.render_no_geometry();
+        self.postprocessing.render(ctx, self)?;
+        self.postprocessing.finish();
         #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
         {
             let err = unsafe { ctx.gl.get_error() };

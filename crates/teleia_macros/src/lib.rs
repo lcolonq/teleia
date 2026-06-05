@@ -32,6 +32,7 @@ impl Designator {
             "textures" => "texture",
             "materials" => "material",
             "shaders" => "shader",
+            "effects" => "effect",
             _ => fnm,
         };
         let mut ret = format!("\n#[doc=\"newton-{}: {}\"]\n", singular, self.path);
@@ -55,6 +56,8 @@ impl Designator {
             } else {
                 Some(format!("teleia::shader::Shader::new(ctx, include_str!(\"{}/vert.glsl\"), include_str!(\"{}/frag.glsl\"))", i, i))
             },
+            "effects" =>
+                Some(format!("st.effect(ctx, include_bytes!(\"{}.glsl\"))", i)),
             _ => None,
         }
     }
@@ -94,6 +97,7 @@ impl Field {
             "textures" => ("Texture", "teleia::texture::Texture"),
             "materials" => ("Material", "teleia::texture::Material"),
             "shaders" => ("Shader", "teleia::shader::Shader"),
+            "effects" => ("Effect", "teleia::postprocessing::Effect"),
             _ => return None,
         };
         let enums: Vec<_> = ents.iter().map(|(e, _, _)| e.clone()).collect();
@@ -114,7 +118,7 @@ impl AssetData {
     fn new(base: &str) -> Self {
         let mut fields = Vec::new();
         let dirs = std::fs::read_dir(base).unwrap_or_else(|_| panic!("failed to read assets directory: {}", base));
-        let (mut has_meshes, mut has_textures, mut has_materials, mut has_shaders) = (false, false, false, false);
+        let (mut has_meshes, mut has_textures, mut has_materials, mut has_shaders, mut has_effects) = (false, false, false, false, false);
         for d in dirs.flatten() {
             let nm = d.file_name().into_string().unwrap();
             fields.push(Field::new(base, &nm));
@@ -123,6 +127,7 @@ impl AssetData {
                 "textures" => has_textures = true,
                 "materials" => has_materials = true,
                 "shaders" => has_shaders = true,
+                "effects" => has_effects = true,
                 _ => {},
             };
         }
@@ -130,6 +135,7 @@ impl AssetData {
         if !has_textures { fields.push(Field { nm: "textures".to_owned(), entries: HashSet::new() }); }
         if !has_materials { fields.push(Field { nm: "materials".to_owned(), entries: HashSet::new() }); }
         if !has_shaders { fields.push(Field { nm: "shaders".to_owned(), entries: HashSet::new() }); }
+        if !has_effects { fields.push(Field { nm: "effects".to_owned(), entries: HashSet::new() }); }
         Self {
             fields,
         }
@@ -144,7 +150,7 @@ impl AssetData {
         for (_, decl, _) in fdata.iter() {
             res += decl; res += ",\n";
         }
-        res += "}\nimpl Assets {\npub fn new(ctx: &teleia::context::Context) -> Self {\nSelf {\n";
+        res += "}\nimpl Assets {\npub fn new(ctx: &teleia::context::Context, st: &mut teleia::state::State) -> Self {\nSelf {\n";
         for (_, _, init) in fdata.iter() {
             res += init; res += ",\n";
         }
@@ -158,6 +164,8 @@ impl AssetData {
         res += "fn material(&self, i: Self::Material) -> &teleia::texture::Material { &self.materials[i] }\n";
         res += "type Mesh = Mesh;\n";
         res += "fn mesh(&self, i: Self::Mesh) -> &teleia::mesh::Mesh { &self.meshes[i] }\n";
+        res += "type Effect = Effect;\n";
+        res += "fn effect(&self, i: Self::Effect) -> &teleia::postprocessing::Effect { &self.effects[i] }\n";
         res += "}\n";
         res
     }
