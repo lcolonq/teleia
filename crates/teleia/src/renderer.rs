@@ -5,16 +5,17 @@ use bitflags::bitflags;
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct UberFlags: u32 {
-        const TEXTURE_COLOR       = 0b0000000001;
-        const TEXTURE_NORMAL      = 0b0000000010;
-        const FLIP_TEXTURE        = 0b0000000100;
-        const LIGHT_AMBIENT       = 0b0000001000;
-        const LIGHT_DIR           = 0b0000010000;
-        const LIGHT_POINT         = 0b0000100000;
-        const SPRITE              = 0b0001000000;
-        const EFFECTS             = 0b0010000000;
-        const YSKEW               = 0b0100000000;
-        const VERTEX_COLOR        = 0b1000000000;
+        const TEXTURE_COLOR       = 0b00000000001;
+        const TEXTURE_NORMAL      = 0b00000000010;
+        const FLIP_TEXTURE        = 0b00000000100;
+        const LIGHT_AMBIENT       = 0b00000001000;
+        const LIGHT_DIR           = 0b00000010000;
+        const LIGHT_POINT         = 0b00000100000;
+        const SPRITE              = 0b00001000000;
+        const EFFECTS             = 0b00010000000;
+        const YSKEW               = 0b00100000000;
+        const VERTEX_COLOR        = 0b01000000000;
+        const OPACITY             = 0b10000000000;
     }
 }
 impl UberFlags {
@@ -221,6 +222,16 @@ impl<A: Assets> Renderer<A> {
             ctx, st, "sprite_offset",
             glam::Vec2::new((x % xinc) as f32 * xratio, (y % yinc) as f32 * yratio),
         );
+    }
+
+    pub fn clear(&mut self,
+        ctx: &context::Context, _st: &mut state::State,
+        color: glam::Vec4
+    ) {
+        self.texture = BoundTexture::None;
+        self.shader = BoundShader::None;
+        ctx.clear_color(color);
+        ctx.clear();
     }
 
     /// Common case: draw the given textured mesh in the world (units are world tiles)

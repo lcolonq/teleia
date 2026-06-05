@@ -22,6 +22,8 @@ uniform float effect_flash;
 uniform float effect_hueshift;
 uniform float effect_huescale;
 
+uniform float opacity;
+
 in vec2 vertex_texcoord;
 in vec3 vertex_color;
 in vec3 vertex_normal;
@@ -189,5 +191,8 @@ void main() {
     }
     if (flag(VERTEX_COLOR)) {
         frag_color.rgb = vertex_color;
+    }
+    if (flag(OPACITY)) {
+        frag_color.a *= opacity;
     }
 }

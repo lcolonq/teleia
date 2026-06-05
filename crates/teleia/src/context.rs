@@ -111,7 +111,8 @@ impl Context {
             self.gl.depth_func(glow::LEQUAL);
 
             self.gl.enable(glow::BLEND);
-            self.gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+            self.gl.blend_equation_separate(glow::FUNC_ADD, glow::MAX);
+            self.gl.blend_func_separate(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA, glow::ONE, glow::ZERO);
 
             self.gl.enable(glow::STENCIL_TEST);
 
