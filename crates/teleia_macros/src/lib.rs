@@ -57,7 +57,7 @@ impl Designator {
                 Some(format!("teleia::shader::Shader::new(ctx, include_str!(\"{}/vert.glsl\"), include_str!(\"{}/frag.glsl\"))", i, i))
             },
             "effects" =>
-                Some(format!("st.effect(ctx, include_bytes!(\"{}.glsl\"))", i)),
+                Some(format!("st.postprocessing.effect(ctx, include_str!(\"{}.glsl\")).unwrap()", i)),
             _ => None,
         }
     }
