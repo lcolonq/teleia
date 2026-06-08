@@ -5,17 +5,18 @@ use bitflags::bitflags;
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct UberFlags: u32 {
-        const TEXTURE_COLOR       = 0b00000000001;
-        const TEXTURE_NORMAL      = 0b00000000010;
-        const FLIP_TEXTURE        = 0b00000000100;
-        const LIGHT_AMBIENT       = 0b00000001000;
-        const LIGHT_DIR           = 0b00000010000;
-        const LIGHT_POINT         = 0b00000100000;
-        const SPRITE              = 0b00001000000;
-        const EFFECTS             = 0b00010000000;
-        const YSKEW               = 0b00100000000;
-        const VERTEX_COLOR        = 0b01000000000;
-        const OPACITY             = 0b10000000000;
+        const VERTEX_COLOR        = 1 << 0;
+        const TEXTURE_COLOR       = 1 << 1;
+        const TEXTURE_NORMAL      = 1 << 2;
+        const TEXTURE_FLIP        = 1 << 3;
+        const LIGHT_AMBIENT       = 1 << 4;
+        const LIGHT_DIR           = 1 << 5;
+        const LIGHT_POINT         = 1 << 6;
+        const HUE                 = 1 << 7;
+        const SPRITE              = 1 << 8;
+        const FLASH               = 1 << 9;
+        const YSKEW               = 1 << 10;
+        const OPACITY             = 1 << 11;
     }
 }
 impl UberFlags {
@@ -268,9 +269,10 @@ impl<A: Assets> Renderer<A> {
         pos: glam::Vec2,
         dims: glam::Vec2,
     ) {
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR);
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP);
         self.bind_texture(ctx, st, texture);
         self.set_position_2d(ctx, st, pos, dims);
+        self.set_vec2(ctx, st, "texture_flip", glam::Vec2::new(0.0, 1.0));
         self.render_square(ctx, st);
     }
 
@@ -281,9 +283,10 @@ impl<A: Assets> Renderer<A> {
         dims: glam::Vec2,
         rot: glam::Quat,
     ) {
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR);
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP);
         self.bind_texture(ctx, st, texture);
         self.set_position_2d_rotate(ctx, st, pos, dims, rot);
+        self.set_vec2(ctx, st, "texture_flip", glam::Vec2::new(0.0, 1.0));
         self.render_square(ctx, st);
     }
 
@@ -293,14 +296,13 @@ impl<A: Assets> Renderer<A> {
         pos: glam::Vec2,
         dims: glam::Vec2,
     ) {
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::EFFECTS);
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP | UberFlags::HUE);
         self.bind_texture(ctx, st, texture);
-        self.set_f32(ctx, st, "effect_huescale", 0.0);
-        self.set_f32(ctx, st, "effect_hueshift", hue);
+        self.set_vec2(ctx, st, "texture_flip", glam::Vec2::new(0.0, 1.0));
+        self.set_f32(ctx, st, "hue_scale", 0.0);
+        self.set_f32(ctx, st, "hue_shift", hue);
         self.set_position_2d(ctx, st, pos, dims);
         self.render_square(ctx, st);
-        self.set_f32(ctx, st, "effect_huescale", 1.0);
-        self.set_f32(ctx, st, "effect_hueshift", 0.0);
     }
 
     /// Common case: text in the default font (units are pixels, pos is top left)
@@ -311,7 +313,7 @@ impl<A: Assets> Renderer<A> {
     ) {
         // drawing text might bind the texture
         self.texture = BoundTexture::None;
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
         let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
         let fpos = pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0);
         self.set_position_2d(ctx, st, fpos, dims);
@@ -326,7 +328,7 @@ impl<A: Assets> Renderer<A> {
         s: &str,
     ) {
         self.texture = BoundTexture::None;
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
         let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
         let fpos = pos + glam::Vec2::new(-dims.x / 2.0, st.font_default.char_height as f32 / 2.0);
         self.set_position_2d(ctx, st, fpos, dims);
@@ -340,7 +342,7 @@ impl<A: Assets> Renderer<A> {
         s: &str,
     ) {
         self.texture = BoundTexture::None;
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR | UberFlags::FLIP_TEXTURE);
+        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
         let width = s.len() as f32 * st.font_default.char_width as f32;
         let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
         let fpos = pos + glam::Vec2::new(-dims.x / 2.0 - (width / 2.0).round(), st.font_default.char_height as f32 / 2.0);

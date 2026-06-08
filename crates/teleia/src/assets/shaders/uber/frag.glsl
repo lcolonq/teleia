@@ -7,8 +7,11 @@ uniform vec2 sprite_offset;
 uniform vec2 sprite_dims;
 
 uniform vec4 color;
+
 uniform sampler2D texture_color;
 uniform sampler2D texture_normal;
+uniform vec2 texture_flip;
+
 uniform vec3 light_ambient_color;
 uniform vec3 light_dir;
 uniform vec3 light_dir_color;
@@ -17,10 +20,10 @@ uniform vec3 light_pos[5];
 uniform vec3 light_color[5];
 uniform vec2 light_attenuation[5];
 
-uniform int effect_flip;
-uniform float effect_flash;
-uniform float effect_hueshift;
-uniform float effect_huescale;
+uniform float flash;
+
+uniform float hue_shift;
+uniform float hue_scale;
 
 uniform float opacity;
 
@@ -37,20 +40,21 @@ bool flag(int mask) {
     return (flags & mask) != 0;
 }
 
-mat3 compute_tbn() {
+mat3 compute_tbn(vec2 tc) {
     vec3 p = -vertex_view_vector;
     vec3 normal = normalize(vertex_normal);
     vec3 dpx = dFdx(p);
     vec3 dpy = dFdy(p);
-    vec2 duvx = dFdx(vertex_texcoord);
-    vec2 duvy = dFdy(vertex_texcoord);
+    vec2 duvx = dFdx(tc);
+    vec2 duvy = dFdy(tc);
     vec3 dpyperp = cross(dpy, normal);
     vec3 dpxperp = cross(normal, dpx);
     vec3 tangent = dpyperp * duvx.x + dpxperp * duvy.x;
     vec3 bitangent = dpyperp * duvx.y + dpxperp * duvy.y;
     float invmax = inversesqrt(max(dot(bitangent, bitangent), dot(bitangent, bitangent)));
-    float flip = flag(FLIP_TEXTURE) ? 1.0 : -1.0;
-    return mat3(-tangent * invmax, flip * bitangent * invmax, normal);
+    // float xflip = -1.0 + 2.0 * float(texture_flip.x);
+    // float yflip = -1.0 + 2.0 * float(texture_flip.y);
+    return mat3(-tangent * invmax, bitangent * invmax, normal);
 
 }
 
@@ -144,14 +148,16 @@ vec3 hsl_to_rgb(vec3 hsl) {
 }
 
 void main() {
-    float tcy = flag(FLIP_TEXTURE) ? vertex_texcoord.y : 1.0 - vertex_texcoord.y;
-    vec2 tc = vec2(vertex_texcoord.x, tcy);
-    mat3 tbn = compute_tbn();
-    if (flag(EFFECTS)) {
-        float fbase = float(effect_flip);
-        float fmul = 1.0 - 2.0 * fbase;
-        tc = vec2(fbase + fmul * vertex_texcoord.x, tcy);
+    vec2 tc = vec2(vertex_texcoord.x, vertex_texcoord.y);
+    if (flag(TEXTURE_FLIP)) {
+        float xfbase = float(texture_flip.x);
+        float xfmul = 1.0 - 2.0 * xfbase;
+        float yfbase = float(texture_flip.y);
+        float yfmul = 1.0 - 2.0 * yfbase;
+        tc.x *= xfmul; tc.x += xfbase;
+        tc.y *= yfmul; tc.y += yfbase;
     }
+    mat3 tbn = compute_tbn(tc);
     if (flag(SPRITE)) {
         tc *= sprite_dims;
         tc += sprite_offset;
@@ -160,11 +166,13 @@ void main() {
     if (flag(TEXTURE_COLOR)) {
         frag_color = texture(texture_color, tc);
     }
-    if (flag(EFFECTS)) {
+    if (flag(HUE)) {
         vec3 hsl = rgb_to_hsl(frag_color.rgb);
-        hsl.x = mod(hsl.x * effect_huescale + effect_hueshift, 1.0);
-        vec3 p = hsl_to_rgb(hsl);
-        frag_color.rgb = vec3(p.r + effect_flash, p.g + effect_flash, p.b + effect_flash);
+        hsl.x = mod(hsl.x * hue_scale + hue_shift, 1.0);
+        frag_color.rgb = hsl_to_rgb(hsl);
+    }
+    if (flag(FLASH)) {
+        frag_color.rgb += vec3(flash);
     }
     vec3 normal = vertex_normal;
     if (flag(TEXTURE_NORMAL)) {
