@@ -1,6 +1,6 @@
 use crate::{context, framebuffer, shader, state, utils};
 
-const NUM_BINDINGS: usize = 5;
+pub const NUM_BINDINGS: usize = 5;
 
 #[derive(Clone, Copy)]
 pub struct Effect(usize);

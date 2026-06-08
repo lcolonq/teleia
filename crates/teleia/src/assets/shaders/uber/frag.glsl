@@ -3,32 +3,44 @@ uniform highp int flags;
 uniform vec3 camera_pos;
 uniform float time;
 
-uniform vec2 sprite_offset;
-uniform vec2 sprite_dims;
-
 uniform vec4 color;
 
+// flag(TEXTURE_COLOR)
 uniform sampler2D texture_color;
+// flag(TEXTURE_NORMAL)
 uniform sampler2D texture_normal;
+// flag(TEXTURE_FLIP)
 uniform vec2 texture_flip;
 
+// flag(LIGHT_AMBIENT)
 uniform vec3 light_ambient_color;
+// flag(LIGHT_DIR)
 uniform vec3 light_dir;
 uniform vec3 light_dir_color;
+// flag(LIGHT_POINT)
 uniform int light_count;
 uniform vec3 light_pos[5];
 uniform vec3 light_color[5];
 uniform vec2 light_attenuation[5];
 
-uniform float flash;
+// flag(RGB_ADD)
+uniform vec3 rgb_add;
 
+// flag(HUE)
 uniform float hue_shift;
 uniform float hue_scale;
 
+ // flag(OPACITY)
 uniform float opacity;
 
-in vec2 vertex_texcoord;
+// flag(VERTEX_COLOR)
 in vec3 vertex_color;
+
+// flag(SPRITE)
+uniform vec2 sprite_offset;
+uniform vec2 sprite_dims;
+
+in vec2 vertex_texcoord;
 in vec3 vertex_normal;
 in vec3 vertex_fragpos;
 in vec4 vertex_fragpos_shadow_dir;
@@ -52,8 +64,6 @@ mat3 compute_tbn(vec2 tc) {
     vec3 tangent = dpyperp * duvx.x + dpxperp * duvy.x;
     vec3 bitangent = dpyperp * duvx.y + dpxperp * duvy.y;
     float invmax = inversesqrt(max(dot(bitangent, bitangent), dot(bitangent, bitangent)));
-    // float xflip = -1.0 + 2.0 * float(texture_flip.x);
-    // float yflip = -1.0 + 2.0 * float(texture_flip.y);
     return mat3(-tangent * invmax, bitangent * invmax, normal);
 
 }
@@ -171,8 +181,8 @@ void main() {
         hsl.x = mod(hsl.x * hue_scale + hue_shift, 1.0);
         frag_color.rgb = hsl_to_rgb(hsl);
     }
-    if (flag(FLASH)) {
-        frag_color.rgb += vec3(flash);
+    if (flag(RGB_ADD)) {
+        frag_color.rgb += vec3(rgb_add);
     }
     vec3 normal = vertex_normal;
     if (flag(TEXTURE_NORMAL)) {

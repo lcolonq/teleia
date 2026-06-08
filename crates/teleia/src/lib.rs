@@ -25,6 +25,8 @@ pub use state::Tick;
 pub use audio::AudioPlayback;
 pub use simple_eyre::eyre::WrapErr;
 
+pub use glam::{Vec2, Vec3, Vec4, Quat, Mat4, Vec3Swizzles, Vec4Swizzles};
+
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
 
@@ -65,16 +67,27 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+pub fn initialize_logging() {
+    env_logger::Builder::new()
+        .filter(None, log::LevelFilter::Info)
+        .init();
+    install_error_handler();
+}
+#[cfg(target_arch = "wasm32")]
+pub fn initialize_logging() {
+    console_log::init_with_level(log::Level::Debug).unwrap();
+    console_error_panic_hook::set_once();
+    tracing_wasm::set_as_global_default();
+    // install_error_handler();
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run<'a, F, G>(title: &str, w: u32, h: u32, options: Options, gnew: F) -> Erm<()>
 where
     G: state::Game + 'static,
     F: (FnOnce(&'a context::Context, &mut state::State) -> G),
 {
-    env_logger::Builder::new()
-        .filter(None, log::LevelFilter::Info)
-        .init();
-    install_error_handler();
-
+    initialize_logging();
     log::info!("hello computer, starting up...");
 
     let (rglfw, rwindow, gl, events) = {
@@ -203,10 +216,7 @@ where
     G: state::Game + 'static,
     F: (Fn(&'a context::Context, &mut state::State) -> G),
 {
-    console_log::init_with_level(log::Level::Debug).unwrap();
-    console_error_panic_hook::set_once();
-    tracing_wasm::set_as_global_default();
-    // install_error_handler();
+    initialize_logging();
 
     log::info!("hello computer, starting up...");
 

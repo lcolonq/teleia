@@ -1,4 +1,4 @@
-use crate::{context, mesh, postprocessing, shader, state, texture};
+use crate::{context, font, mesh, postprocessing, shader, state, texture};
 
 use bitflags::bitflags;
 
@@ -12,9 +12,9 @@ bitflags! {
         const LIGHT_AMBIENT       = 1 << 4;
         const LIGHT_DIR           = 1 << 5;
         const LIGHT_POINT         = 1 << 6;
-        const HUE                 = 1 << 7;
-        const SPRITE              = 1 << 8;
-        const FLASH               = 1 << 9;
+        const RGB_ADD             = 1 << 7;
+        const HUE                 = 1 << 8;
+        const SPRITE              = 1 << 9;
         const YSKEW               = 1 << 10;
         const OPACITY             = 1 << 11;
     }
@@ -72,6 +72,148 @@ impl<A: Assets> PartialEq for BoundTexture<A> {
         }
     }
 }
+
+#[must_use]
+pub struct ApplyPostprocessingEffect
+<'s, 'r, A: Assets> {
+    st: &'s mut state::State,
+    renderer: &'r mut Renderer<A>,
+    effect: A::Effect,
+    bindings: [Option<(&'static str, postprocessing::Uniform)>; postprocessing::NUM_BINDINGS],
+}
+impl<'s, 'r, A: Assets> ApplyPostprocessingEffect<'s, 'r, A> {
+    pub fn apply(self) {
+        let eff = *self.renderer.assets.effect(self.effect);
+        self.st.postprocessing.apply_with_bindings(eff, self.bindings.into_iter().flatten());
+    }
+    pub fn bind_uniform(mut self, nm: &'static str, val: postprocessing::Uniform) -> Self {
+        if let Some(u) = self.bindings.iter_mut().find(|b| b.is_none()) {
+            *u = Some((nm, val));
+        } else {
+            log::warn!("too many bindings on postprocessing effect in renderer!");
+        }
+        self
+    }
+    pub fn bind_i32(self, nm: &'static str, x: i32) -> Self {
+        self.bind_uniform(nm, postprocessing::Uniform::I32(x))
+    }
+    pub fn bind_f32(self, nm: &'static str, x: f32) -> Self {
+        self.bind_uniform(nm, postprocessing::Uniform::F32(x))
+    }
+    pub fn bind_vec2(self, nm: &'static str, x: glam::Vec2) -> Self {
+        self.bind_uniform(nm, postprocessing::Uniform::Vec2(x))
+    }
+    pub fn bind_vec3(self, nm: &'static str, x: glam::Vec3) -> Self {
+        self.bind_uniform(nm, postprocessing::Uniform::Vec3(x))
+    }
+    pub fn bind_vec4(self, nm: &'static str, x: glam::Vec4) -> Self {
+        self.bind_uniform(nm, postprocessing::Uniform::Vec4(x))
+    }
+    pub fn bind_mat4(self, nm: &'static str, x: glam::Mat4) -> Self {
+        self.bind_uniform(nm, postprocessing::Uniform::Mat4(x))
+    }
+}
+
+#[must_use]
+pub struct RenderMesh<'c, 's, 'r, A: Assets> {
+    ctx: &'c context::Context,
+    st: &'s mut state::State,
+    renderer: &'r mut Renderer<A>,
+    mesh: A::Mesh,
+    pos: glam::Mat4,
+    texture: Option<A::Texture>,
+}
+impl<'c, 's, 'r, A: Assets> RenderMesh<'c, 's, 'r, A> {
+    pub fn render(self) {
+        self.renderer.bind_uber_2d(self.ctx, self.st, UberFlags::TEXTURE_COLOR);
+        self.renderer.set_position_3d(self.ctx, self.st, self.pos);
+        if let Some(texture) = self.texture {
+            self.renderer.bind_texture(self.ctx, self.st, texture);
+        }
+        self.renderer.render(self.ctx, self.st, self.mesh);
+    }
+}
+
+#[must_use]
+pub struct RenderTextureScreen<'c, 's, 'r, A: Assets> {
+    ctx: &'c context::Context,
+    st: &'s mut state::State,
+    renderer: &'r mut Renderer<A>,
+    texture: A::Texture,
+    pos: glam::Vec2,
+    dims: Option<glam::Vec2>,
+    rot: Option<glam::Quat>,
+    hue: Option<f32>,
+}
+impl<'c, 's, 'r, A: Assets> RenderTextureScreen<'c, 's, 'r, A> {
+    pub fn render(self) {
+        self.renderer.bind_uber_2d(self.ctx, self.st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP);
+        self.renderer.bind_texture(self.ctx, self.st, self.texture);
+        let dims = if let Some(dims) = self.dims { dims } else {
+            let t = self.renderer.assets.texture(self.texture);
+            glam::Vec2::new(t.width as f32, t.height as f32)
+        };
+        if let Some(rot) = self.rot {
+            self.renderer.set_position_2d_rotate(self.ctx, self.st, self.pos, dims, rot);
+        } else {
+            self.renderer.set_position_2d(self.ctx, self.st, self.pos, dims);
+        }
+        self.renderer.set_vec2(self.ctx, self.st, "texture_flip", glam::Vec2::new(0.0, 1.0));
+        if let Some(hue) = self.hue {
+            self.renderer.set_f32(self.ctx, self.st, "hue_scale", 0.0);
+            self.renderer.set_f32(self.ctx, self.st, "hue_shift", hue);
+        }
+        self.renderer.render_square(self.ctx, self.st);
+    }
+    pub fn dimensions(mut self, dims: glam::Vec2) -> Self { self.dims = Some(dims); self }
+    pub fn rotation(mut self, rot: glam::Quat) -> Self { self.rot = Some(rot); self }
+    pub fn hue(mut self, hue: f32) -> Self { self.hue = Some(hue); self }
+}
+
+#[must_use]
+pub struct RenderTextScreen<'c, 's, 'r, 'str, 'f, A: Assets> {
+    ctx: &'c context::Context,
+    st: &'s mut state::State,
+    renderer: &'r mut Renderer<A>,
+    text: &'str str,
+    pos: glam::Vec2,
+    font: Option<&'f font::Bitmap>,
+    centered: bool,
+    col: Option<glam::Vec3>,
+    scale: Option<glam::Vec2>,
+    offset: Option<glam::Vec2>,
+}
+impl<'c, 's, 'r, 'str, 'f, A: Assets> RenderTextScreen<'c, 's, 'r, 'str, 'f, A> {
+    pub fn render(self) {
+        // drawing text might bind the texture
+        self.renderer.texture = BoundTexture::None;
+        self.renderer.bind_uber_2d(self.ctx, self.st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
+        let font = if let Some(font) = self.font { font } else { &self.st.font_default };
+        let dims = glam::Vec2::new(font.char_width as f32, font.char_height as f32);
+        let fpos = if self.centered {
+            let width = self.text.len() as f32 * font.char_width as f32;
+            self.pos + glam::Vec2::new(
+                -dims.x / 2.0 - (width / 2.0).round(),
+                font.char_height as f32 / 2.0
+            )
+        } else {
+            self.pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0)
+        };
+        self.renderer.set_position_2d(self.ctx, self.st, fpos, dims);
+        let color: &[glam::Vec3] = if let Some(col) = self.col { &[col] } else { &[] };
+        font.render_text_parameterized(self.ctx, self.st, self.text, font::BitmapParams {
+            color,
+            scale: if let Some(scale) = self.scale { scale } else { glam::Vec2::ONE },
+            offset: if let Some(off) = self.offset { off } else { glam::Vec2::ZERO },
+        });
+    }
+    pub fn font(mut self, font: &'f font::Bitmap) -> Self { self.font = Some(font); self }
+    pub fn centered(mut self) -> Self { self.centered = true; self }
+    pub fn color(mut self, col: glam::Vec3) -> Self { self.col = Some(col); self }
+    pub fn scale(mut self, scale: glam::Vec2) -> Self { self.scale = Some(scale); self }
+    pub fn offset(mut self, offset: glam::Vec2) -> Self { self.offset = Some(offset); self }
+}
+
 pub struct Renderer<A: Assets> {
     pub assets: A,
     shader_uber: shader::Shader,
@@ -94,8 +236,6 @@ impl<A: Assets> Renderer<A> {
             texture: BoundTexture::None,
         }
     }
-    pub fn font_char_width(&self, st: &state::State) -> f32 { st.font_default.char_width as f32 }
-    pub fn font_char_height(&self, st: &state::State) -> f32 { st.font_default.char_height as f32 }
     pub fn unbind_texture(&mut self, _ctx: &context::Context, _st: &mut state::State) {
         self.texture = BoundTexture::None;
     }
@@ -225,28 +365,40 @@ impl<A: Assets> Renderer<A> {
         );
     }
 
-    pub fn clear(&mut self,
+    pub fn begin_frame(&mut self,
         ctx: &context::Context, _st: &mut state::State,
-        color: glam::Vec4
+        clear_color: glam::Vec4
     ) {
         self.texture = BoundTexture::None;
         self.shader = BoundShader::None;
-        ctx.clear_color(color);
+        ctx.clear_color(clear_color);
         ctx.clear();
     }
 
-    /// Common case: draw the given textured mesh in the world (units are world tiles)
-    pub fn textured_mesh_world(&mut self,
-        ctx: &context::Context, st: &mut state::State,
-        shader: A::Shader,
-        texture: A::Texture,
-        mesh: A::Mesh,
+    /// Enable the given postprocessing effect for the current frame
+    pub fn postprocessing_effect<'s, 'r>(&'r mut self,
+        _ctx: &context::Context, st: &'s mut state::State,
+        effect: A::Effect,
+    ) -> ApplyPostprocessingEffect<'s, 'r, A> {
+        ApplyPostprocessingEffect {
+            st, renderer: self,
+            effect,
+            bindings: [const { None }; _],
+        }
+    }
+
+    /// Common case: draw the given textured mesh in the world (units are world coordinates)
+    pub fn mesh_world<'c, 's, 'r>(&'r mut self,
+        ctx: &'c context::Context, st: &'s mut state::State,
         pos: glam::Mat4,
-    ) {
-        self.bind_shader_3d(ctx, st, shader);
-        self.bind_texture(ctx, st, texture);
-        self.set_position_3d(ctx, st, pos);
-        self.render(ctx, st, mesh);
+        mesh: A::Mesh,
+    ) -> RenderMesh<'c, 's, 'r, A> {
+        RenderMesh {
+            ctx, st, renderer: self,
+            mesh,
+            pos,
+            texture: None,
+        }
     }
 
     /// Common case: draw the given color in a rectangle on the screen (units are pixels, pos is top left)
@@ -263,90 +415,34 @@ impl<A: Assets> Renderer<A> {
     }
 
     /// Common case: draw the given texture on the screen (units are pixels, pos is top left)
-    pub fn texture_screen(&mut self,
-        ctx: &context::Context, st: &mut state::State,
+    pub fn texture_screen<'c, 's, 'r>(&'r mut self, ctx: &'c context::Context, st: &'s mut state::State,
+        pos: glam::Vec2,
         texture: A::Texture,
-        pos: glam::Vec2,
-        dims: glam::Vec2,
-    ) {
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP);
-        self.bind_texture(ctx, st, texture);
-        self.set_position_2d(ctx, st, pos, dims);
-        self.set_vec2(ctx, st, "texture_flip", glam::Vec2::new(0.0, 1.0));
-        self.render_square(ctx, st);
-    }
-
-    pub fn texture_screen_rotate(&mut self,
-        ctx: &context::Context, st: &mut state::State,
-        texture: A::Texture,
-        pos: glam::Vec2,
-        dims: glam::Vec2,
-        rot: glam::Quat,
-    ) {
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP);
-        self.bind_texture(ctx, st, texture);
-        self.set_position_2d_rotate(ctx, st, pos, dims, rot);
-        self.set_vec2(ctx, st, "texture_flip", glam::Vec2::new(0.0, 1.0));
-        self.render_square(ctx, st);
-    }
-
-    pub fn texture_screen_recolor(&mut self,
-        ctx: &context::Context, st: &mut state::State,
-        texture: A::Texture, hue: f32,
-        pos: glam::Vec2,
-        dims: glam::Vec2,
-    ) {
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::TEXTURE_FLIP | UberFlags::HUE);
-        self.bind_texture(ctx, st, texture);
-        self.set_vec2(ctx, st, "texture_flip", glam::Vec2::new(0.0, 1.0));
-        self.set_f32(ctx, st, "hue_scale", 0.0);
-        self.set_f32(ctx, st, "hue_shift", hue);
-        self.set_position_2d(ctx, st, pos, dims);
-        self.render_square(ctx, st);
+    ) -> RenderTextureScreen<'c, 's, 'r, A> {
+        RenderTextureScreen {
+            ctx, st, renderer: self,
+            texture, pos,
+            dims: None,
+            rot: None,
+            hue: None,
+        }
     }
 
     /// Common case: text in the default font (units are pixels, pos is top left)
-    pub fn text_screen(&mut self,
-        ctx: &context::Context, st: &mut state::State,
+    pub fn text_screen<'c, 's, 'r, 'str, 'f>(&'r mut self,
+        ctx: &'c context::Context, st: &'s mut state::State,
         pos: glam::Vec2,
-        s: &str,
-    ) {
-        // drawing text might bind the texture
-        self.texture = BoundTexture::None;
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
-        let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
-        let fpos = pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0);
-        self.set_position_2d(ctx, st, fpos, dims);
-        st.font_default.render_text(ctx, st, s);
-    }
-
-    /// Common case: text in the default font, with a color (units are pixels, pos is top left)
-    pub fn text_colored_screen(&mut self,
-        ctx: &context::Context, st: &mut state::State,
-        pos: glam::Vec2,
-        col: glam::Vec3,
-        s: &str,
-    ) {
-        self.texture = BoundTexture::None;
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
-        let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
-        let fpos = pos + glam::Vec2::new(-dims.x / 2.0, st.font_default.char_height as f32 / 2.0);
-        self.set_position_2d(ctx, st, fpos, dims);
-        st.font_default.render_text_helper(ctx, st, s, &[col]);
-    }
-
-    /// Common case: text in the default font (units are pixels, pos is center)
-    pub fn text_centered_screen(&mut self,
-        ctx: &context::Context, st: &mut state::State,
-        pos: glam::Vec2,
-        s: &str,
-    ) {
-        self.texture = BoundTexture::None;
-        self.bind_uber_2d(ctx, st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
-        let width = s.len() as f32 * st.font_default.char_width as f32;
-        let dims = glam::Vec2::new(st.font_default.char_width as f32, st.font_default.char_height as f32);
-        let fpos = pos + glam::Vec2::new(-dims.x / 2.0 - (width / 2.0).round(), st.font_default.char_height as f32 / 2.0);
-        self.set_position_2d(ctx, st, fpos, dims);
-        st.font_default.render_text(ctx, st, s);
+        text: &'str str,
+    ) -> RenderTextScreen<'c, 's, 'r, 'str, 'f, A> {
+        RenderTextScreen {
+            ctx, st, renderer: self,
+            text,
+            pos,
+            font: None,
+            centered: false,
+            col: None,
+            scale: None,
+            offset: None,
+        }
     }
 }
