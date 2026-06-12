@@ -47,6 +47,18 @@
       LIBCOLONQ_PIT_WASM="${inputs.pit.packages.x86_64-linux.wasm}/lib";
       LIBCOLONQ_PIT_WINDOWS="${inputs.pit.packages.x86_64-linux.windows}/lib";
 
+      cleanSource = path: lib.cleanSourceWith {
+        src = path;
+        filter = path: type:
+          true
+          # (lib.hasSuffix "\.html" path) ||
+          # (lib.hasSuffix "\.js" path) ||
+          # (lib.hasSuffix "\.css" path) ||
+          # (lib.hasInfix "/assets/" path) ||
+          # (craneLib.filterCargoSources path type)
+        ;
+      };
+
       native = rec {
         nativeBuildInputs = [
           pkgs.pkg-config
@@ -66,16 +78,7 @@
         ];
         deps = path: nm:
           let
-            src = lib.cleanSourceWith {
-              src = path;
-              filter = path: type:
-                (lib.hasSuffix "\.html" path) ||
-                (lib.hasSuffix "\.js" path) ||
-                (lib.hasSuffix "\.css" path) ||
-                (lib.hasInfix "/assets/" path) ||
-                (craneLib.filterCargoSources path type)
-              ;
-            };
+            src = cleanSource path;
             commonArgs = {
               inherit src nativeBuildInputs buildInputs;
               inherit LIBCOLONQ_PIT_NATIVE;
@@ -91,16 +94,7 @@
             cargoArtifacts;
         build = path: nm:
           let
-            src = lib.cleanSourceWith {
-              src = path;
-              filter = path: type:
-                (lib.hasSuffix "\.html" path) ||
-                (lib.hasSuffix "\.js" path) ||
-                (lib.hasSuffix "\.css" path) ||
-                (lib.hasInfix "/assets/" path) ||
-                (craneLib.filterCargoSources path type)
-              ;
-            };
+            src = cleanSource path;
             commonArgs = {
               inherit src nativeBuildInputs buildInputs;
               inherit LIBCOLONQ_PIT_NATIVE;
@@ -124,16 +118,7 @@
       wasm = rec {
         buildAtUrlInDir = path: nm: url: dir:
           let
-            src = lib.cleanSourceWith {
-              src = path;
-              filter = path: type:
-                (lib.hasSuffix "\.html" path) ||
-                (lib.hasSuffix "\.js" path) ||
-                (lib.hasSuffix "\.css" path) ||
-                (lib.hasInfix "/assets/" path) ||
-                (craneLib.filterCargoSources path type)
-              ;
-            };
+            src = cleanSource path;
             commonArgs = {
               inherit src;
               inherit LIBCOLONQ_PIT_WASM;
@@ -191,16 +176,7 @@
         };
         build = path: nm:
           let
-            src = lib.cleanSourceWith {
-              src = path;
-              filter = path: type:
-                (lib.hasSuffix "\.html" path) ||
-                (lib.hasSuffix "\.js" path) ||
-                (lib.hasSuffix "\.css" path) ||
-                (lib.hasInfix "/assets/" path) ||
-                (craneLib.filterCargoSources path type)
-              ;
-            };
+            src = cleanSource path;
             commonArgs = {
               inherit src;
               strictDeps = true;
