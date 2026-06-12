@@ -50,7 +50,7 @@
       cleanSource = path: lib.cleanSourceWith {
         src = path;
         filter = path: type:
-          true
+          !(lib.hasInfix "/.direnv/" path)
           # (lib.hasSuffix "\.html" path) ||
           # (lib.hasSuffix "\.js" path) ||
           # (lib.hasSuffix "\.css" path) ||
