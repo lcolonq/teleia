@@ -5,7 +5,6 @@ pub struct BitmapParams<'color> {
     pub color: &'color [glam::Vec3],
     pub scale: glam::Vec2,
     pub offset: glam::Vec2,
-    pub background: glam::Vec4,
 }
 impl<'color> Default for BitmapParams<'color> {
     fn default() -> Self {
@@ -13,7 +12,6 @@ impl<'color> Default for BitmapParams<'color> {
             color: &[],
             scale: glam::Vec2::ONE,
             offset: glam::Vec2::ZERO,
-            background: glam::Vec4::ZERO,
         }
     }
 }
@@ -171,7 +169,6 @@ impl Bitmap {
                 color,
                 scale: glam::Vec2::ONE,
                 offset: glam::Vec2::ZERO,
-                background: glam::Vec4::ZERO,
             }
         )
     }
@@ -189,7 +186,6 @@ impl Bitmap {
         params: BitmapParams,
     ) {
         st.bind_2d(ctx, &st.shader_text_bitmap);
-        st.shader_text_bitmap.set_vec4(ctx, "background", &params.background);
         let dims = glam::Vec2::new(self.char_width as f32, self.char_height as f32);
         let fpos = pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0);
         st.shader_text_bitmap.set_position_text_bitmap(ctx, st, self, &fpos);
