@@ -35,6 +35,14 @@ impl AudioPlayingHandle {
         self.node.stop_with_when(ctx.audio.current_time() + time as f64 + 1.0)
             .expect("failed to stop audio while fading out");
     }
+    pub fn mute(&self, ctx: &Context, time: f32) {
+        self.gain.gain().set_target_at_time(0.0, ctx.audio.current_time(), time as f64)
+            .expect("failed to mute audio");
+    }
+    pub fn unmute(&self, ctx: &Context, time: f32) {
+        self.gain.gain().set_target_at_time(1.0, ctx.audio.current_time(), time as f64)
+            .expect("failed to mute audio");
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -133,6 +141,22 @@ impl Assets {
             self.music_node = a.play(&mut self.ctx, Some((start, end)));
         }
     }
+
+    pub fn fade_out_music(&mut self, t: f32) {
+        if let Some(s) = &self.music_node {
+            let _ = s.fade_out(&self.ctx, t);
+        }
+    }
+    pub fn mute_music(&mut self, t: f32) {
+        if let Some(s) = &self.music_node {
+            let _ = s.mute(&self.ctx, t);
+        }
+    }
+    pub fn unmute_music(&mut self, t: f32) {
+        if let Some(s) = &self.music_node {
+            let _ = s.unmute(&self.ctx, t);
+        }
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -163,6 +187,18 @@ impl AudioPlayingHandle {
     }
     pub fn fade_out(&self, _ctx: &Context, time: f32) {
         self.handle.lock().unwrap().stop(kira::tween::Tween {
+            duration: std::time::Duration::from_secs_f32(time + 0.5),
+            ..Default::default()
+        });
+    }
+    pub fn mute(&self, _ctx: &Context, time: f32) {
+        self.handle.lock().unwrap().set_volume(-60.0, kira::tween::Tween {
+            duration: std::time::Duration::from_secs_f32(time + 0.5),
+            ..Default::default()
+        });
+    }
+    pub fn unmute(&self, _ctx: &Context, time: f32) {
+        self.handle.lock().unwrap().set_volume(0.0, kira::tween::Tween {
             duration: std::time::Duration::from_secs_f32(time + 0.5),
             ..Default::default()
         });
@@ -263,11 +299,30 @@ impl Assets {
             }
         }
     }
+
+    pub fn fade_out_music(&mut self, t: f32) {
+        if let Some(s) = &self.music_handle {
+            let _ = s.fade_out(&self.ctx, t);
+        }
+    }
+    pub fn mute_music(&mut self, t: f32) {
+        if let Some(s) = &self.music_handle {
+            let _ = s.mute(&self.ctx, t);
+        }
+    }
+    pub fn unmute_music(&mut self, t: f32) {
+        if let Some(s) = &self.music_handle {
+            let _ = s.unmute(&self.ctx, t);
+        }
+    }
 }
 
 pub trait AudioPlayback {
     fn play_sfx(&mut self, name: &str);
     fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>);
+    fn fade_out_music(&mut self, t: f32);
+    fn mute_music(&mut self, t: f32);
+    fn unmute_music(&mut self, t: f32);
 }
 impl AudioPlayback for Option<Assets> {
     fn play_sfx(&mut self, name: &str) {
@@ -275,5 +330,14 @@ impl AudioPlayback for Option<Assets> {
     }
     fn play_music(&mut self, name: &str, start: Option<f64>, end: Option<f64>) {
         if let Some(a) = self { a.play_music(name, start, end); }
+    }
+    fn fade_out_music(&mut self, t: f32) {
+        if let Some(a) = self { a.fade_out_music(t); }
+    }
+    fn mute_music(&mut self, t: f32) {
+        if let Some(a) = self { a.mute_music(t); }
+    }
+    fn unmute_music(&mut self, t: f32) {
+        if let Some(a) = self { a.unmute_music(t); }
     }
 }
