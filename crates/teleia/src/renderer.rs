@@ -179,7 +179,7 @@ pub struct RenderTextScreen<'c, 's, 'r, 'str, 'f, A: Assets> {
     pos: glam::Vec2,
     font: Option<&'f font::Bitmap>,
     centered: bool,
-    col: Option<glam::Vec3>,
+    col: Option<glam::Vec4>,
     scale: Option<glam::Vec2>,
     offset: Option<glam::Vec2>,
 }
@@ -200,7 +200,7 @@ impl<'c, 's, 'r, 'str, 'f, A: Assets> RenderTextScreen<'c, 's, 'r, 'str, 'f, A> 
             self.pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0)
         };
         self.renderer.set_position_2d(self.ctx, self.st, fpos, dims);
-        let color: &[glam::Vec3] = if let Some(col) = self.col { &[col] } else { &[] };
+        let color: &[glam::Vec4] = if let Some(col) = self.col { &[col] } else { &[] };
         font.render_text_parameterized(self.ctx, self.st, self.text, font::BitmapParams {
             color,
             scale: if let Some(scale) = self.scale { scale } else { glam::Vec2::ONE },
@@ -209,7 +209,7 @@ impl<'c, 's, 'r, 'str, 'f, A: Assets> RenderTextScreen<'c, 's, 'r, 'str, 'f, A> 
     }
     pub fn font(mut self, font: &'f font::Bitmap) -> Self { self.font = Some(font); self }
     pub fn centered(mut self) -> Self { self.centered = true; self }
-    pub fn color(mut self, col: glam::Vec3) -> Self { self.col = Some(col); self }
+    pub fn color(mut self, col: glam::Vec4) -> Self { self.col = Some(col); self }
     pub fn scale(mut self, scale: glam::Vec2) -> Self { self.scale = Some(scale); self }
     pub fn offset(mut self, offset: glam::Vec2) -> Self { self.offset = Some(offset); self }
 }

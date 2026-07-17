@@ -34,7 +34,7 @@ uniform float hue_scale;
 uniform float opacity;
 
 // flag(VERTEX_COLOR)
-in vec3 vertex_color;
+in vec4 vertex_color;
 
 // flag(SPRITE)
 uniform vec2 sprite_offset;
@@ -208,7 +208,7 @@ void main() {
         discard;
     }
     if (flag(VERTEX_COLOR)) {
-        frag_color.rgb = vertex_color;
+        frag_color = vertex_color;
     }
     if (flag(OPACITY)) {
         frag_color.a *= opacity;

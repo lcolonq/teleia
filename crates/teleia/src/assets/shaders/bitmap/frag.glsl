@@ -5,7 +5,7 @@ uniform sampler2D texture_data;
 uniform vec4 background;
 
 in vec2 vertex_texcoord;
-in vec3 vertex_color;
+in vec4 vertex_color;
 out vec4 frag_color;
 
 void main() {
@@ -17,6 +17,6 @@ void main() {
         frag_color = background;
         return;
     }
-    texel.rgb = vertex_color;
+    texel = vertex_color;
     frag_color = texel;
 } 

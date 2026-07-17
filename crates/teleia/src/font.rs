@@ -2,7 +2,7 @@ use crate::{context, mesh, state, texture};
 use glow::HasContext;
 
 pub struct BitmapParams<'color> {
-    pub color: &'color [glam::Vec3],
+    pub color: &'color [glam::Vec4],
     pub scale: glam::Vec2,
     pub offset: glam::Vec2,
 }
@@ -49,7 +49,7 @@ impl Bitmap {
             ctx.gl.enable_vertex_attrib_array(mesh::ATTRIB_TEXCOORD);
             let colors_buf = ctx.gl.create_buffer().expect("failed to create buffer object");
             ctx.gl.bind_buffer(glow::ARRAY_BUFFER, Some(colors_buf));
-            ctx.gl.vertex_attrib_pointer_f32(mesh::ATTRIB_COLOR, 3, glow::FLOAT, false, 0, 0);
+            ctx.gl.vertex_attrib_pointer_f32(mesh::ATTRIB_COLOR, 4, glow::FLOAT, false, 0, 0);
             ctx.gl.enable_vertex_attrib_array(mesh::ATTRIB_COLOR);
             let index_buf = ctx.gl.create_buffer().expect("failed to create buffer object");
             ctx.gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(index_buf));
@@ -109,7 +109,7 @@ impl Bitmap {
                 let c = if let Some(c) = params.color.get(if params.color.is_empty() { 0 } else { i % params.color.len() }) {
                     *c
                 } else {
-                    glam::Vec3::new(1.0, 1.0, 1.0)
+                    glam::Vec4::new(1.0, 1.0, 1.0, 1.0)
                 };
                 colors.push(c); colors.push(c); colors.push(c); colors.push(c);
                 indices.push(idx); indices.push(idx + 1); indices.push(idx + 2);
@@ -144,7 +144,7 @@ impl Bitmap {
                 glow::ARRAY_BUFFER,
                 std::slice::from_raw_parts(
                     colors.as_ptr() as _,
-                    colors.len() * std::mem::size_of::<f32>() * 3,
+                    colors.len() * std::mem::size_of::<f32>() * 4,
                 ),
                 glow::STATIC_DRAW,
             );
@@ -160,7 +160,7 @@ impl Bitmap {
 
     pub fn render_text_helper(&self,
         ctx: &context::Context, st: &state::State,
-        text: &str, color: &[glam::Vec3]
+        text: &str, color: &[glam::Vec4]
     ) {
         self.render_text_parameterized(
             ctx, st,

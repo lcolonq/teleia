@@ -3,14 +3,14 @@ precision highp float;
 
 in vec3 vertex;
 in vec2 texcoord;
-in vec3 color;
+in vec4 color;
 
 uniform mat4 view;
 uniform mat4 position;
 uniform mat4 projection;
 
 out vec2 vertex_texcoord;
-out vec3 vertex_color;
+out vec4 vertex_color;
 
 void main() {
     vertex_texcoord = texcoord;
