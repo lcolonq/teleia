@@ -1,4 +1,4 @@
-use crate::{context, mesh, state, texture};
+use crate::{context, mesh, shader, state, texture, utils};
 use glow::HasContext;
 
 pub struct BitmapParams<'color> {
@@ -190,5 +190,115 @@ impl Bitmap {
         let fpos = pos + glam::Vec2::new(-dims.x / 2.0, dims.y / 2.0);
         st.shader_text_bitmap.set_position_text_bitmap(ctx, st, self, &fpos);
         self.render_text_parameterized(ctx, st, text, params);
+    }
+}
+
+struct GlyphOutliner {
+    pos: (f32, f32),
+    data: Vec<((f32, f32), (f32, f32), (f32, f32))>,
+}
+impl GlyphOutliner {
+    fn new() -> Self {
+        Self {
+            pos: (0.0, 0.0),
+            data: Vec::new(),
+        }
+    }
+    fn add_curve(&mut self, p1: (f32, f32), p2: (f32, f32), p3: (f32, f32)) {
+        self.data.push(((p1.0, p1.1), (p2.0, p2.1), (p3.0, p3.1)),);
+    }
+}
+impl ttf_parser::OutlineBuilder for GlyphOutliner {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.pos = (x, y);
+    }
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.add_curve(self.pos, (x, y), (x, y));
+        self.pos = (x, y);
+    }
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        self.add_curve(self.pos, (x1, y1), (x, y));
+        self.pos = (x, y);
+    }
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        panic!("cubic");
+        // self.add_curve(self.pos, ((x1 + x2) / 2.0, (y1 + y2) / 2.0), (x, y));
+        // self.pos = (x, y);
+    }
+    fn close(&mut self) {}
+}
+
+pub struct Truetype {
+    shader: shader::Shader,
+    tex_bezier: texture::Texture,
+    face: ttf_parser::Face<'static>,
+}
+impl Truetype {
+    pub fn new(ctx: &context::Context, bs: &[u8]) -> utils::Erm<Self> {
+        let shader = shader::Shader::new(ctx,
+            include_str!("assets/shaders/slug/vert.glsl"),
+            include_str!("assets/shaders/slug/frag.glsl"),
+        );
+        let mut v: Vec<u8> = Vec::new();
+        v.extend_from_slice(bs);
+        let data = Box::leak(Box::new(v));
+        let tex_bezier = texture::Texture::new_empty(ctx);
+        let face = ttf_parser::Face::parse(&*data, 0)?;
+        Ok(Self {
+            shader,
+            tex_bezier,
+            face,
+        })
+    }
+    pub fn render_glyph(&self,
+        ctx: &context::Context, st: &mut state::State,
+        pos: glam::Vec2, sz: f32,
+        char: char
+    ) -> utils::Erm<()> {
+        let mut outliner = GlyphOutliner::new();
+        let g = self.face.glyph_index(char).unwrap();
+        let bound = self.face.outline_glyph(g, &mut outliner).unwrap();
+        log::info!("glyph {:?} bound: {:?}", g, bound);
+        let width = (bound.x_max - bound.x_min) as f32;
+        let height = (bound.y_max - bound.y_min) as f32;
+        let curves_len = outliner.data.len() as i32;
+        let mut bytes = Vec::new();
+        let scale_point = |bound: &ttf_parser::Rect, p: (f32, f32)| {
+            ((p.0 - bound.x_min as f32) / width - 0.5,
+            (p.1 - bound.y_min as f32) / height - 0.5)
+        };
+        fn extend_with_point(bytes: &mut Vec<u8>, p: (f32, f32)) {
+            bytes.extend_from_slice(&p.0.to_ne_bytes());
+            bytes.extend_from_slice(&p.1.to_ne_bytes());
+        }
+        for (p1, p2, p3) in outliner.data {
+            extend_with_point(&mut bytes, scale_point(&bound, p1));
+            extend_with_point(&mut bytes, scale_point(&bound, p2));
+            extend_with_point(&mut bytes, scale_point(&bound, p3));
+            extend_with_point(&mut bytes, (0.0, 0.0));
+        }
+        bytes.resize(4096 * 4 * 4, 0);
+        self.tex_bezier.bind(ctx);
+        unsafe {
+            ctx.gl.tex_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                glow::RGBA32F as i32,
+                4096,
+                1,
+                0,
+                glow::RGBA,
+                glow::FLOAT,
+                Some(&bytes),
+            );
+        }
+        st.bind_2d(ctx, &self.shader);
+        self.shader.set_position_2d(ctx, st,
+            &pos,
+            &glam::Vec2::new(sz, height * sz / width)
+        );
+        self.shader.set_i32(ctx, "curves_len", curves_len);
+        st.mesh_square.render(ctx);
+        Ok(())
     }
 }

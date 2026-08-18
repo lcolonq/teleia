@@ -32,6 +32,7 @@ parry3d = "0.18.0" # collision detection
 nalgebra = {version = "0.33.2", features = ["convert-glam029"]} # linear algebra library for rapier3d
 byteorder = "1.5.0" # read numbers in particular endianness
 base64 = "0.22.1" # encode/decode base64
+ttf-parser = "0.25.1" # ttf fonts
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 winit = {version = "=0.29.15", features = ["serde"]} # windowing and events
