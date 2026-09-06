@@ -9,8 +9,8 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
-    pit = {
-      url = "github:lcolonq/pit";
+    libcolonq = {
+      url = "git+ssh://git@git.colonq.computer/~/libcolonq";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -43,9 +43,9 @@
         postPatch = "true";
       });
 
-      LIBCOLONQ_PIT_NATIVE="${inputs.pit.packages.x86_64-linux.default}/lib";
-      LIBCOLONQ_PIT_WASM="${inputs.pit.packages.x86_64-linux.wasm}/lib";
-      LIBCOLONQ_PIT_WINDOWS="${inputs.pit.packages.x86_64-linux.windows}/lib";
+      LIBCOLONQ_PIT_NATIVE="${inputs.libcolonq.packages.x86_64-linux.pit.native}/lib";
+      LIBCOLONQ_PIT_WASM="${inputs.libcolonq.packages.x86_64-linux.pit.wasm}/lib";
+      LIBCOLONQ_PIT_WINDOWS="${inputs.libcolonq.packages.x86_64-linux.pit.windows}/lib";
 
       cleanSource = path: lib.cleanSourceWith {
         src = path;
