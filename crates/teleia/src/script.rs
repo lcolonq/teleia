@@ -68,45 +68,46 @@ struct PitParser {
 unsafe extern "C" {
     pub fn pit_runtime_test(out: *mut u8, out_len: i64, buf: *mut u8, len: i64) -> c_int;
     fn pit_runtime_new(buf: *mut MaybeUninit<u8>, len: i64) -> *mut PitRuntime;
-    fn pit_get_error(buf: *mut PitRuntime) -> PitValue;
+    fn pit_error_get(buf: *mut PitRuntime) -> PitValue;
     fn pit_install_library_essential(buf: *mut PitRuntime);
     fn pit_install_library_plist(buf: *mut PitRuntime);
     fn pit_install_library_alist(buf: *mut PitRuntime);
     fn pit_lex_bytes(ret: *mut PitLexer, buf: *const u8, len: i64);
     fn pit_parser_from_lexer(ret: *mut PitParser, lex: *mut PitLexer);
     fn pit_parse(rt: *mut PitRuntime, parser: *mut PitParser, eof: *mut bool) -> PitValue;
-    fn pit_eval(rt: *mut PitRuntime, v: PitValue) -> PitValue;
     fn pit_dump(rt: *mut PitRuntime, buf: *mut u8, len: i64, v: PitValue, readable: bool) -> i64;
 
-    fn pit_eq(x: PitValue, y: PitValue) -> bool;
+    fn pit_vm_eval(rt: *mut PitRuntime, v: PitValue) -> PitValue;
+    fn pit_vm_apply(rt: *mut PitRuntime, f: PitValue, args: PitValue) -> PitValue;
 
-    fn pit_intern(rt: *mut PitRuntime, buf: *const u8, len: i64) -> PitValue;
-    fn pit_set(rt: *mut PitRuntime, sym: PitValue, v: PitValue);
-    fn pit_fset(rt: *mut PitRuntime, sym: PitValue, v: PitValue);
-    fn pit_get(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
-    fn pit_fget(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
+    fn pit_symtab_intern(rt: *mut PitRuntime, buf: *const u8, len: i64) -> PitValue;
+    fn pit_symtab_set(rt: *mut PitRuntime, sym: PitValue, v: PitValue);
+    fn pit_symtab_fset(rt: *mut PitRuntime, sym: PitValue, v: PitValue);
+    fn pit_symtab_get(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
+    fn pit_symtab_fget(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
 
-    fn pit_array_new(rt: *mut PitRuntime, len: i64) -> PitValue;
-    fn pit_array_from_buf(rt: *mut PitRuntime, xs: *const PitValue, len: i64) -> PitValue;
-    fn pit_array_len(rt: *mut PitRuntime, arr: PitValue) -> i64;
-    fn pit_array_get(rt: *mut PitRuntime, arr: PitValue, idx: i64) -> PitValue;
-    fn pit_array_set(rt: *mut PitRuntime, arr: PitValue, idx: i64, v: PitValue) -> PitValue;
+    fn pit_value_eq(x: PitValue, y: PitValue) -> bool;
 
-    fn pit_cons(rt: *mut PitRuntime, car: PitValue, cdr: PitValue) -> PitValue;
-    fn pit_list_len(rt: *mut PitRuntime, xs: PitValue) -> i64;
-    fn pit_car(rt: *mut PitRuntime, v: PitValue) -> PitValue;
-    fn pit_cdr(rt: *mut PitRuntime, v: PitValue) -> PitValue;
-    fn pit_setcar(rt: *mut PitRuntime, v: PitValue, x: PitValue);
-    fn pit_setcdr(rt: *mut PitRuntime, v: PitValue, x: PitValue);
-    fn pit_append(rt: *mut PitRuntime, xs: PitValue, ys: PitValue) -> PitValue;
-    fn pit_reverse(rt: *mut PitRuntime, xs: PitValue) -> PitValue;
-    fn pit_contains_eq(rt: *mut PitRuntime, needle: PitValue, haystack: PitValue) -> PitValue;
-    fn pit_contains_equal(rt: *mut PitRuntime, needle: PitValue, haystack: PitValue) -> PitValue;
-    fn pit_plist_get(rt: *mut PitRuntime, k: PitValue, vs: PitValue) -> PitValue;
+    fn pit_value_array_new(rt: *mut PitRuntime, len: i64) -> PitValue;
+    fn pit_value_array_from_buf(rt: *mut PitRuntime, xs: *const PitValue, len: i64) -> PitValue;
+    fn pit_value_array_len(rt: *mut PitRuntime, arr: PitValue) -> i64;
+    fn pit_value_array_get(rt: *mut PitRuntime, arr: PitValue, idx: i64) -> PitValue;
+    fn pit_value_array_set(rt: *mut PitRuntime, arr: PitValue, idx: i64, v: PitValue) -> PitValue;
 
-    fn pit_lambda(rt: *mut PitRuntime, args: PitValue, body: PitValue) -> PitValue;
-    fn pit_nativefunc_new_with_data(rt: *mut PitRuntime, f: PitNativeFunc, data: *mut PitNativeFuncDataShim) -> PitValue;
-    fn pit_apply(rt: *mut PitRuntime, f: PitValue, args: PitValue) -> PitValue;
+    fn pit_value_cons(rt: *mut PitRuntime, car: PitValue, cdr: PitValue) -> PitValue;
+    fn pit_value_cons_car(rt: *mut PitRuntime, v: PitValue) -> PitValue;
+    fn pit_value_cons_cdr(rt: *mut PitRuntime, v: PitValue) -> PitValue;
+    fn pit_value_cons_setcar(rt: *mut PitRuntime, v: PitValue, x: PitValue);
+    fn pit_value_cons_setcdr(rt: *mut PitRuntime, v: PitValue, x: PitValue);
+    fn pit_value_list_len(rt: *mut PitRuntime, xs: PitValue) -> i64;
+    fn pit_value_list_append(rt: *mut PitRuntime, xs: PitValue, ys: PitValue) -> PitValue;
+    fn pit_value_list_reverse(rt: *mut PitRuntime, xs: PitValue) -> PitValue;
+    fn pit_value_list_contains_eq(rt: *mut PitRuntime, needle: PitValue, haystack: PitValue) -> PitValue;
+    fn pit_value_list_contains_equal(rt: *mut PitRuntime, needle: PitValue, haystack: PitValue) -> PitValue;
+    fn pit_value_list_plist_get(rt: *mut PitRuntime, k: PitValue, vs: PitValue) -> PitValue;
+
+    fn pit_value_func_lambda(rt: *mut PitRuntime, args: PitValue, body: PitValue) -> PitValue;
+    fn pit_value_nativefunc_new_with_data(rt: *mut PitRuntime, f: PitNativeFunc, data: *mut PitNativeFuncDataShim) -> PitValue;
 }
 
 pub struct Runtime {
@@ -136,7 +137,7 @@ impl Runtime {
         }
     }
     pub fn error(&mut self) -> utils::Erm<()> {
-        let e = unsafe { pit_get_error(self.rt) };
+        let e = unsafe { pit_error_get(self.rt) };
         let ve = Value { val: e };
         if self.eq(ve, NIL) { return Ok(()) };
         Err(Error { msg: self.dump(ve).unwrap_or("<unable to dump>".to_owned()) }.into())
@@ -149,7 +150,7 @@ impl Runtime {
     }
     pub fn eval(&mut self, v: Value) -> utils::Erm<Value> {
         unsafe {
-            let ret = pit_eval(self.rt, v.val);
+            let ret = pit_vm_eval(self.rt, v.val);
             self.error()?;
             Ok(Value { val: ret })
         }
@@ -162,19 +163,19 @@ impl Runtime {
         }
     }
     pub fn eq(&self, x: Value, y: Value) -> bool {
-        unsafe { pit_eq(x.val, y.val) }
+        unsafe { pit_value_eq(x.val, y.val) }
     }
     pub fn intern(&mut self, nm: &str) -> utils::Erm<Value> {
         unsafe {
             let bs = nm.as_bytes();
-            let sym = pit_intern(self.rt, bs.as_ptr(), bs.len() as i64);
+            let sym = pit_symtab_intern(self.rt, bs.as_ptr(), bs.len() as i64);
             self.error()?;
             Ok(Value { val: sym })
         }
     }
     pub fn fset(&mut self, sym: Value, f: Value) -> utils::Erm<()> {
         unsafe {
-            pit_fset(self.rt, sym.val, f.val);
+            pit_symtab_fset(self.rt, sym.val, f.val);
             self.error()?;
             Ok(())
         }
@@ -185,14 +186,14 @@ impl Runtime {
             let data = Box::leak(Box::new(PitNativeFuncData {
                 f: Box::new(f),
             }));
-            let ret = pit_nativefunc_new_with_data(self.rt, unwrap_nativefunc, data as *mut PitNativeFuncData as *mut _);
+            let ret = pit_value_nativefunc_new_with_data(self.rt, unwrap_nativefunc, data as *mut PitNativeFuncData as *mut _);
             self.error()?;
             Ok(Value { val: ret })
         }
     }
     pub fn car(&mut self, x: Value) -> utils::Erm<Value> {
         unsafe {
-            let ret = pit_car(self.rt, x.val);
+            let ret = pit_value_cons_car(self.rt, x.val);
             self.error()?;
             Ok(Value { val: ret})
         }

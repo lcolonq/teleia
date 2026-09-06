@@ -51,6 +51,27 @@
         "type": "github"
       }
     },
+    "libcolonq": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788730851,
+        "narHash": "sha256-gijAvjPdjb7MW1OJkANW2F3kQszKVGZ/QgFNAO94laA=",
+        "ref": "refs/heads/master",
+        "rev": "71bfa9094a4a25f762d681bb07f79f92a95dbb87",
+        "revCount": 20,
+        "type": "git",
+        "url": "ssh://git@git.colonq.computer/~/libcolonq"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@git.colonq.computer/~/libcolonq"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1777425547,
@@ -67,33 +88,12 @@
         "type": "github"
       }
     },
-    "pit": {
-      "inputs": {
-        "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1778890311,
-        "narHash": "sha256-JZx/jh/E16SlAATrzQvB7kZcbBBfXX0zCqpwgw+Qlfc=",
-        "owner": "lcolonq",
-        "repo": "pit",
-        "rev": "48ab2cb8e3de88dbd0722337bd4617ad22de1a12",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lcolonq",
-        "repo": "pit",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "crane": "crane",
         "flake-utils": "flake-utils",
+        "libcolonq": "libcolonq",
         "nixpkgs": "nixpkgs",
-        "pit": "pit",
         "rust-overlay": "rust-overlay"
       }
     },
