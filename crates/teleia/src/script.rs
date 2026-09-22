@@ -77,6 +77,8 @@ unsafe extern "C" {
     fn pit_parse(rt: *mut PitRuntime, parser: *mut PitParser, eof: *mut bool) -> PitValue;
     fn pit_dump(rt: *mut PitRuntime, buf: *mut u8, len: i64, v: PitValue, readable: bool) -> i64;
 
+    fn pit_compile(rt: *mut PitRuntime, v: PitValue) -> PitValue;
+
     fn pit_vm_eval(rt: *mut PitRuntime, v: PitValue) -> PitValue;
     fn pit_vm_apply(rt: *mut PitRuntime, f: PitValue, args: PitValue) -> PitValue;
 
@@ -150,7 +152,9 @@ impl Runtime {
     }
     pub fn eval(&mut self, v: Value) -> utils::Erm<Value> {
         unsafe {
-            let ret = pit_vm_eval(self.rt, v.val);
+            let code = pit_compile(self.rt, v.val);
+            self.error()?;
+            let ret = pit_vm_eval(self.rt, code);
             self.error()?;
             Ok(Value { val: ret })
         }

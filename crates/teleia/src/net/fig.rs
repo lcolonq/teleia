@@ -69,24 +69,22 @@ impl BinaryClient {
         self.in_buf.drain(..len);
         Some(BinaryMessage { event, data })
     }
-    fn try_read(&mut self) -> Erm<()> {
-        let mut buf = [0; 1024];
+    fn try_read(&mut self) -> Erm<bool> {
+        let mut buf = [0; 8192];
         match self.socket.read(&mut buf) {
-            Ok(sz) => self.in_buf.extend_from_slice(&buf[..sz]),
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {},
-            e => { e.wrap_err("failed to read from bus socket")?; },
+            Ok(sz) => { self.in_buf.extend_from_slice(&buf[..sz]); Ok(true) },
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(false),
+            e => { e.wrap_err("failed to read from bus socket")?; Ok(false) },
         }
-        Ok(())
     }
-    fn try_write(&mut self) -> Erm<()> {
+    fn try_write(&mut self) -> Erm<bool> {
         if !self.out_buf.is_empty() {
             match self.socket.write(&self.out_buf) {
-                Ok(sz) => { self.out_buf.drain(..sz); },
-                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {},
-                e => { e.wrap_err("failed to write to bus socket")?; },
+                Ok(sz) => { self.out_buf.drain(..sz); Ok(true) },
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(false),
+                e => { e.wrap_err("failed to write to bus socket")?; Ok(false) },
             }
-        }
-        Ok(())
+        } else { Ok(false) }
     }
     fn resubscribe(&mut self) -> Erm<()> {
         self.poller.modify(&self.socket, polling::Event::readable(KEY)).wrap_err("failed to update event to poll")?;
@@ -98,8 +96,8 @@ impl BinaryClient {
     fn process_events(&mut self, events: &mut polling::Events) -> Erm<()> {
         for ev in events.iter() {
             if ev.key == KEY {
-                if ev.readable { self.try_read()?; }
-                if ev.writable { self.try_write()?; }
+                if ev.readable { while self.try_read()? {} }
+                if ev.writable { while self.try_write()? {} }
             }
         }
         Ok(())
