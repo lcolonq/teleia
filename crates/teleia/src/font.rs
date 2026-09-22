@@ -181,7 +181,7 @@ impl Bitmap {
     }
 
     pub fn render_text_at(&self,
-        ctx: &context::Context, st: &mut state::State,
+        ctx: &context::Context, st: &state::State,
         pos: glam::Vec2, text: &str,
         params: BitmapParams,
     ) {
