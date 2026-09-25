@@ -90,6 +90,8 @@ unsafe extern "C" {
 
     fn pit_value_eq(x: PitValue, y: PitValue) -> bool;
 
+    fn pit_value_as_double(rt: *mut PitRuntime, v: PitValue) -> f64;
+
     fn pit_value_array_new(rt: *mut PitRuntime, len: i64) -> PitValue;
     fn pit_value_array_from_buf(rt: *mut PitRuntime, xs: *const PitValue, len: i64) -> PitValue;
     fn pit_value_array_len(rt: *mut PitRuntime, arr: PitValue) -> i64;
@@ -159,6 +161,24 @@ impl Runtime {
             Ok(Value { val: ret })
         }
     }
+    pub fn list(&mut self, xs: &[Value]) -> utils::Erm<Value> {
+        unsafe {
+            let mut ret = NIL;
+            for x in xs.iter().rev() {
+                ret = Value { val: pit_value_cons(self.rt, x.val, ret.val) };
+                self.error()?;
+            }
+            Ok(ret)
+        }
+    }
+    pub fn apply(&mut self, f: Value, args: &[Value]) -> utils::Erm<Value> {
+        unsafe {
+            let xs = self.list(args)?;
+            let ret = pit_vm_apply(self.rt, f.val, xs.val);
+            self.error()?;
+            Ok(Value { val: ret })
+        }
+    }
     pub fn dump(&mut self, v: Value) -> utils::Erm<String> {
         let mut buf = vec![0; 1024];
         unsafe {
@@ -168,6 +188,13 @@ impl Runtime {
     }
     pub fn eq(&self, x: Value, y: Value) -> bool {
         unsafe { pit_value_eq(x.val, y.val) }
+    }
+    pub fn as_double(&mut self, x: Value) -> utils::Erm<f64> {
+        unsafe {
+            let v = pit_value_as_double(self.rt, x.val);
+            self.error()?;
+            Ok(v)
+        }
     }
     pub fn intern(&mut self, nm: &str) -> utils::Erm<Value> {
         unsafe {

@@ -59,11 +59,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788891727,
-        "narHash": "sha256-7ZBC2VN0RfwWQt6bAMO+GLpPyOv0Fs7n8p/W2zu+37w=",
+        "lastModified": 1790372175,
+        "narHash": "sha256-xxa2VTKm2iA32YdFtVYlk0tvK5wh2np4P8OtZGtJYRU=",
         "ref": "refs/heads/master",
-        "rev": "3c42bf8f574e6888a0b2be604802a286d0f62793",
-        "revCount": 22,
+        "rev": "17df4b1ff7f4cbcf3b3218fea68f65d3cb60c984",
+        "revCount": 26,
         "type": "git",
         "url": "ssh://git@git.colonq.computer/~/libcolonq"
       },
