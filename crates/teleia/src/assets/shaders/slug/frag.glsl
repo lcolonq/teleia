@@ -42,10 +42,10 @@ void main() {
     int winding = 0;
     for (int i = 0; i < curves_len; ++i) {
         curve b = get_curve(i);
-        if (distance(c, b.p1) < 0.01 || distance(c, b.p2) < 0.01 || distance(c, b.p3) < 0.01) {
-            frag_color = vec4(0.0, 1.0, 0.0, 1.0);
-            return;
-        }
+        // if (distance(c, b.p1) < 0.01 || distance(c, b.p2) < 0.01 || distance(c, b.p3) < 0.01) {
+        //     frag_color = vec4(0.0, 1.0, 0.0, 1.0);
+        //     return;
+        // }
         b.p1 -= c;
         b.p2 -= c;
         b.p3 -= c;
@@ -68,5 +68,6 @@ void main() {
         frag_color = vec4(1.0, 1.0, 1.0, 1.0);
     } else {
         discard;
+        // frag_color = vec4(1.0, 0.0, 0.0, 1.0);
     }
 } 

@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+
 use crate::{context, mesh, shader, state, texture, utils};
 use glow::HasContext;
 
@@ -195,6 +198,7 @@ impl Bitmap {
 
 struct GlyphOutliner {
     pos: (f32, f32),
+    #[allow(clippy::type_complexity)]
     data: Vec<((f32, f32), (f32, f32), (f32, f32))>,
 }
 impl GlyphOutliner {
@@ -220,18 +224,23 @@ impl ttf_parser::OutlineBuilder for GlyphOutliner {
         self.add_curve(self.pos, (x1, y1), (x, y));
         self.pos = (x, y);
     }
-    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        panic!("cubic");
+    fn curve_to(&mut self, _x1: f32, _y1: f32, _x2: f32, _y2: f32, _x: f32, _y: f32) {
+        panic!("ttf font glyph outline contains unsupported curve!");
         // self.add_curve(self.pos, ((x1 + x2) / 2.0, (y1 + y2) / 2.0), (x, y));
         // self.pos = (x, y);
     }
     fn close(&mut self) {}
 }
 
+struct CacheEntry {
+    outliner: GlyphOutliner,
+    bound: ttf_parser::Rect,
+}
 pub struct Truetype {
     shader: shader::Shader,
     tex_bezier: texture::Texture,
     face: ttf_parser::Face<'static>,
+    cache: RefCell<HashMap<ttf_parser::GlyphId, CacheEntry>>,
 }
 impl Truetype {
     pub fn new(ctx: &context::Context, bs: &[u8]) -> utils::Erm<Self> {
@@ -244,37 +253,40 @@ impl Truetype {
         let data = Box::leak(Box::new(v));
         let tex_bezier = texture::Texture::new_empty(ctx);
         let face = ttf_parser::Face::parse(&*data, 0)?;
+        let cache = RefCell::new(HashMap::new());
         Ok(Self {
             shader,
             tex_bezier,
             face,
+            cache,
         })
     }
-    pub fn render_glyph(&self,
-        ctx: &context::Context, st: &mut state::State,
-        pos: glam::Vec2, sz: f32,
-        char: char
-    ) -> utils::Erm<()> {
-        let mut outliner = GlyphOutliner::new();
-        let g = self.face.glyph_index(char).unwrap();
-        let bound = self.face.outline_glyph(g, &mut outliner).unwrap();
-        log::info!("glyph {:?} bound: {:?}", g, bound);
-        let width = (bound.x_max - bound.x_min) as f32;
-        let height = (bound.y_max - bound.y_min) as f32;
+    fn scale(&self, sz: f32) -> f32 {
+        let dpi = 50.0;
+        sz * dpi / (72.0 * self.face.units_per_em() as f32)
+    }
+    fn upload_bezier(&self, ctx: &context::Context, st: &state::State, sz: f32, outliner: &GlyphOutliner, bound: &ttf_parser::Rect, pos: &glam::Vec2) {
+        let scale = self.scale(sz);
+        let x_max = bound.x_max as f32 * scale;
+        let x_min = bound.x_min as f32 * scale;
+        let y_max = bound.y_max as f32 * scale;
+        let y_min = bound.y_min as f32 * scale;
+        let width = x_max - x_min;
+        let height = y_max - y_min;
         let curves_len = outliner.data.len() as i32;
         let mut bytes = Vec::new();
-        let scale_point = |bound: &ttf_parser::Rect, p: (f32, f32)| {
-            ((p.0 - bound.x_min as f32) / width - 0.5,
-            (p.1 - bound.y_min as f32) / height - 0.5)
+        let scale_point = |p: &(f32, f32)| {
+            // scale and normalize all points to the range (-0.5, 0.5)
+            ((p.0 * scale - x_min) / width - 0.5, (p.1 * scale - y_min) / height - 0.5)
         };
         fn extend_with_point(bytes: &mut Vec<u8>, p: (f32, f32)) {
             bytes.extend_from_slice(&p.0.to_ne_bytes());
             bytes.extend_from_slice(&p.1.to_ne_bytes());
         }
-        for (p1, p2, p3) in outliner.data {
-            extend_with_point(&mut bytes, scale_point(&bound, p1));
-            extend_with_point(&mut bytes, scale_point(&bound, p2));
-            extend_with_point(&mut bytes, scale_point(&bound, p3));
+        for (p1, p2, p3) in outliner.data.iter() {
+            extend_with_point(&mut bytes, scale_point(p1));
+            extend_with_point(&mut bytes, scale_point(p2));
+            extend_with_point(&mut bytes, scale_point(p3));
             extend_with_point(&mut bytes, (0.0, 0.0));
         }
         bytes.resize(4096 * 4 * 4, 0);
@@ -294,11 +306,59 @@ impl Truetype {
         }
         st.bind_2d(ctx, &self.shader);
         self.shader.set_position_2d(ctx, st,
-            &pos,
-            &glam::Vec2::new(sz, height * sz / width)
+            &glam::Vec2::new(pos.x, pos.y - y_max),
+            &glam::Vec2::new(width, height)
         );
         self.shader.set_i32(ctx, "curves_len", curves_len);
+    }
+    pub fn render_glyph(&self,
+        ctx: &context::Context, st: &mut state::State,
+        pos: glam::Vec2, // note that this is the position of the bottom left of the glyph, not top left
+        sz: f32, // size in points
+        g: ttf_parser::GlyphId
+    ) -> utils::Erm<()> {
+        let mut cache = self.cache.borrow_mut();
+        if let Some(c) = cache.get(&g) {
+            self.upload_bezier(ctx, st, sz, &c.outliner, &c.bound, &pos);
+        } else {
+            let mut outliner = GlyphOutliner::new();
+            let bound = if let Some(b) = self.face.outline_glyph(g, &mut outliner) { b } else { return Ok(()) };
+            self.upload_bezier(ctx, st, sz, &outliner, &bound, &pos);
+            cache.insert(g, CacheEntry {
+                outliner,
+                bound,
+            });
+        }
         st.mesh_square.render(ctx);
+        Ok(())
+    }
+    pub fn render_text(&self,
+        ctx: &context::Context, st: &mut state::State,
+        pos: glam::Vec2, sz: f32, text: &str
+    ) -> utils::Erm<()> {
+        let scale = self.scale(sz);
+        let ascent = self.face.ascender() as f32 * scale; // maximum distance above baseline
+        let descent = self.face.descender() as f32 * scale; // maximum distance below baseline (negative)
+        let line_gap = self.face.line_gap() as f32 * scale; // additional space between lines
+        let mut baseline = pos.y + ascent;
+        let mut xoff = pos.x;
+        for c in text.chars() {
+            if c == '\n' {
+                // on newline, reset back to the left and move the baseline down
+                xoff = pos.x;
+                // baseline += ascent - descent + line_gap;
+                baseline += ascent - descent + line_gap;
+            } else if let Some(g) = self.face.glyph_index(c) {
+                // otherwise, render the glyph normally
+                let advance = self.face.glyph_hor_advance(g).unwrap_or(0) as f32 * scale;
+                let bearing = self.face.glyph_hor_side_bearing(g).unwrap_or(0) as f32 * scale;
+                self.render_glyph(ctx, st,
+                    glam::Vec2::new(xoff + bearing, baseline),
+                    sz, g
+                )?;
+                xoff += advance;
+            }
+        }
         Ok(())
     }
 }
