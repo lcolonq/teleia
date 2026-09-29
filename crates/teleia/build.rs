@@ -1,5 +1,7 @@
 fn main() {
     println!("cargo::rerun-if-changed=../../flake.lock");
+    println!("cargo::rerun-if-env-changed=LIBCOLONQ_PIT_NATIVE");
+    println!("cargo::rerun-if-env-changed=LIBCOLONQ_PIT_WASM");
     match &*std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() {
         "x86_64" => if let Ok(p) = std::env::var("LIBCOLONQ_PIT_NATIVE") {
             println!("cargo::rustc-link-search={}", p);

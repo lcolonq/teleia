@@ -36,6 +36,21 @@ extern "C" fn unwrap_nativefunc(rt: *mut PitRuntime, args: PitValue, data: *mut 
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
+enum PitSort {
+    Double,
+    Integer,
+    Symbol,
+    Cell,
+    Cons,
+    Array,
+    Bytes,
+    Func,
+    NativeFunc,
+    NativeData,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
 struct PitValue { data: u64 }
 
 #[repr(C)]
@@ -68,6 +83,7 @@ struct PitParser {
 unsafe extern "C" {
     pub fn pit_runtime_test(out: *mut u8, out_len: i64, buf: *mut u8, len: i64) -> c_int;
     fn pit_runtime_new(buf: *mut MaybeUninit<u8>, len: i64) -> *mut PitRuntime;
+    fn pit_runtime_set_fuel(rt: *mut PitRuntime, fuel: i64);
     fn pit_error_get(buf: *mut PitRuntime) -> PitValue;
     fn pit_install_library_essential(buf: *mut PitRuntime);
     fn pit_install_library_plist(buf: *mut PitRuntime);
@@ -90,6 +106,7 @@ unsafe extern "C" {
 
     fn pit_value_eq(x: PitValue, y: PitValue) -> bool;
 
+    fn pit_value_as_integer(rt: *mut PitRuntime, v: PitValue) -> i64;
     fn pit_value_as_double(rt: *mut PitRuntime, v: PitValue) -> f64;
 
     fn pit_value_array_new(rt: *mut PitRuntime, len: i64) -> PitValue;
@@ -146,6 +163,11 @@ impl Runtime {
         if self.eq(ve, NIL) { return Ok(()) };
         Err(Error { msg: self.dump(ve).unwrap_or("<unable to dump>".to_owned()) }.into())
     }
+    pub fn set_fuel(&mut self, fuel: i64) {
+        unsafe {
+            pit_runtime_set_fuel(self.rt, fuel);
+        }
+    }
     pub fn parse(&mut self, s: &str) -> utils::Erm<Value> {
         let lexer = Lexer::from_bytes(s.as_bytes());
         let mut parser = Parser::from_lexer(lexer);
@@ -188,6 +210,13 @@ impl Runtime {
     }
     pub fn eq(&self, x: Value, y: Value) -> bool {
         unsafe { pit_value_eq(x.val, y.val) }
+    }
+    pub fn as_integer(&mut self, x: Value) -> utils::Erm<i64> {
+        unsafe {
+            let v = pit_value_as_integer(self.rt, x.val);
+            self.error()?;
+            Ok(v)
+        }
     }
     pub fn as_double(&mut self, x: Value) -> utils::Erm<f64> {
         unsafe {
