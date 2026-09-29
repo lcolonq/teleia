@@ -36,7 +36,7 @@ extern "C" fn unwrap_nativefunc(rt: *mut PitRuntime, args: PitValue, data: *mut 
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-enum PitSort {
+pub enum Sort {
     Double,
     Integer,
     Symbol,
@@ -81,6 +81,17 @@ struct PitParser {
 
 #[allow(dead_code)]
 unsafe extern "C" {
+    static PIT__SORT_DOUBLE: i64;
+    static PIT__SORT_INTEGER: i64;
+    static PIT__SORT_SYMBOL: i64;
+    static PIT__SORT_CELL: i64;
+    static PIT__SORT_CONS: i64;
+    static PIT__SORT_ARRAY: i64;
+    static PIT__SORT_BYTES: i64;
+    static PIT__SORT_FUNC: i64;
+    static PIT__SORT_NATIVEFUNC: i64;
+    static PIT__SORT_NATIVEDATA: i64;
+
     pub fn pit_runtime_test(out: *mut u8, out_len: i64, buf: *mut u8, len: i64) -> c_int;
     fn pit_runtime_new(buf: *mut MaybeUninit<u8>, len: i64) -> *mut PitRuntime;
     fn pit_runtime_set_fuel(rt: *mut PitRuntime, fuel: i64);
@@ -104,6 +115,8 @@ unsafe extern "C" {
     fn pit_symtab_get(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
     fn pit_symtab_fget(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
 
+    fn pit_value_sort(x: PitValue) -> i64;
+    fn pit_value_sort_or_heavy_sort(x: PitValue) -> i64;
     fn pit_value_eq(x: PitValue, y: PitValue) -> bool;
 
     fn pit_value_as_integer(rt: *mut PitRuntime, v: PitValue) -> i64;
@@ -166,6 +179,25 @@ impl Runtime {
     pub fn set_fuel(&mut self, fuel: i64) {
         unsafe {
             pit_runtime_set_fuel(self.rt, fuel);
+        }
+    }
+    pub fn sort_of(&mut self, v: Value) -> utils::Erm<Sort> {
+        unsafe {
+            let vt = pit_value_sort_or_heavy_sort(v.val);
+            self.error()?;
+            if vt == PIT__SORT_DOUBLE { Ok(Sort::Double) }
+            else if vt == PIT__SORT_INTEGER { Ok(Sort::Integer) }
+            else if vt == PIT__SORT_SYMBOL { Ok(Sort::Symbol) }
+            else if vt == PIT__SORT_CELL { Ok(Sort::Cell) }
+            else if vt == PIT__SORT_CONS { Ok(Sort::Cons) }
+            else if vt == PIT__SORT_ARRAY { Ok(Sort::Array) }
+            else if vt == PIT__SORT_BYTES { Ok(Sort::Bytes) }
+            else if vt == PIT__SORT_FUNC { Ok(Sort::Func) }
+            else if vt == PIT__SORT_NATIVEFUNC { Ok(Sort::NativeFunc) }
+            else if vt == PIT__SORT_NATIVEDATA { Ok(Sort::NativeData) }
+            else {
+                utils::erm(Error { msg: format!("unknown pit sort index: {}", vt) })
+            }
         }
     }
     pub fn parse(&mut self, s: &str) -> utils::Erm<Value> {
