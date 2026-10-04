@@ -76,6 +76,7 @@ pub struct Scene {
     pub nodes: Vec<Node>,
     pub nodes_by_name: HashMap<String, Index>,
     pub scene_nodes: Vec<Index>,
+    pub has_joints: bool,
 }
 
 impl Scene {
@@ -91,6 +92,7 @@ impl Scene {
         let get_buffer_data = |b: gltf::Buffer| {
             buffers.get(b.index()).map(|gltf::buffer::Data(bytes)| bytes.as_slice())
         };
+        let mut has_joints = false;
         let objects = gltf.meshes().map(|m| {
             let primitives = m.primitives().map(|p| {
                 let mode = match p.mode() {
@@ -163,11 +165,13 @@ impl Scene {
                         }
                     }
                     if let Some(iter) = reader.read_joints(0) {
+                        has_joints = true;
                         for (i, j) in iter.into_u16().enumerate() {
                             vertices[i].joints = glam::Vec4::from_slice(&j.into_iter().map(|x| x as f32).collect::<Vec<f32>>())
                         }
                     }
                     if let Some(iter) = reader.read_weights(0) {
+                        has_joints = true;
                         for (i, w) in iter.into_f32().enumerate() {
                             vertices[i].weights = glam::Vec4::from_array(w)
                         }
@@ -318,6 +322,7 @@ impl Scene {
             nodes,
             nodes_by_name,
             scene_nodes,
+            has_joints,
         }
     }
 
@@ -363,6 +368,7 @@ impl Scene {
         for sn in &self.scene_nodes {
             q.push_back(*sn);
         }
+        shader.set_i32(ctx, "has_joints", self.has_joints as i32);
         while let Some(ni) = q.pop_front() {
             let n = &self.nodes[ni];
             self.render_node(ctx, shader, n);
