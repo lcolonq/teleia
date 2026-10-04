@@ -116,11 +116,15 @@ unsafe extern "C" {
     fn pit_symtab_fget(rt: *mut PitRuntime, sym: PitValue) -> PitValue;
 
     fn pit_value_sort(x: PitValue) -> i64;
-    fn pit_value_sort_or_heavy_sort(x: PitValue) -> i64;
+    fn pit_value_sort_or_heavy_sort(rt: *mut PitRuntime, x: PitValue) -> i64;
     fn pit_value_eq(x: PitValue, y: PitValue) -> bool;
 
+    fn pit_value_integer_new(rt: *mut PitRuntime, x: i64) -> PitValue;
+    fn pit_value_double_new(rt: *mut PitRuntime, x: f64) -> PitValue;
     fn pit_value_as_integer(rt: *mut PitRuntime, v: PitValue) -> i64;
     fn pit_value_as_double(rt: *mut PitRuntime, v: PitValue) -> f64;
+
+    fn pit_value_bytes_new(rt: *mut PitRuntime, buf: *const u8, len: i64) -> PitValue;
 
     fn pit_value_array_new(rt: *mut PitRuntime, len: i64) -> PitValue;
     fn pit_value_array_from_buf(rt: *mut PitRuntime, xs: *const PitValue, len: i64) -> PitValue;
@@ -176,6 +180,9 @@ impl Runtime {
         if self.eq(ve, NIL) { return Ok(()) };
         Err(Error { msg: self.dump(ve).unwrap_or("<unable to dump>".to_owned()) }.into())
     }
+    pub fn to_value<T>(&mut self, v: T) -> utils::Erm<Value> where T: PitValuable {
+        v.to_value(self)
+    }
     pub fn set_fuel(&mut self, fuel: i64) {
         unsafe {
             pit_runtime_set_fuel(self.rt, fuel);
@@ -183,7 +190,7 @@ impl Runtime {
     }
     pub fn sort_of(&mut self, v: Value) -> utils::Erm<Sort> {
         unsafe {
-            let vt = pit_value_sort_or_heavy_sort(v.val);
+            let vt = pit_value_sort_or_heavy_sort(self.rt, v.val);
             self.error()?;
             if vt == PIT__SORT_DOUBLE { Ok(Sort::Double) }
             else if vt == PIT__SORT_INTEGER { Ok(Sort::Integer) }
@@ -334,4 +341,45 @@ impl Parser {
 #[derive(Debug, Clone, Copy)]
 pub struct Value {
     val: PitValue,
+}
+
+pub trait PitValuable {
+    fn to_value(self, rt: &mut Runtime) -> utils::Erm<Value>;
+}
+impl PitValuable for i64 {
+    fn to_value(self, rt: &mut Runtime) -> utils::Erm<Value> {
+        unsafe {
+            let val = pit_value_integer_new(rt.rt, self);
+            rt.error()?;
+            Ok(Value { val })
+        }
+    }
+}
+impl PitValuable for bool {
+    fn to_value(self, rt: &mut Runtime) -> utils::Erm<Value> {
+        unsafe {
+            let val = pit_value_integer_new(rt.rt, self as i64);
+            rt.error()?;
+            Ok(Value { val })
+        }
+    }
+}
+impl PitValuable for f64 {
+    fn to_value(self, rt: &mut Runtime) -> utils::Erm<Value> {
+        unsafe {
+            let val = pit_value_double_new(rt.rt, self);
+            rt.error()?;
+            Ok(Value { val })
+        }
+    }
+}
+impl<T: AsRef<[u8]>> PitValuable for &T {
+    fn to_value(self, rt: &mut Runtime) -> utils::Erm<Value> {
+        unsafe {
+            let bs = self.as_ref();
+            let val = pit_value_bytes_new(rt.rt, bs.as_ptr(), bs.len() as i64);
+            rt.error()?;
+            Ok(Value { val })
+        }
+    }
 }

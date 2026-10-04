@@ -126,6 +126,7 @@ impl Cursor {
         self.index = val;
         self.index %= self.bound;
     }
+    pub fn finish_visually(&mut self) { self.prev_index = self.index; }
     pub fn increment_unlocked(&mut self, tick: Tick) -> bool { self.set_unlocked(self.index + 1, tick); true }
     pub fn decrement_unlocked(&mut self, tick: Tick) -> bool { self.set_unlocked(self.index + self.bound - 1, tick); true }
 
