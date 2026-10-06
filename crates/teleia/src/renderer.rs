@@ -49,13 +49,19 @@ pub trait Assets {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ShaderMode { TwoDimension, ThreeDimension, ThreeDimensionOrth }
 #[derive(Debug, Clone, Copy)]
-enum BoundShader<A: Assets> { None, Uber(UberFlags, ShaderMode), Shader(A::Shader, ShaderMode) }
+enum BoundShader<A: Assets> {
+    None,
+    Uber(UberFlags, ShaderMode),
+    Shader(A::Shader, ShaderMode),
+    Skybox,
+}
 impl<A: Assets> PartialEq for BoundShader<A> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::None, Self::None) => true,
             (Self::Uber(sf, sm), Self::Uber(of, om)) => sf == of && sm == om,
             (Self::Shader(ss, sm), Self::Shader(os, om)) => ss == os && sm == om,
+            (Self::Skybox, Self::Skybox) => true,
             _ => false,
         }
     }
@@ -298,11 +304,22 @@ impl<A: Assets> Renderer<A> {
     pub fn bind_shader_3d(&mut self, ctx: &context::Context, st: &mut state::State, shader: A::Shader) {
         self.bind_shader(ctx, st, shader, ShaderMode::ThreeDimension);
     }
+    pub fn bind_shader_skybox(&mut self, ctx: &context::Context, st: &mut state::State) {
+        if BoundShader::Skybox == self.shader { return }
+        let view = glam::Mat4::from_mat3(glam::Mat3::from_mat4(st.view()));
+        st.shader_skybox.bind(ctx);
+        st.shader_skybox.set_mat4(ctx, "projection", &st.projection);
+        st.shader_skybox.set_mat4(ctx, "view", &view);
+        self.shader = BoundShader::Skybox;
+    }
     pub fn render(&self, ctx: &context::Context, _st: &state::State, mesh: A::Mesh) {
         self.assets.mesh(mesh).render(ctx)
     }
     pub fn render_square(&self, ctx: &context::Context, st: &state::State) {
         st.mesh_square.render(ctx)
+    }
+    pub fn render_cube(&self, ctx: &context::Context, st: &state::State) {
+        st.mesh_cube.render(ctx)
     }
     pub fn set_position_2d_mat(&self, ctx: &context::Context, st: &state::State, pos: glam::Mat4) {
         if let Some((s, sm)) = self.shader() {
@@ -444,5 +461,15 @@ impl<A: Assets> Renderer<A> {
             scale: None,
             offset: None,
         }
+    }
+
+    /// Common case: draw a cubemap as a skybox
+    pub fn skybox(&mut self,
+        ctx: &context::Context, st: &mut state::State,
+        skybox: &texture::Cubemap,
+    ) {
+        self.bind_shader_skybox(ctx, st);
+        skybox.bind(ctx);
+        self.render_cube(ctx, st);
     }
 }

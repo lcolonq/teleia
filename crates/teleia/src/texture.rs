@@ -8,7 +8,6 @@ pub struct Texture {
     pub width: i32,
     pub height: i32,
 }
-
 impl Texture {
     pub fn new_empty(ctx: &context::Context) -> Self {
         unsafe {
@@ -24,7 +23,6 @@ impl Texture {
             }
         }
     }
-
     pub fn new(ctx: &context::Context, bytes: &[u8]) -> Self {
         let rgba = image::ImageReader::new(std::io::Cursor::new(bytes))
             .with_guessed_format()
@@ -52,7 +50,6 @@ impl Texture {
                 Some(pixels),
             );
             ctx.gl.generate_mipmap(glow::TEXTURE_2D);
-
             Self {
                 tex,
                 width: rgba.width() as i32,
@@ -60,7 +57,6 @@ impl Texture {
             }
         }
     }
-
     pub fn upload(&mut self, ctx: &context::Context, bytes: &[u8]) {
         let rgba = image::ImageReader::new(std::io::Cursor::new(bytes))
             .with_guessed_format()
@@ -71,7 +67,6 @@ impl Texture {
         let pixels = rgba.as_bytes();
         self.upload_rgba8(ctx, rgba.width() as i32, rgba.height() as i32, pixels);
     }
-
     pub fn upload_rgba8(&mut self, ctx: &context::Context, width: i32, height: i32, data: &[u8]) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
@@ -95,7 +90,6 @@ impl Texture {
         self.width = width;
         self.height = height;
     }
-
     pub fn set_repeat(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
@@ -103,7 +97,6 @@ impl Texture {
             ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
         }
     }
-
     pub fn set_anisotropic_filtering(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
@@ -114,21 +107,18 @@ impl Texture {
             ctx.gl.tex_parameter_f32(glow::TEXTURE_2D, glow::TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
         }
     }
-
     pub fn bind(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.active_texture(glow::TEXTURE0);
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
         }
     }
-
     pub fn bind_initial(ctx: &context::Context) {
         unsafe {
             ctx.gl.active_texture(glow::TEXTURE0);
             ctx.gl.bind_texture(glow::TEXTURE_2D, None);
         }
     }
-
     pub fn bind_index(&self, ctx: &context::Context, idx: u32) {
         unsafe {
             ctx.gl.active_texture(glow::TEXTURE0 + idx);
@@ -152,5 +142,53 @@ impl Material {
     pub fn bind(&self, ctx: &context::Context) {
         self.color.bind(ctx);
         self.normal.bind_index(ctx, 1);
+    }
+}
+
+pub struct Cubemap {
+    pub tex: glow::Texture,
+}
+impl Cubemap {
+    // expects an iterator of side image bytes in this order:
+    //  right, left, top, bottom, front, back
+    pub fn new<'a>(ctx: &context::Context, sides: impl IntoIterator<Item = &'a [u8]>) -> Self {
+        unsafe {
+            let tex = ctx.gl.create_texture().expect("failed to create texture");
+            ctx.gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(tex));
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_WRAP_T, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_WRAP_R, glow::CLAMP_TO_EDGE as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MIN_FILTER, glow::LINEAR as i32);
+            ctx.gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
+            for (i, bytes) in sides.into_iter().enumerate() {
+                let rgba = image::ImageReader::new(std::io::Cursor::new(bytes))
+                    .with_guessed_format()
+                    .expect("failed to guess image format")
+                    .decode()
+                    .expect("failed to decode image")
+                    .into_rgba8();
+                let pixels = rgba.as_bytes();
+                ctx.gl.tex_image_2d(
+                    glow::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
+                    0,
+                    glow::RGBA as i32,
+                    rgba.width() as i32,
+                    rgba.height() as i32,
+                    0,
+                    glow::RGBA,
+                    glow::UNSIGNED_BYTE,
+                    Some(pixels),
+                );
+            }
+            Self {
+                tex,
+            }
+        }
+    }
+    pub fn bind(&self, ctx: &context::Context) {
+        unsafe {
+            ctx.gl.active_texture(glow::TEXTURE0);
+            ctx.gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(self.tex));
+        }
     }
 }

@@ -164,7 +164,9 @@ pub struct State {
     pub render_dims: glam::Vec2,
     pub postprocessing: postprocessing::Pipeline,
     pub shader_text_bitmap: shader::Shader,
+    pub shader_skybox: shader::Shader,
     pub mesh_square: mesh::Mesh,
+    pub mesh_cube: mesh::Mesh,
     pub font_default: font::Bitmap,
     pub font_small: font::Bitmap,
     pub audio: Option<audio::Assets>,
@@ -239,7 +241,13 @@ impl State {
             include_str!("assets/shaders/bitmap/vert.glsl"),
             include_str!("assets/shaders/bitmap/frag.glsl"),
         );
+        let shader_skybox = shader::Shader::new(
+            ctx,
+            include_str!("assets/shaders/skybox/vert.glsl"),
+            include_str!("assets/shaders/skybox/frag.glsl"),
+        );
         let mesh_square = mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/square.obj"));
+        let mesh_cube = mesh::Mesh::from_obj(ctx, include_bytes!("assets/meshes/cube.obj"));
 
         let nextframe = now(ctx);
 
@@ -262,7 +270,9 @@ impl State {
             render_dims: glam::Vec2::new(ctx.render_width, ctx.render_height),
             postprocessing: postprocessing::Pipeline::new(ctx),
             shader_text_bitmap,
+            shader_skybox,
             mesh_square,
+            mesh_cube,
             font_default: font::Bitmap::default(ctx),
             font_small: font::Bitmap::small(ctx),
             audio: None,
