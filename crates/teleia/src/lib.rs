@@ -1,4 +1,5 @@
 #![feature(try_blocks)]
+#![feature(unix_socket_ancillary_data)]
 
 pub mod utils;
 pub mod ui;

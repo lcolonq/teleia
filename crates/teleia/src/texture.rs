@@ -49,7 +49,6 @@ impl Texture {
                 glow::UNSIGNED_BYTE,
                 Some(pixels),
             );
-            ctx.gl.generate_mipmap(glow::TEXTURE_2D);
             Self {
                 tex,
                 width: rgba.width() as i32,
@@ -85,7 +84,6 @@ impl Texture {
                 glow::UNSIGNED_BYTE,
                 Some(data),
             );
-            ctx.gl.generate_mipmap(glow::TEXTURE_2D);
         }
         self.width = width;
         self.height = height;
@@ -100,6 +98,7 @@ impl Texture {
     pub fn set_anisotropic_filtering(&self, ctx: &context::Context) {
         unsafe {
             ctx.gl.bind_texture(glow::TEXTURE_2D, Some(self.tex));
+            ctx.gl.generate_mipmap(glow::TEXTURE_2D);
             ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
             ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
             ctx.gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR_MIPMAP_LINEAR as i32);

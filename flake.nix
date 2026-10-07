@@ -200,19 +200,22 @@
             });
       };
 
-      shell = craneLib.devShell {
+      baseShell = craneLib.devShell {
         packages = [
           pkgs.trunk
           pkgs.rust-analyzer
           pkgs.cargo-flamegraph
           pkgs.cmake
           pkgs.mold
-        ] ++ native.nativeBuildInputs ++ native.buildInputs;
+        ];
         LIBRARY_PATH = "$LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         RUSTFLAGS="-L ${glfw}/lib";
         LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.lib.makeLibraryPath native.buildInputs}";
         inherit LIBCOLONQ_PIT_NATIVE LIBCOLONQ_PIT_WASM;
       };
+      shell = baseShell.overrideAttrs (final: prev: {
+        buildInputs = prev.buildInputs ++ native.nativeBuildInputs ++ native.buildInputs;
+      });
     in {
       inherit shell native wasm windows;
       devShells.${system} = {

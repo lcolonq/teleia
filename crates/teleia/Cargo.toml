@@ -14,7 +14,6 @@ tobj = "=4.0.1" # loader for .obj meshes loader
 ahash = "=0.8.10" # dependency of tobj
 gltf = { git = "https://github.com/lcolonq/gltf", features = ["extras", "import", "names", "utils"] } # loader for .gltf scenes
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] } # texture loader
-# cosmic-text = { version = "*", default-features = false, features = ["std", "swash"] }  # advanced text rendering
 glam = {version = "0.29.2", features = ["serde"]} # linear algebra
 log = "0.4.21" # logging
 rand = { version = "=0.8.5", features = ["small_rng"] } # rng
@@ -23,8 +22,6 @@ serde_json = "1.0.128" # serialize JSON
 bincode = { version = "2.0.1", features = ["serde"] } # binary serialization
 enum-map = "2.7.3" # fast maps with enums as keys
 bimap = "0.6.3" # bijective maps
-# reqwest = "*" # http requests
-bytes = "*" # bytes for http responses
 bitflags = { version = "2.6.0", features = ["serde"] } # bitwise flags
 simple-eyre = { version = "0.3.1", default-features = false } # error reporting and formatting
 rapier3d = "0.23.1" # rigid-body physics
@@ -52,3 +49,4 @@ kira = { version = "=0.9.6", default-features = false, features = ["cpal", "ogg"
 directories = { git = "https://github.com/lcolonq/directories-rs" } # standard system directories
 polling = "3.11.0" # interface to epoll
 tungstenite = { version = "0.24.0", features = ["native-tls"] } # websockets
+libc = "0.2.190" # ffi
