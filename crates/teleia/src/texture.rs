@@ -3,6 +3,7 @@ use image::EncodableLayout;
 
 use crate::context;
 
+#[derive(Debug)]
 pub struct Texture {
     pub tex: glow::Texture,
     pub width: i32,

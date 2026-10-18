@@ -5,6 +5,7 @@ pub const EGL_HEIGHT: EGLenum = 0x3056;
 pub const EGL_GL_TEXTURE_2D: EGLenum = 0x30B1;
 
 // from <EGL/eglext.h>
+pub const EGL_NATIVE_PIXMAP_KHR: EGLenum = 0x30B0;
 pub const EGL_LINUX_DMA_BUF_EXT: EGLenum = 0x3270;
 pub const EGL_LINUX_DRM_FOURCC_EXT: EGLenum = 0x3271;
 pub const EGL_DMA_BUF_PLANE0_FD_EXT: EGLenum = 0x3272;
@@ -51,4 +52,5 @@ unsafe extern "C" {
 #[link(name = "GL")]
 unsafe extern "C" {
     pub fn glEGLImageTargetTexture2DOES(t: u32, img: EGLImage);
+    pub fn glEGLImageTargetTexStorageEXT(t: u32, img: EGLImage, attribs: *const core::ffi::c_int);
 }

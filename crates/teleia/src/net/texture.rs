@@ -16,6 +16,18 @@ use ffi::glfw;
 
 use crate::{context, texture, utils};
 
+pub fn upload_xcb_pixmap(ctx: &context::Context, t: &mut texture::Texture, pixmap: u32) {
+    t.bind(ctx);
+    unsafe {
+        let d = glfw::glfwGetEGLDisplay();
+        let img = egl::eglCreateImage(d, std::ptr::null_mut(), egl::EGL_NATIVE_PIXMAP_KHR,
+            pixmap as libc::uintptr_t as egl::EGLClientBuffer,
+            std::ptr::null_mut()
+        );
+        egl::glEGLImageTargetTexStorageEXT(glow::TEXTURE_2D, img, std::ptr::null_mut())
+    }
+}
+
 #[derive(Debug)]
 struct ReceivedTexture {
     fd: i32,
