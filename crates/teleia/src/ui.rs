@@ -113,7 +113,7 @@ impl Cursor {
             self.change_started = tick;
             self.prev_index = self.index;
             self.index = val;
-            self.index %= self.bound;
+            if self.bound != 0 { self.index %= self.bound };
             true
         } else { false }
     }
@@ -124,7 +124,7 @@ impl Cursor {
         self.change_started = tick;
         self.prev_index = self.index;
         self.index = val;
-        self.index %= self.bound;
+        if self.bound != 0 { self.index %= self.bound; }
     }
     pub fn finish_visually(&mut self) { self.prev_index = self.index; }
     pub fn increment_unlocked(&mut self, tick: Tick) -> bool { self.set_unlocked(self.index + 1, tick); true }
