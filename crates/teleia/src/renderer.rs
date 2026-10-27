@@ -176,6 +176,12 @@ impl<'c, 's, 'r, A: Assets> RenderTextureScreen<'c, 's, 'r, A> {
     pub fn hue(mut self, hue: f32) -> Self { self.hue = Some(hue); self }
 }
 
+enum RenderTextScreenFont<'f> {
+    Default,
+    Small,
+    Bitmap(&'f font::Bitmap),
+}
+
 #[must_use]
 pub struct RenderTextScreen<'c, 's, 'r, 'str, 'f, A: Assets> {
     ctx: &'c context::Context,
@@ -183,7 +189,7 @@ pub struct RenderTextScreen<'c, 's, 'r, 'str, 'f, A: Assets> {
     renderer: &'r mut Renderer<A>,
     text: &'str str,
     pos: glam::Vec2,
-    font: Option<&'f font::Bitmap>,
+    font: RenderTextScreenFont<'f>,
     centered: bool,
     col: Option<glam::Vec4>,
     scale: Option<glam::Vec2>,
@@ -194,7 +200,11 @@ impl<'c, 's, 'r, 'str, 'f, A: Assets> RenderTextScreen<'c, 's, 'r, 'str, 'f, A> 
         // drawing text might bind the texture
         self.renderer.texture = BoundTexture::None;
         self.renderer.bind_uber_2d(self.ctx, self.st, UberFlags::TEXTURE_COLOR | UberFlags::VERTEX_COLOR);
-        let font = if let Some(font) = self.font { font } else { &self.st.font_default };
+        let font = match self.font {
+            RenderTextScreenFont::Default => &self.st.font_default,
+            RenderTextScreenFont::Small => &self.st.font_small,
+            RenderTextScreenFont::Bitmap(font) => font,
+        };
         let dims = glam::Vec2::new(font.char_width as f32, font.char_height as f32);
         let fpos = if self.centered {
             let width = self.text.len() as f32 * font.char_width as f32;
@@ -213,7 +223,8 @@ impl<'c, 's, 'r, 'str, 'f, A: Assets> RenderTextScreen<'c, 's, 'r, 'str, 'f, A> 
             offset: if let Some(off) = self.offset { off } else { glam::Vec2::ZERO },
         });
     }
-    pub fn font(mut self, font: &'f font::Bitmap) -> Self { self.font = Some(font); self }
+    pub fn font(mut self, font: &'f font::Bitmap) -> Self { self.font = RenderTextScreenFont::Bitmap(font); self }
+    pub fn font_small(mut self) -> Self { self.font = RenderTextScreenFont::Small; self }
     pub fn centered(mut self) -> Self { self.centered = true; self }
     pub fn color(mut self, col: glam::Vec4) -> Self { self.col = Some(col); self }
     pub fn scale(mut self, scale: glam::Vec2) -> Self { self.scale = Some(scale); self }
@@ -455,7 +466,7 @@ impl<A: Assets> Renderer<A> {
             ctx, st, renderer: self,
             text,
             pos,
-            font: None,
+            font: RenderTextScreenFont::Default,
             centered: false,
             col: None,
             scale: None,
