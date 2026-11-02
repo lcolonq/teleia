@@ -1,5 +1,5 @@
 #![feature(try_blocks)]
-#![feature(unix_socket_ancillary_data)]
+#![cfg_attr(not(target_arch = "wasm32"), feature(unix_socket_ancillary_data))]
 
 pub mod utils;
 pub mod ui;
